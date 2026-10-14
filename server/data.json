@@ -1,0 +1,44 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Exact Recipient Test",
+      "email": "yousarname11@gmail.com",
+      "passwordHash": "$2a$12$F5vZAJCgE9SZFfQoXMN02uqh4pNYpb23w2xM4gnoBKoFjeEnsCtXq",
+      "role": "customer",
+      "phone": null,
+      "company": null,
+      "verified": false,
+      "verificationToken": "2b7a155075fec8c24586615ecb3f4a6a12a098bd58d69ce66a63a5205ad023f6",
+      "createdAt": "2026-09-06"
+    },
+    {
+      "id": 3,
+      "name": "Shane Fuller",
+      "email": "jovansumaylocruz@gmail.com",
+      "passwordHash": "$2a$12$OZ3XiauYXaPBW8U1gal/aOF5HYDeLZ8Qdz0f83CF/kieG0K1R/JDy",
+      "role": "customer",
+      "phone": "12345678912",
+      "company": null,
+      "verified": false,
+      "verificationToken": "ab6b169573e9727502ae26f8f913c935b7b44dfb2b84dedf8ad9fb231cf4fc80",
+      "createdAt": "2026-09-06"
+    },
+    {
+      "id": 4,
+      "name": "Julius Almendras",
+      "email": "almendras.julius.g@gmail.com",
+      "passwordHash": "$2a$12$Lggg2dmlqH4Z2nAikzVm1urXcqYVrlofQAdAklUIF80i/F.itVkwW",
+      "role": "customer",
+      "phone": null,
+      "company": null,
+      "verified": false,
+      "verificationToken": "0a60f6959c592d592df84fb3b0945172fbdd53aab3bcfc4db37111fbd8c92642",
+      "createdAt": "2026-09-06"
+    }
+  ],
+  "partners": [],
+  "serviceRequests": [],
+  "drivers": [],
+  "trucks": []
+}

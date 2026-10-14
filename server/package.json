@@ -1,0 +1,26 @@
+{
+  "name": "ultimate-express-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend API for the Ultimate Express capstone project",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "gmail:authorize": "node gmail-authorize.js",
+    "bootstrap:manager": "node bootstrap-manager.js",
+    "export:accounts": "node export-accounts.js",
+    "seed:test-accounts": "node seed-test-accounts.js",
+    "clean:test-data": "node clean-test-data.js",
+    "test:login-codes": "node test-login-codes.js"
+  },
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "googleapis": "^144.0.0",
+    "mysql2": "^3.14.3"
+  }
+}

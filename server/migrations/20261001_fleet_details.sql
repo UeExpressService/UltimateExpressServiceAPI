@@ -1,0 +1,9 @@
+ALTER TABLE trucks
+    ADD COLUMN capacity VARCHAR(64) NULL,
+    ADD COLUMN location VARCHAR(255) NULL,
+    ADD COLUMN notes TEXT NULL;
+
+ALTER TABLE drivers
+    ADD COLUMN email VARCHAR(255) NULL,
+    ADD COLUMN experience VARCHAR(100) NULL,
+    ADD COLUMN notes TEXT NULL;
