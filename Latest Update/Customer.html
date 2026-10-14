@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Portal - Ultimate Express</title>
+    <script src="api-config.js"></script>
+    <script src="auth.js"></script>
+    <script>if (!requireRole('customer')) document.documentElement.style.display = 'none';</script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="route-map.js"></script>
+    <link rel="icon" type="image/jpg" href="images/logo.jpg">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #e07b39;
+            --primary-dark: #c4652c;
+            --secondary: #4a5d3a;
+            --dark: #2d3a24;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --success: #28a745;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: white;
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo { display: flex; align-items: center; text-decoration: none; gap: .6rem; font-weight: 800; font-size: 1.25rem; color: var(--secondary); }
+        .logo img { height: 48px; width: auto; border-radius: 6px; }
+        .logo span { color: var(--primary); }
+
+        .user-profile { display: flex; align-items: center; gap: 1rem; }
+        .user-info { text-align: right; line-height: 1.2; }
+        .user-info .name { display: block; font-weight: 600; font-size: 0.9rem; }
+        .user-info .role { font-size: 0.75rem; color: var(--gray); }
+
+        .logout-btn { color: var(--gray); font-size: 1.2rem; text-decoration: none; padding: 8px; border-radius: 8px; transition: all 0.3s; }
+        .logout-btn:hover { background: #fee2e2; color: #dc2626; }
+
+        /* ── Dashboard Content ── */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 5%;
+            flex: 1;
+            width: 100%;
+        }
+
+        .welcome-header { margin-bottom: 2rem; }
+        .welcome-header h1 { font-size: 1.8rem; color: var(--secondary); }
+        .welcome-header p { color: var(--gray); }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            border: 1px solid var(--light-gray);
+            margin-bottom: 2rem;
+        }
+        .profile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+        .profile-item { padding: 0.85rem 1rem; background: var(--light); border-radius: 10px; }
+        .profile-item .label { display: block; margin-bottom: 0.25rem; color: var(--gray); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .profile-item .value { color: var(--dark); font-size: 0.95rem; overflow-wrap: anywhere; }
+        .form-group input[type="checkbox"] { width: auto; }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .card-title i { color: var(--primary); font-size: 1.3rem; }
+
+        /* ── Action Buttons Row ── */
+        .action-buttons-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* ── Transaction Tabs ── */
+        .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--light-gray); }
+        .tab { padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; color: var(--gray); font-size: 0.9rem; border-bottom: 3px solid transparent; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* ── Transaction List ── */
+        .transaction-list { display: flex; flex-direction: column; gap: 1rem; }
+        .transaction-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1rem;
+            background: var(--light);
+            border-radius: 12px;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .transaction-item:hover { transform: translateX(5px); }
+
+        .icon-box {
+            width: 45px; height: 45px;
+            background: white; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--primary); font-size: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .details .id { font-weight: 700; font-size: 0.9rem; display: block; }
+        .details .route { font-size: 0.85rem; color: var(--gray); }
+
+        .status-badge { padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .status-ongoing { background: #e0f2fe; color: #0369a1; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-completed { background: #dcfce7; color: #166534; }
+        .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1.25rem; }
+        .detail-group { padding: 0.85rem 1rem; background: var(--light); border-radius: 10px; }
+        .detail-group.full-width { grid-column: 1 / -1; }
+        .detail-label { display: block; margin-bottom: 0.25rem; color: var(--gray); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .detail-value { color: var(--dark); font-size: 0.9rem; word-break: break-word; }
+        .customer-route-summary { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--light-gray); }
+        .customer-route-summary h3 { margin-bottom: .85rem; color: var(--secondary); font-size: 1.05rem; }
+        .customer-route-map { width: 100%; height: 320px; min-height: 260px; border-radius: 12px; background: #e9ecef; }
+        .customer-route-status { margin: .75rem 0; color: var(--gray); font-size: .85rem; }
+        .customer-route-directions { color: var(--primary-dark); font-weight: 600; }
+        @media (max-width: 600px) { .details-grid { grid-template-columns: 1fr; } .detail-group.full-width { grid-column: auto; } }
+
+        .price { font-weight: 700; color: var(--secondary); font-size: 0.95rem; }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 0.85rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+        .btn-secondary { background: var(--secondary); color: white; }
+        .btn-secondary:hover { background: var(--dark); transform: translateY(-2px); }
+
+        .btn-block { width: 100%; }
+
+        /* ── Modal Overlay ── */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            position: relative;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+        }
+
+        .modal-close { position: absolute; top: 1rem; right: 1.5rem; font-size: 1.5rem; cursor: pointer; color: var(--gray); transition: color 0.3s; }
+        .modal-close:hover { color: var(--primary); }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .modal-title i { color: var(--primary); }
+
+        /* ── Quotation Form inside Modal ── */
+        .form-section-label { 
+            font-size: 0.8rem; font-weight: 800; color: var(--primary); 
+            text-transform: uppercase; letter-spacing: 1px; 
+            margin: 1.5rem 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        .form-section-label::after { content: ""; flex: 1; height: 1px; background: var(--light-gray); }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-group { margin-bottom: 0.8rem; }
+        .form-group.full { grid-column: span 2; }
+        .form-group.third { grid-column: span 1; }
+
+        .form-group label { display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.3rem; color: var(--secondary); }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 0.65rem;
+            border: 1.5px solid var(--light-gray);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+        }
+        .form-group input:focus { outline: none; border-color: var(--primary); }
+
+        .error-message {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+            padding: 0.9rem 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            color: #166534;
+            border: 1px solid #86efac;
+            padding: 0.9rem 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 968px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .transaction-item { grid-template-columns: auto; } 
+        }
+
+        @media (max-width: 580px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .form-group.full, .form-group.third, .form-grid > div { grid-column: span 1; }
+            .transaction-item { grid-template-columns: auto 1fr; }
+            .status-badge, .price { grid-column: span 2; width: max-content; margin-left: 60px; }
+            .action-buttons-row { flex-direction: column; }
+        }
+
+        footer { background: var(--dark); color: white; padding: 2rem; text-align: center; font-size: 0.85rem; }
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <img src="images/logo.jpg" alt="Logo">
+            Ultimate<span>Express</span>
+        </a>
+        <div class="user-profile">
+            <div class="user-info">
+                <span class="name">Loading...</span>
+                <span class="role">Customer</span>
+            </div>
+            <a href="login.html?logout=1" class="logout-btn" title="Logout">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="welcome-header">
+            <h1>Customer Portal</h1>
+            <p>Manage your logistics, track transactions, and request new service quotations.</p>
+        </div>
+
+        <div class="card" id="customerProfileCard">
+            <div class="card-title"><i class="bi bi-person-vcard"></i> Customer Profile</div>
+            <p style="color:var(--gray);font-size:0.85rem;margin:-0.8rem 0 1rem;">Profile details are read-only. Contact a manager if they need to be updated.</p>
+            <div class="profile-grid">
+                <div class="profile-item"><span class="label">Name</span><div class="value" id="profileName">—</div></div>
+                <div class="profile-item"><span class="label">Company</span><div class="value" id="profileCompany">—</div></div>
+                <div class="profile-item"><span class="label">Email</span><div class="value" id="profileEmail">—</div></div>
+                <div class="profile-item"><span class="label">Contact</span><div class="value" id="profilePhone">—</div></div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+
+            <!-- ── Left Column: Transactions ── -->
+            <div class="main-column" id="transactionColumn">
+                <div class="card">
+                    <div class="card-title">
+                        <i class="bi bi-clock-history"></i> Transaction History
+                    </div>
+
+                    <!-- Action Buttons Row -->
+                    <div class="action-buttons-row">
+                        <button id="openQuoteModal" class="btn btn-primary">
+                            <i class="bi bi-file-earmark-plus"></i> Request a Quote
+                        </button>
+                        <a href="tel:+63281234567" class="btn btn-secondary">
+                            <i class="bi bi-telephone"></i> Call Dispatch
+                        </a>
+                    </div>
+
+                    <div class="tabs">
+                        <div class="tab active" onclick="renderTransactions('all')">All</div>
+                        <div class="tab" onclick="renderTransactions('ongoing')">Ongoing</div>
+                        <div class="tab" onclick="renderTransactions('pending')">Pending</div>
+                        <div class="tab" onclick="renderTransactions('completed')">Completed</div>
+                    </div>
+
+                    <div class="transaction-list" id="transactionContainer">
+                        <div class="transaction-item ongoing">
+                            <div class="icon-box"><i class="bi bi-truck"></i></div>
+                            <div class="details">
+                                <span class="id">#UE-99281</span>
+                                <span class="route">Manila → Cebu City</span>
+                            </div>
+                            <span class="status-badge status-ongoing">In Transit</span>
+                            <span class="price">₱12,500.00</span>
+                        </div>
+
+                        <div class="transaction-item pending">
+                            <div class="icon-box"><i class="bi bi-hourglass-split"></i></div>
+                            <div class="details">
+                                <span class="id">#UE-99285</span>
+                                <span class="route">Davao City → Cagayan de Oro</span>
+                            </div>
+                            <span class="status-badge status-pending">Processing</span>
+                            <span class="price">₱8,200.00</span>
+                        </div>
+
+                        <div class="transaction-item completed">
+                            <div class="icon-box"><i class="bi bi-check2-circle"></i></div>
+                            <div class="details">
+                                <span class="id">#UE-99102</span>
+                                <span class="route">Batangas → Quezon City</span>
+                            </div>
+                            <span class="status-badge status-completed">Delivered</span>
+                            <span class="price">₱5,400.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Read-only transaction details modal -->
+    <div class="modal" id="transactionDetailsModal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeTransactionDetails" role="button" tabindex="0" aria-label="Close transaction details">&times;</span>
+            <h2 class="modal-title"><i class="bi bi-receipt"></i> Order Summary</h2>
+            <div class="details-grid" id="transactionDetailsContent"></div>
+            <section class="customer-route-summary" aria-labelledby="customerRouteHeading">
+                <h3 id="customerRouteHeading"><i class="bi bi-map"></i> Shipment Route</h3>
+                <div class="customer-route-map" id="customerRouteMap" role="img" aria-label="Map showing pickup and delivery route"></div>
+                <p class="customer-route-status" id="customerRouteStatus" role="status" aria-live="polite">Open an order to view its route.</p>
+                <a class="customer-route-directions" id="customerRouteDirections" href="#" target="_blank" rel="noopener" hidden>Open directions in Google Maps</a>
+                <p class="customer-route-status">The route is estimated from the saved addresses. It does not show the truck's live location.</p>
+            </section>
+        </div>
+    </div>
+
+    <!-- Modal: Quotation Form -->
+    <div class="modal" id="quoteModal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeQuoteModal">&times;</span>
+            <h2 class="modal-title"><i class="bi bi-file-earmark-plus"></i> Request a Quotation</h2>                <div id="quoteError" class="error-message" style="display:none;"></div>
+                <div id="quoteSuccess" class="success-message" style="display:none;"></div>
+            <form id="quoteForm">
+                <!-- Contact Information -->
+                <div class="form-section-label"><i class="bi bi-person"></i> Contact Information</div>
+                <div class="form-grid">
+                    <div class="form-group"><label>Full Name</label><input type="text" id="quoteFullName" placeholder="e.g. Juan Dela Cruz" required></div>
+                    <div class="form-group"><label>Company Name</label><input type="text" id="quoteCompany" placeholder="e.g. ABC Corporation"></div>
+                    <div class="form-group"><label>Email Address</label><input type="email" id="quoteEmail" placeholder="e.g. juan@example.com" required></div>
+                    <div class="form-group"><label>Mobile Number</label><input type="tel" id="quotePhone" placeholder="e.g. +63 912 345 6789" required></div>
+                </div>
+
+                <!-- Pickup Details -->
+                <div class="form-section-label"><i class="bi bi-geo-alt"></i> Pickup Address</div>
+                <div class="form-grid">
+                    <div class="form-group"><label>Region</label><input type="text" id="quotePickupRegion" list="quotePickupRegionList" placeholder="Choose or type a region" required><datalist id="quotePickupRegionList"></datalist></div>
+                    <div class="form-group"><label>Province / District</label><input type="text" id="quotePickupProvince" list="quotePickupProvinceList" placeholder="e.g. Metro Manila" required><datalist id="quotePickupProvinceList"></datalist></div>
+                    <div class="form-group"><label>City/Municipality</label><input type="text" id="quotePickupCity" list="quotePickupCityList" placeholder="e.g. Makati" required><datalist id="quotePickupCityList"></datalist></div>
+                    <div class="form-group"><label>Barangay</label><input type="text" id="quotePickupBarangay" list="quotePickupBarangayList" placeholder="e.g. Bel-Air" required><datalist id="quotePickupBarangayList"></datalist></div>
+                    <div class="form-group"><label>Postal Code</label><input type="text" id="quotePickupPostal" placeholder="1209" readonly></div>
+                    <div class="form-group"><label>House/Bldg No.</label><input type="text" id="quotePickupHouse" placeholder="e.g. Unit 1201"></div>
+                    <div class="form-group full"><label>Street Name</label><input type="text" id="quotePickupStreet" placeholder="e.g. Ayala Avenue"></div>
+                </div>
+
+                <!-- Delivery Details -->
+                <div class="form-section-label"><i class="bi bi-truck"></i> Delivery Address</div>
+                <div class="form-group"><label><input type="checkbox" id="sameAsPickupAddress"> Use pickup address for delivery</label></div>
+                <div class="form-grid">
+                    <div class="form-group"><label>Region</label><input type="text" id="quoteDeliveryRegion" list="quoteDeliveryRegionList" placeholder="Choose or type a region" required><datalist id="quoteDeliveryRegionList"></datalist></div>
+                    <div class="form-group"><label>Province / District</label><input type="text" id="quoteDeliveryProvince" list="quoteDeliveryProvinceList" required><datalist id="quoteDeliveryProvinceList"></datalist></div>
+                    <div class="form-group"><label>City/Municipality</label><input type="text" id="quoteDeliveryCity" list="quoteDeliveryCityList" required><datalist id="quoteDeliveryCityList"></datalist></div>
+                    <div class="form-group"><label>Barangay</label><input type="text" id="quoteDeliveryBarangay" list="quoteDeliveryBarangayList" required><datalist id="quoteDeliveryBarangayList"></datalist></div>
+                    <div class="form-group"><label>Postal Code</label><input type="text" id="quoteDeliveryPostal" readonly></div>
+                    <div class="form-group"><label>House/Bldg No.</label><input type="text" id="quoteDeliveryHouse"></div>
+                    <div class="form-group full"><label>Street Name</label><input type="text" id="quoteDeliveryStreet"></div>
+                </div>
+
+                <!-- Cargo Details -->
+                <div class="form-section-label"><i class="bi bi-box-seam"></i> Cargo Information</div>
+                <div class="form-group">
+                    <label>Description & Estimated Weight / Volume</label>
+                    <textarea id="quoteCargo" rows="3" placeholder="e.g. 50 boxes of office supplies, approx 500kg total" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label><input type="checkbox" id="acceptQuoteTerms" required>
+                        I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms &amp; Conditions</a> for this service request.
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top: 2rem;">
+                    Submit Quote Request <i class="bi bi-send"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2012 Ultimate Express. All rights reserved. <i class="bi bi-flag-fill" style="color: var(--primary);"></i>
+    </footer>
+
+    <script>
+        const API_URL = window.UE_API_URL;
+        let allTransactions = [];
+        let currentFilter = 'all';
+        let customerRouteMap = null;
+        const ADDRESS_CATALOG = {
+            CAR: {
+                Abra: { Bangued: { postal: '2800', barangays: ['Calaba', 'Cosili East', 'Poblacion'] } },
+                Benguet: { 'Baguio City': { postal: '2600', barangays: ['Camp 7', 'Loakan', 'Session Road'] } }
+            },
+            'Region I': {
+                'Ilocos Norte': { 'Laoag City': { postal: '2900', barangays: ['San Lorenzo', 'San Nicolas', 'Santa Maria'] } },
+                'Pangasinan': { 'Dagupan City': { postal: '2400', barangays: ['Bonuan Gueset', 'Lucao', 'Poblacion Oeste'] } }
+            },
+            'Region II': {
+                Cagayan: { 'Tuguegarao City': { postal: '3500', barangays: ['Caritan Norte', 'Centro 1', 'Pengue-Ruyu'] } },
+                Isabela: { 'Ilagan City': { postal: '3300', barangays: ['Alibagu', 'Centro Poblacion', 'San Felipe'] } }
+            },
+            NCR: {
+                'Metro Manila': {
+                    Manila: { postal: '1000', barangays: ['Ermita', 'Intramuros', 'Malate', 'Sampaloc', 'Tondo'] },
+                    'Makati City': { postal: '1200', barangays: ['Bel-Air', 'Poblacion', 'San Antonio', 'Urdaneta'] },
+                    'Quezon City': { postal: '1100', barangays: ['Batasan Hills', 'Commonwealth', 'Diliman', 'Novaliches'] },
+                    'Taguig City': { postal: '1630', barangays: ['Bicutan', 'Fort Bonifacio', 'Ususan'] }
+                }
+            },
+            'Region III': {
+                Bulacan: { 'Malolos City': { postal: '3000', barangays: ['Bulihan', 'Guinhawa', 'Longos'] } },
+                Pampanga: { 'Angeles City': { postal: '2009', barangays: ['Balibago', 'Malabanias', 'Pulung Maragul'] } }
+            },
+            'Region IV-B': {
+                'Oriental Mindoro': { Calapan: { postal: '5200', barangays: ['Balingayan', 'Lumangbayan', 'San Vicente'] } },
+                Palawan: { 'Puerto Princesa': { postal: '5300', barangays: ['Bancao-Bancao', 'San Jose', 'Tiniguiban'] } }
+            },
+            'Region V': {
+                Albay: { 'Legazpi City': { postal: '4500', barangays: ['Cruzada', 'Gogon', 'Rawis'] } },
+                'Camarines Sur': { 'Naga City': { postal: '4400', barangays: ['Concepcion Grande', 'Dayangdang', 'Triangulo'] } }
+            },
+            'Region IV-A': {
+                Cavite: { 'Bacoor City': { postal: '4102', barangays: ['Molino', 'Mambog', 'Talaba'] }, 'Dasmarinas City': { postal: '4114', barangays: ['Salawag', 'Sampaloc', 'Zone I'] } },
+                Laguna: { 'Calamba City': { postal: '4027', barangays: ['Canlubang', 'Halang', 'Real'] }, 'Santa Rosa City': { postal: '4026', barangays: ['Balibago', 'Don Jose', 'Tagapo'] } },
+                Rizal: { Antipolo: { postal: '1870', barangays: ['Cupang', 'Dela Paz', 'San Isidro'] } }
+            },
+            'Region VI': {
+                Iloilo: { 'Iloilo City': { postal: '5000', barangays: ['Jaro', 'La Paz', 'Mandurriao'] } },
+                'Negros Occidental': { 'Bacolod City': { postal: '6100', barangays: ['Alijis', 'Mandalagan', 'Villamonte'] } }
+            },
+            'Region VII': {
+                Cebu: { 'Cebu City': { postal: '6000', barangays: ['Lahug', 'Mabolo', 'Talamban'] } },
+                'Negros Oriental': { 'Dumaguete City': { postal: '6200', barangays: ['Bantayan', 'Daro', 'Piapi'] } }
+            },
+            'Region VIII': {
+                Leyte: { 'Tacloban City': { postal: '6500', barangays: ['Downtown', 'Nula-Tula', 'San Jose'] } },
+                'Northern Samar': { Catarman: { postal: '6400', barangays: ['Dalakit', 'Gamay', 'San Julian'] } }
+            },
+            'Region IX': {
+                'Zamboanga del Sur': { 'Zamboanga City': { postal: '7000', barangays: ['Ayala', 'Guiwan', 'Tetuan'] } },
+                'Zamboanga Sibugay': { Ipil: { postal: '7001', barangays: ['Don Andres', 'Poblacion', 'Taway'] } }
+            },
+            'Region X': {
+                'Misamis Oriental': { 'Cagayan de Oro City': { postal: '9000', barangays: ['Carmen', 'Kauswagan', 'Poblacion'] } },
+                'Bukidnon': { 'Malaybalay City': { postal: '8700', barangays: ['Bangcud', 'Cabangahan', 'Poblacion'] } }
+            },
+            'Region XI': {
+                'Davao del Sur': { 'Davao City': { postal: '8000', barangays: ['Bajada', 'Matina', 'Poblacion'] } }
+            },
+            'Region XII': {
+                'South Cotabato': { 'General Santos City': { postal: '9500', barangays: ['Bula', 'Lagao', 'Poblacion'] } },
+                Cotabato: { Kidapawan: { postal: '9400', barangays: ['Amas', 'Lanao', 'Poblacion'] } }
+            },
+            'Region XIII': {
+                'Agusan del Norte': { 'Butuan City': { postal: '8600', barangays: ['Bancasi', 'Libertad', 'Villa Kananga'] } },
+                'Surigao del Norte': { 'Surigao City': { postal: '8400', barangays: ['Luna', 'San Juan', 'Washington'] } }
+            },
+            BARMM: {
+                'Lanao del Sur': { 'Marawi City': { postal: '9700', barangays: ['Banggolo Poblacion', 'Basak', 'Lilod Madaya'] } },
+                Sulu: { Jolo: { postal: '7400', barangays: ['Bus-Bus', 'San Raymundo', 'Tulay'] } }
+            }
+        };
+
+        function setDatalistOptions(id, values) {
+            const list = document.getElementById(id);
+            if (list) list.innerHTML = values.map(value => `<option value="${escapeHtml(value)}"></option>`).join('');
+        }
+
+        function updateAddressSuggestions(prefix, resetLevel = '') {
+            const region = document.getElementById(`${prefix}Region`).value.trim();
+            const province = document.getElementById(`${prefix}Province`).value.trim();
+            const city = document.getElementById(`${prefix}City`).value.trim();
+            const provinces = ADDRESS_CATALOG[region] || {};
+            if (resetLevel === 'region') {
+                document.getElementById(`${prefix}Province`).value = '';
+                document.getElementById(`${prefix}City`).value = '';
+                document.getElementById(`${prefix}Barangay`).value = '';
+            } else if (resetLevel === 'province') {
+                document.getElementById(`${prefix}City`).value = '';
+                document.getElementById(`${prefix}Barangay`).value = '';
+            }
+            setDatalistOptions(`${prefix}RegionList`, Object.keys(ADDRESS_CATALOG));
+            setDatalistOptions(`${prefix}ProvinceList`, Object.keys(provinces));
+            const cities = provinces[province] || {};
+            setDatalistOptions(`${prefix}CityList`, Object.keys(cities));
+            const cityDetails = cities[city];
+            setDatalistOptions(`${prefix}BarangayList`, cityDetails ? cityDetails.barangays : []);
+            if (cityDetails) document.getElementById(`${prefix}Postal`).value = cityDetails.postal;
+            else if (resetLevel || !city) document.getElementById(`${prefix}Postal`).value = '';
+        }
+
+        function populateCustomerProfile() {
+            const customer = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+            if (!customer) return;
+            document.getElementById('profileName').textContent = customer.name || '—';
+            document.getElementById('profileCompany').textContent = customer.company || '—';
+            document.getElementById('profileEmail').textContent = customer.email || '—';
+            document.getElementById('profilePhone').textContent = customer.phone || '—';
+            document.getElementById('quoteFullName').value = customer.name || '';
+            document.getElementById('quoteCompany').value = customer.company || '';
+            document.getElementById('quoteEmail').value = customer.email || '';
+            document.getElementById('quotePhone').value = customer.phone || '';
+        }
+
+        function copyPickupToDelivery() {
+            if (!document.getElementById('sameAsPickupAddress').checked) return;
+            ['Region', 'Province', 'City', 'Barangay', 'Postal', 'House', 'Street'].forEach(part => {
+                document.getElementById(`quoteDelivery${part}`).value = document.getElementById(`quotePickup${part}`).value;
+            });
+            updateAddressSuggestions('quoteDelivery');
+        }
+
+        function showSuccess(message, targetId = 'quoteSuccess') {
+            const successEl = document.getElementById(targetId);
+            if (successEl) {
+                successEl.innerText = message;
+                successEl.style.display = 'block';
+                setTimeout(() => successEl.style.display = 'none', 4000);
+            } else {
+                alert(message);
+            }
+        }
+
+        function showError(message, targetId = 'quoteError') {
+            const errorEl = document.getElementById(targetId);
+            if (errorEl) {
+                errorEl.innerText = message;
+                errorEl.style.display = 'block';
+                setTimeout(() => errorEl.style.display = 'none', 5000);
+            } else {
+                alert(message);
+            }
+        }
+
+        async function loadTransactions() {
+            try {
+                const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+                const response = await fetch(`${API_URL}/service-requests`, {
+                    headers: authenticatedApiHeaders()
+                });
+                if (!response.ok) throw new Error('Failed to load service requests');
+                const data = await response.json();
+                allTransactions = data.filter(item => String(item.customer_id) === String(currentUser.id)).map(item => ({
+                    ...item,
+                    status: item.status || 'new'
+                }));
+                renderTransactions(currentFilter);
+            } catch (err) {
+                console.error(err);
+                const container = document.getElementById('transactionContainer');
+                if (container) {
+                    container.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Unable to load transactions. Check your backend server.</p></div>';
+                }
+            }
+        }
+
+        function renderTransactions(category) {
+            currentFilter = category;
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.toLowerCase().includes(category) || (category === 'all' && tab.textContent.toLowerCase().includes('all')));
+            });
+
+            const container = document.getElementById('transactionContainer');
+            if (!container) return;
+
+            const filtered = allTransactions.filter(item => {
+                if (category === 'all') return true;
+                return item.status.toLowerCase() === category;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><p>No transactions found.</p></div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const statusClass = item.status === 'pending' ? 'pending' : item.status === 'completed' || item.status === 'approved' ? 'completed' : 'ongoing';
+                return `
+                    <div class="transaction-item ${statusClass}" onclick="openTransactionDetails(${item.id})" role="button" tabindex="0" onkeydown="if (event.key === 'Enter' || event.key === ' ') openTransactionDetails(${item.id})">
+                        <div class="icon-box"><i class="bi bi-truck"></i></div>
+                        <div class="details">
+                            <span class="id">${item.id || 'N/A'}</span>
+                            <span class="route">${escapeHtml(item.pickup_location || 'Unknown pickup')} → ${escapeHtml(item.delivery_location || 'Unknown delivery')}</span>
+                        </div>
+                        <div class="status-badge status-${statusClass}">${item.status}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? 'Not provided')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function openTransactionDetails(transactionId) {
+            const transaction = allTransactions.find(item => String(item.id) === String(transactionId));
+            if (!transaction) return;
+
+            const statusClass = transaction.status === 'pending' ? 'pending' : transaction.status === 'completed' || transaction.status === 'approved' ? 'completed' : 'ongoing';
+            const details = [
+                ['Order Number', transaction.id],
+                ['Status', `<span class="status-badge status-${statusClass}">${escapeHtml(transaction.status)}</span>`],
+                ['Cargo Type', transaction.cargo_type],
+                ['Cargo Weight', transaction.cargo_weight],
+                ['Pickup Address', transaction.pickup_location],
+                ['Delivery Address', transaction.delivery_location],
+                ['Pickup Date', transaction.pickup_date],
+                ['Preferred Time', transaction.preferred_time],
+                ['Truck Type', transaction.truck_type],
+                ['Paid Amount', transaction.paid_amount == null ? 'Not recorded' : `₱${Number(transaction.paid_amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+                ['Contact Person', transaction.contact_person],
+                ['Contact Phone', transaction.contact_phone],
+                ['Contact Email', transaction.contact_email],
+                ['Special Requirements', transaction.special_requirements]
+            ];
+            document.getElementById('transactionDetailsContent').innerHTML = details.map(([label, value]) => `
+                <div class="detail-group${label === 'Special Requirements' ? ' full-width' : ''}">
+                    <span class="detail-label">${escapeHtml(label)}</span>
+                    <span class="detail-value">${label === 'Status' ? value : escapeHtml(value)}</span>
+                </div>
+            `).join('');
+            const directions = new URL('https://www.google.com/maps/dir/');
+            directions.searchParams.set('api', '1');
+            directions.searchParams.set('origin', transaction.pickup_location || '');
+            directions.searchParams.set('destination', transaction.delivery_location || '');
+            const directionsLink = document.getElementById('customerRouteDirections');
+            directionsLink.href = directions.toString();
+            directionsLink.hidden = !transaction.pickup_location || !transaction.delivery_location;
+            document.getElementById('customerRouteStatus').textContent = 'Preparing the route map...';
+            document.getElementById('transactionDetailsModal').classList.add('active');
+            if (!customerRouteMap) {
+                customerRouteMap = window.UE.RouteMap.create(
+                    'customerRouteMap',
+                    document.getElementById('customerRouteStatus')
+                );
+            }
+            window.UE.RouteMap.invalidate(customerRouteMap);
+            setTimeout(() => window.UE.RouteMap.draw(
+                customerRouteMap,
+                transaction.pickup_location,
+                transaction.delivery_location,
+                document.getElementById('customerRouteStatus')
+            ), 180);
+        }
+
+        // Modal Controls
+        const modal = document.getElementById('quoteModal');
+        const openBtn = document.getElementById('openQuoteModal');
+        const closeBtn = document.getElementById('closeQuoteModal');
+        const transactionDetailsModal = document.getElementById('transactionDetailsModal');
+        const closeTransactionDetails = document.getElementById('closeTransactionDetails');
+        function closeTransactionDetailsModal() {
+            if (customerRouteMap) customerRouteMap._ueRouteRequestId += 1;
+            transactionDetailsModal.classList.remove('active');
+        }
+
+        openBtn.addEventListener('click', () => {
+            populateCustomerProfile();
+            modal.classList.add('active');
+        });
+        closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+        closeTransactionDetails.addEventListener('click', closeTransactionDetailsModal);
+        closeTransactionDetails.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                closeTransactionDetailsModal();
+            }
+        });
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+            if (e.target === transactionDetailsModal) closeTransactionDetailsModal();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const verificationToken = new URLSearchParams(window.location.search).get('verificationToken');
+            const verifyAccount = verificationToken
+                ? fetch(`${API_URL}/verify?token=${encodeURIComponent(verificationToken)}`)
+                    .then(response => response.ok ? response.json() : null)
+                    .then(data => {
+                        if (data && data.user) {
+                            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }
+                    })
+                    .catch(() => {})
+                : Promise.resolve();
+
+            verifyAccount.then(() => {
+                const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+                if (!currentUser || currentUser.role !== 'customer') {
+                    alert('Please log in as a customer before requesting a service.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                populateCustomerProfile();
+                ['quotePickup', 'quoteDelivery'].forEach(prefix => {
+                    updateAddressSuggestions(prefix);
+                });
+                document.getElementById('sameAsPickupAddress').addEventListener('change', copyPickupToDelivery);
+                document.getElementById('quotePickupRegion').addEventListener('input', () => updateAddressSuggestions('quotePickup', 'region'));
+                document.getElementById('quotePickupProvince').addEventListener('input', () => updateAddressSuggestions('quotePickup', 'province'));
+                document.getElementById('quotePickupCity').addEventListener('input', () => {
+                    updateAddressSuggestions('quotePickup');
+                    copyPickupToDelivery();
+                });
+                document.getElementById('quoteDeliveryRegion').addEventListener('input', () => updateAddressSuggestions('quoteDelivery', 'region'));
+                document.getElementById('quoteDeliveryProvince').addEventListener('input', () => updateAddressSuggestions('quoteDelivery', 'province'));
+                document.getElementById('quoteDeliveryCity').addEventListener('input', () => updateAddressSuggestions('quoteDelivery'));
+                ['Region', 'Province', 'Barangay', 'Postal', 'House', 'Street'].forEach(part => {
+                    document.getElementById(`quotePickup${part}`).addEventListener('input', copyPickupToDelivery);
+                });
+                loadTransactions();
+            });
+        });
+
+        document.getElementById('quoteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = this.querySelector('button');
+            const originalContent = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+            submitBtn.disabled = true;
+
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+            if (!currentUser || !currentUser.id) {
+                showError('Please log in again before submitting a quote.');
+                submitBtn.innerHTML = originalContent;
+                submitBtn.disabled = false;
+                return;
+            }
+            if (!confirm('Are you sure you want to submit this quote request?')) {
+                submitBtn.innerHTML = originalContent;
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const pickupAddress = ['quotePickupHouse', 'quotePickupStreet', 'quotePickupBarangay', 'quotePickupCity', 'quotePickupProvince', 'quotePickupRegion', 'quotePickupPostal']
+                .map(id => document.getElementById(id).value.trim()).filter(Boolean).join(', ');
+            const deliveryAddress = ['quoteDeliveryHouse', 'quoteDeliveryStreet', 'quoteDeliveryBarangay', 'quoteDeliveryCity', 'quoteDeliveryProvince', 'quoteDeliveryRegion', 'quoteDeliveryPostal']
+                .map(id => document.getElementById(id).value.trim()).filter(Boolean).join(', ');
+
+            const payload = {
+                customer_id: currentUser.id,
+                cargo_type: document.getElementById('quoteCargo').value.slice(0, 100),
+                cargo_weight: '0',
+                special_requirements: document.getElementById('quoteCargo').value.slice(0, 255),
+                pickup_location: pickupAddress,
+                delivery_location: deliveryAddress,
+                pickup_date: new Date().toISOString().split('T')[0],
+                preferred_time: '',
+                truck_type: '',
+                contact_person: document.getElementById('quoteFullName').value,
+                contact_phone: document.getElementById('quotePhone').value,
+                contact_email: document.getElementById('quoteEmail').value,
+                terms_accepted: document.getElementById('acceptQuoteTerms').checked
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/service-requests`, {
+                    method: 'POST',
+                    headers: authenticatedApiHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to create request');
+                }
+
+                showSuccess('Quotation request submitted successfully.', 'quoteSuccess');
+                this.reset();
+                modal.classList.remove('active');
+                await loadTransactions();
+            } catch (err) {
+                console.error(err);
+                showError(err.message || 'Unable to submit request.', 'quoteError');
+            } finally {
+                submitBtn.innerHTML = originalContent;
+                submitBtn.disabled = false;
+            }
+        });
+
+        setInterval(() => {
+            if (sessionStorage.getItem('currentUser')) loadTransactions();
+        }, 15000);
+
+        document.addEventListener('DOMContentLoaded', loadTransactions);
+    </script>
+</body>
+</html>

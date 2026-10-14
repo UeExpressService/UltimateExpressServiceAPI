@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Express - Trucking & Logistics Philippines</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="icon" type="image/jpg" href="images/logo.jpg">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #e07b39;
+            --primary-dark: #c4652c;
+            --secondary: #4a5d3a;
+            --dark: #2d3a24;
+            --light: #f8f9fa;
+            --accent: #6b7f5a;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --olive: #556b2f;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: white; z-index: 1000;
+            padding: 1rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 20px rgba(0,0,0,.08);
+            transition: all .3s ease;
+        }
+        .navbar.scrolled { padding: .7rem 5%; }
+
+        .logo { display: flex; align-items: center; text-decoration: none; gap: .6rem; font-weight: 800; font-size: 1.25rem; color: var(--secondary); }
+        .logo img { height: 48px; width: auto; display: block; object-fit: contain; border-radius: 6px; }
+        .logo span { color: var(--primary); }
+
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a { text-decoration: none; color: var(--secondary); font-weight: 500; transition: color .3s; font-size: .95rem; }
+        .nav-links a:hover { color: var(--primary); }
+
+        .nav-cta { background: var(--primary); color: white !important; padding: .7rem 1.5rem; border-radius: 50px; transition: all .3s ease !important; }
+        .nav-cta:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+        .mobile-toggle { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 5px; }
+        .mobile-toggle span { width: 25px; height: 3px; background: var(--secondary); border-radius: 3px; transition: all .3s ease; }
+
+        /* ── Hero ── */
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(135deg, rgba(0,0,0,.75), rgba(45,58,36,.6)), url('images/backgroundhome.jpg');
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            display: flex; align-items: center;
+            padding: 120px 5% 80px;
+        }
+        .hero-container { max-width: 1200px; margin: 0 auto; width: 100%; }
+        .hero-content { color: white; max-width: 680px; }
+
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: .5rem;
+            background: rgba(255,255,255,.12); padding: .5rem 1rem;
+            border-radius: 50px; font-size: .85rem; margin-bottom: 1.5rem;
+            border: 1px solid rgba(255,255,255,.18);
+        }
+        .hero-badge i { color: var(--primary); }
+
+        .hero h1 { font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.15; margin-bottom: 1.5rem; }
+        .hero h1 .highlight { color: var(--primary); }
+        .hero p { font-size: 1.05rem; opacity: .95; margin-bottom: 2rem; max-width: 520px; }
+
+        .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+        .btn { display: inline-flex; align-items: center; gap: .5rem; padding: .9rem 1.8rem; border-radius: 50px; font-weight: 600; text-decoration: none; transition: all .3s ease; cursor: pointer; border: none; font-size: .95rem; font-family: inherit; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(224,123,57,.3); }
+        .btn-outline { background: transparent; color: white; border: 2px solid rgba(255,255,255,.4); }
+        .btn-outline:hover { background: white; color: var(--secondary); border-color: white; }
+
+        .hero-stats { display: flex; gap: 2.5rem; margin-top: 2.5rem; flex-wrap: wrap; }
+        .stat-item { text-align: left; }
+        .stat-number { font-size: 2.2rem; font-weight: 800; color: var(--primary); }
+        .stat-label { font-size: .85rem; opacity: .85; }
+
+        /* ── Services ── */
+        .services { padding: 80px 5%; background: var(--light); }
+
+        .section-header { text-align: center; max-width: 600px; margin: 0 auto 3rem; }
+        .section-tag { display: inline-block; background: rgba(224,123,57,.12); color: var(--primary-dark); padding: .4rem 1rem; border-radius: 50px; font-size: .85rem; font-weight: 600; margin-bottom: .8rem; text-transform: uppercase; letter-spacing: .5px; }
+        .section-header h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); color: var(--secondary); margin-bottom: .8rem; }
+        .section-header p { color: var(--gray); font-size: 1rem; }
+
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 0 auto; }
+
+        .service-card { background: white; padding: 2rem; border-radius: 16px; transition: all .3s ease; position: relative; overflow: hidden; }
+        .service-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--primary), var(--accent)); transform: scaleX(0); transition: transform .3s ease; }
+        .service-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,.1); }
+        .service-card:hover::before { transform: scaleX(1); }
+
+        .service-icon { width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.2rem; color: white; }
+        .service-card h3 { color: var(--secondary); font-size: 1.15rem; margin-bottom: .8rem; }
+        .service-card p { color: var(--gray); font-size: .9rem; margin-bottom: 1rem; }
+
+        .service-link { color: var(--primary); text-decoration: none; font-weight: 600; font-size: .9rem; display: inline-flex; align-items: center; gap: .4rem; transition: gap .3s ease; }
+        .service-link:hover { gap: .8rem; }
+
+        /* ── Fleet Section ── */
+        .fleet-section {
+            height: 500px;
+            display: flex;
+            width: calc(100% + 0px);
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e07b39 0%, #4a5d3a 100%);
+            box-shadow: none;
+        }
+        .blade {
+            flex: 1;
+            position: relative;
+            clip-path: polygon(15% 0, 100% 0, 85% 100%, 0% 100%);
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-end;
+            padding: 24px;
+            margin: 0 2px;
+        }
+        .blade:hover { flex: 2.5; clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%); }
+        .blade-content {
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            position: relative;
+            z-index: 1;
+            max-width: 260px;
+        }
+        .blade-content h3 { font-size: 1.2rem; margin-bottom: .35rem; }
+        .blade-content p { font-size: .9rem; margin-bottom: .45rem; color: rgba(255,255,255,.95); }
+        .blade-content .blade-price {
+            display: inline-block;
+            background: rgba(224,123,57,.95);
+            color: white;
+            padding: .35rem .7rem;
+            border-radius: 999px;
+            font-size: .8rem;
+            font-weight: 600;
+        }
+        .blade:hover .blade-content { opacity: 1; pointer-events: all; }
+        .blade::after { content: ''; position: absolute; inset: 0; background: transparent; transition: background 0.3s; }
+        .blade:hover::after { background: transparent; }
+
+        @media (max-width: 768px) {
+            .fleet-section { height: auto; flex-direction: column; }
+            .blade { min-height: 220px; clip-path: none; }
+            .blade:hover { flex: 1; clip-path: none; }
+            .blade-content { opacity: 1; pointer-events: all; }
+        }
+
+        /* ── About ── */
+        .about { padding: 80px 5%; background: white; }
+
+        .about-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+
+        .about-images { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; position: relative; }
+
+        .about-img {
+            border-radius: 12px; display: flex; align-items: flex-end; justify-content: flex-start;
+            padding: 16px; font-size: 1rem; color: white; font-weight: 700; letter-spacing: .5px;
+            text-shadow: 0 2px 8px rgba(0,0,0,.5); overflow: hidden; position: relative;
+        }
+        .about-img::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.45), transparent 60%); border-radius: 12px; }
+        .about-img span { position: relative; z-index: 1; }
+
+        .about-img.img-1 { height: 200px; background: url(images/extra.jpg) center/cover no-repeat; }
+        .about-img.img-2 { height: 200px; margin-top: 1.5rem; background: url(images/luzon.png) center/cover no-repeat; }
+        .about-img.img-3 { height: 200px; margin-top: -1.5rem; background: url(images/visayas.jpg) center/cover no-repeat; }
+        .about-img.img-4 { height: 200px; background: url(images/mindanao.jpg) center/cover no-repeat; }
+
+        .about-badge { position: absolute; bottom: 15px; right: 15px; background: var(--primary); color: white; padding: 14px; border-radius: 12px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,.15); z-index: 2; }
+        .about-badge .number { font-size: 2rem; font-weight: 800; display: block; line-height: 1; }
+        .about-badge .text { font-size: .8rem; font-weight: 600; }
+
+        .about-content h2 { font-size: clamp(1.8rem, 4vw, 2.4rem); color: var(--secondary); margin-bottom: 1.2rem; }
+        .about-content > p { color: var(--gray); margin-bottom: 1.5rem; font-size: 1rem; line-height: 1.75; }
+
+        .about-highlights { display: flex; flex-wrap: wrap; gap: .8rem; margin-bottom: 1.5rem; }
+        .highlight-item { display: flex; align-items: center; gap: .5rem; background: rgba(224,123,57,.08); padding: .5rem 1rem; border-radius: 50px; font-size: .85rem; font-weight: 600; color: var(--secondary); }
+        .highlight-item i { color: var(--primary); font-size: 1rem; }
+
+        /* MVV Section */
+        .mvv-section { max-width: 1200px; margin: 4rem auto 0; }
+        .mvv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+
+        .mvv-card {
+            background: var(--light); padding: 2rem; border-radius: 16px;
+            border-left: 4px solid var(--primary);
+            transition: all .3s ease;
+        }
+        .mvv-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,.08); }
+
+        .mvv-icon { width: 55px; height: 55px; background: rgba(224,123,57,.12); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--primary); margin-bottom: 1rem; }
+        .mvv-card h3 { color: var(--secondary); font-size: 1.1rem; margin-bottom: .8rem; }
+        .mvv-card p { color: var(--gray); font-size: .9rem; line-height: 1.75; }
+
+        /* ── Stats Banner ── */
+        .stats-banner { background: linear-gradient(135deg, var(--secondary), var(--dark)); padding: 60px 5%; }
+        .stats-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+        .stat-box { text-align: center; color: white; }
+        .stat-box .icon { font-size: 2rem; margin-bottom: .8rem; color: var(--primary); }
+        .stat-box .number { font-size: 2.5rem; font-weight: 800; color: var(--primary); }
+        .stat-box .label { font-size: .9rem; opacity: .85; }
+
+        /* ── Routes ── */
+        .routes { padding: 80px 5%; background: var(--light); }
+        .routes-container { max-width: 1200px; margin: 0 auto; }
+        .routes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
+
+        .route-card { background: white; padding: 1.5rem; border-radius: 12px; display: flex; align-items: center; gap: 1rem; transition: all .3s ease; }
+        .route-card:hover { transform: translateX(5px); box-shadow: 0 10px 25px rgba(0,0,0,.08); }
+
+        .route-icon { width: 50px; height: 50px; background: rgba(224,123,57,.12); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--primary); flex-shrink: 0; }
+
+        .route-info h4 { color: var(--secondary); font-size: .95rem; margin-bottom: .2rem; }
+        .route-info p { color: var(--gray); font-size: .8rem; margin: 0; }
+
+        /* ── CTA ── */
+        .cta { padding: 80px 5%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); text-align: center; position: relative; overflow: hidden; }
+        .cta::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+        .cta-content { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; }
+        .cta h2 { color: white; font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: 1rem; }
+        .cta p { color: rgba(255,255,255,.95); font-size: 1.05rem; margin-bottom: 1.5rem; }
+        .cta .btn-primary { background: white; color: var(--primary); }
+        .cta .btn-primary:hover { background: var(--secondary); color: white; }
+
+        /* ── Contact ── */
+        .contact { padding: 80px 5%; background: white; }
+        .contact-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; }
+
+        .contact-info h2 { font-size: clamp(1.8rem, 4vw, 2.2rem); color: var(--secondary); margin-bottom: 1rem; }
+        .contact-info > p { color: var(--gray); margin-bottom: 1.5rem; }
+        .contact-details { display: flex; flex-direction: column; gap: 1.2rem; }
+
+        .contact-item { display: flex; gap: 1rem; align-items: flex-start; }
+        .contact-item-icon { width: 45px; height: 45px; background: rgba(224,123,57,.12); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; color: var(--primary); }
+        .contact-item h4 { color: var(--secondary); font-size: .95rem; margin-bottom: .2rem; }
+        .contact-item p { color: var(--gray); margin: 0; font-size: .9rem; }
+
+        .contact-form { background: var(--light); padding: 2rem; border-radius: 16px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; color: var(--secondary); font-weight: 500; margin-bottom: .4rem; font-size: .9rem; }
+        .form-group input, .form-group textarea { width: 100%; padding: .85rem 1rem; border: 2px solid var(--light-gray); border-radius: 10px; font-family: inherit; font-size: .95rem; transition: border-color .3s ease; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+        .form-group textarea { min-height: 200px; resize: vertical; }
+
+        /* ── Footer ── */
+        .footer { background: var(--dark); color: white; padding: 30px 5%; }
+        .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .footer-left { display: flex; align-items: center; gap: .5rem; color: rgba(255,255,255,.8); font-size: .9rem; }
+        .footer-left i { color: var(--primary); }
+        .footer-right { display: flex; gap: 2rem; }
+        .footer-right a { color: rgba(255,255,255,.8); text-decoration: none; font-size: .9rem; transition: color .3s; }
+        .footer-right a:hover { color: var(--primary); }
+
+        /* ── Mobile Menu ── */
+        .mobile-menu { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 999; padding: 100px 8% 2rem; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1.5rem; }
+        .mobile-menu.active { display: flex; }
+        .mobile-menu a { font-size: 1.2rem; color: var(--secondary); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: .75rem; padding: .6rem 0; width: 100%; border-bottom: 1px solid var(--light-gray); transition: color .3s, padding-left .3s; }
+        .mobile-menu a:hover { color: var(--primary); padding-left: .5rem; }
+        .mobile-menu a i { color: var(--primary); font-size: 1.1rem; width: 28px; text-align: center; }
+        .mobile-menu .btn { border-bottom: none; justify-content: center; margin-top: .5rem; }
+
+        /* ── Terms Modal ── */
+        body.modal-open { overflow: hidden; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 620px;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-content h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .modal-content h2 i { color: var(--primary); font-size: 1.4rem; }
+        .modal-sub { color: #64748b; font-size: 0.85rem; margin-bottom: 16px; flex-shrink: 0; }
+
+        .modal-body {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1.2rem 1.4rem;
+            margin: 0 0 1.2rem 0;
+            scroll-behavior: smooth;
+            line-height: 1.8;
+            color: #334155;
+            font-size: 0.92rem;
+            background: #fafbfc;
+            flex-shrink: 0;
+        }
+
+        .modal-body::-webkit-scrollbar { width: 6px; }
+        .modal-body::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        .modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .modal-body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .modal-body p { margin-bottom: 14px; }
+        .modal-body p:last-child { margin-bottom: 0; }
+        .modal-body strong { color: #0f172a; }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+            padding-top: 4px;
+        }
+
+        .modal-footer input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .modal-footer input[type="checkbox"]:disabled {
+            accent-color: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .modal-footer label {
+            font-size: 0.9rem;
+            color: #334155;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .modal-footer label.disabled { color: #94a3b8; cursor: not-allowed; }
+
+        #closeBtn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 50px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        #closeBtn:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(224, 123, 57, 0.35);
+        }
+
+        #closeBtn:disabled {
+            background: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .scroll-indicator {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            flex-shrink: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .scroll-indicator.hidden { opacity: 0; }
+        .scroll-indicator i { color: var(--primary); animation: bounce 1.5s infinite; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(4px); }
+        }
+
+        .footer-link-btn {
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,.8);
+            font-size: .9rem;
+            cursor: pointer;
+            font-family: inherit;
+            padding: 0;
+            transition: color .3s;
+        }
+
+        .footer-link-btn:hover { color: var(--primary); }
+
+        /* ── Animations ── */
+        .fade-up { opacity: 0; transform: translateY(25px); transition: all .5s ease; }
+        .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .hero-container, .about-container, .contact-container { grid-template-columns: 1fr; gap: 2.5rem; }
+            .stats-container { grid-template-columns: repeat(2, 1fr); }
+            .routes-grid { grid-template-columns: repeat(2, 1fr); }
+            .mvv-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .mobile-toggle { display: flex; }
+            .hero { padding: 110px 5% 60px; }
+            .hero-stats { gap: 2rem; }
+            .about-features { grid-template-columns: 1fr; }
+            .stats-container { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+            .routes-grid { grid-template-columns: 1fr; }
+            .mvv-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .footer-container { flex-direction: column; text-align: center; }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 { font-size: 1.9rem; }
+            .about-images { grid-template-columns: 1fr; }
+            .about-img.img-2, .about-img.img-3 { margin: 0; }
+            .stat-number { font-size: 1.8rem; }
+            .about-highlights { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <a href="#" class="logo">
+            <img src="images/logo.jpg" alt="Ultimate Express Logo">
+            Ultimate<span>Express</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#fleet">Trucks</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#routes">Routes</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li><a href="login.html">Log In</a></li>
+        </ul>
+        <div class="mobile-toggle" id="mobileToggle">
+            <span></span><span></span><span></span>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#home"><i class="bi bi-house-door"></i> Home</a>
+        <a href="#fleet"><i class="bi bi-truck"></i> Trucks</a>
+        <a href="#services"><i class="bi bi-grid"></i> Services</a>
+        <a href="#about"><i class="bi bi-info-circle"></i> About</a>
+        <a href="#routes"><i class="bi bi-map"></i> Routes</a>
+        <a href="#contact"><i class="bi bi-envelope"></i> Contact</a>
+        <a href="login.html"><i class="bi bi-box-arrow-in-right"></i> Log In</a>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero" id="home">
+        <div class="hero-container">
+            <div class="hero-content fade-up">
+                <div class="hero-badge">
+                    <i class="bi bi-flag-fill"></i> Trusted Filipino Trucking Partner
+                </div>
+                <h1>Reliable Trucking Services Across the <span class="highlight">Philippines</span></h1>
+                <p>From Luzon to Mindanao, we deliver your cargo safely and on time. Your trusted partner for land transport and trucking services nationwide.</p>
+                <div class="hero-buttons">
+                    <a href="#contact" class="btn btn-primary">
+                        Request Quote <i class="bi bi-clipboard-check"></i>
+                    </a>
+                    <a href="#services" class="btn btn-outline">
+                        Our Services <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">200+</div>
+                        <div class="stat-label">Fleet Vehicles</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">50+</div>
+                        <div class="stat-label">Destinations</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">14+</div>
+                        <div class="stat-label">Years Service</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="services" id="fleet" style="padding: 20px 0 80px; background: linear-gradient(135deg, #fff8f2 0%, #f3f7ee 100%);">
+        <div class="section-header fade-up">
+            <span class="section-tag">Our Fleet</span>
+            <h2>Flexible Vehicles!</h2>
+            <p>From urgent city deliveries to large inter-provincial hauls, we have the right truck for the job.</p>
+        </div>
+        <section class="fleet-section">
+            <div class="blade" style="background-image: url('images/lightduty.jpg');">
+                <div class="blade-content">
+                    <h3>Light Duty Van</h3>
+                    <p>Ideal for urban, last-mile deliveries and tight city routes.</p>
+                    <span class="blade-price">Initial Amount: ₱5,000</span>
+                </div>
+            </div>
+            <div class="blade" style="background-image: url('images/medium.jpg');">
+                <div class="blade-content">
+                    <h3>Medium Box Truck</h3>
+                    <p>Reliable for local distribution, retail replenishment, and moving goods.</p>
+                    <span class="blade-price">Initial Amount: ₱12,000</span>
+                </div>
+            </div>
+            <div class="blade" style="background-image: url('images/10wheller.webp');">
+                <div class="blade-content">
+                    <h3>Heavy Cargo Truck</h3>
+                    <p>Built for bulk freight, cross-country hauling, and heavy cargo loads.</p>
+                    <span class="blade-price">Initial Amount: ₱20,000</span>
+                </div>
+            </div>
+            <div class="blade" style="background-image: url('images/refeer.webp');">
+                <div class="blade-content">
+                    <h3>Refrigerated Truck</h3>
+                    <p>Perfect for cold-chain logistics, perishables, and pharmaceuticals.</p>
+                    <span class="blade-price">Initial Amount: ₱18,000</span>
+                </div>
+            </div>
+            <div class="blade" style="background-image: url('images/wingvan.webp');">
+                <div class="blade-content">
+                    <h3>Wing Van / Trailer</h3>
+                    <p>Suited for large warehouse transfers and container hauling operations.</p>
+                    <span class="blade-price">Initial Amount: ₱30,000</span>
+                </div>
+            </div>
+        </section>
+    </section>
+
+    <!-- Services -->
+    <section class="services" id="services">
+        <div class="section-header fade-up">
+            <span class="section-tag">Our Services</span>
+            <h2>Trucking Solutions</h2>
+            <p>Professional trucking services tailored for Filipino businesses.</p>
+        </div>
+        <div class="services-grid">
+            <div class="service-card fade-up">
+                <div class="service-icon"><i class="bi bi-truck"></i></div>
+                <h3>Trucking Services</h3>
+                <p>Reliable land transport with various truck types — 4-wheeler, 6-wheeler, 10-wheeler, and trailers available.</p>
+                <a href="#contact" class="service-link">Inquire Now <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="service-card fade-up">
+                <div class="service-icon"><i class="bi bi-box-seam"></i></div>
+                <h3>Cargo Handling</h3>
+                <p>Professional loading and unloading services with careful handling of your valuable goods.</p>
+                <a href="#contact" class="service-link">Inquire Now <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="service-card fade-up">
+                <div class="service-icon"><i class="bi bi-house-door-fill"></i></div>
+                <h3>Door-to-Door Delivery</h3>
+                <p>Direct pickup and delivery service from shipper to consignee anywhere in the Philippines.</p>
+                <a href="#contact" class="service-link">Inquire Now <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="service-card fade-up">
+                <div class="service-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
+                <h3>Freight Forwarding</h3>
+                <p>Complete documentation and forwarding services for seamless cargo movement.</p>
+                <a href="#contact" class="service-link">Inquire Now <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="service-card fade-up">
+                <div class="service-icon"><i class="bi bi-arrow-repeat"></i></div>
+                <h3>Logistics Solutions</h3>
+                <p>Customized transport solutions for your business needs with dedicated account management.</p>
+                <a href="#contact" class="service-link">Inquire Now <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="service-card fade-up">
+                <div class="service-icon"><i class="bi bi-truck-front-fill"></i></div>
+                <h3>Long Haul Trucking</h3>
+                <p>Inter-island and long distance trucking services with Ro-Ro and inter-provincial routes.</p>
+                <a href="#contact" class="service-link">Inquire Now <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About -->
+    <section class="about" id="about">
+        <div class="about-container">
+            <div class="about-images fade-up">
+                <div class="about-img img-1"><span>Luzon</span></div>
+                <div class="about-img img-2"><span>Visayas</span></div>
+                <div class="about-img img-3"><span>Mindanao</span></div>
+                <div class="about-img img-4"><span>Nationwide</span></div>
+                <div class="about-badge">
+                    <span class="number">14+</span>
+                    <span class="text">Years</span>
+                </div>
+            </div>
+            <div class="about-content fade-up">
+                <span class="section-tag">About Us</span>
+                <h2>Your Trusted Trucking Partner in the Philippines</h2>
+                <p>Ultimate Express is a proudly Filipino-owned trucking company serving businesses nationwide since 2012. We understand the unique challenges of Philippine logistics — from navigating provincial roads to coordinating inter-island Ro-Ro shipments — and we provide reliable, end-to-end transport solutions that keep your supply chain moving.</p>
+                <div class="about-highlights">
+                    <div class="highlight-item"><i class="bi bi-people-fill"></i> <span>200+ Professionals</span></div>
+                    <div class="highlight-item"><i class="bi bi-calendar-check-fill"></i> <span>Since 2012</span></div>
+                    <div class="highlight-item"><i class="bi bi-patch-check-fill"></i> <span>LTO & LTFRB Licensed</span></div>
+                </div>
+                <a href="#contact" class="btn btn-primary">Partner With Us <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+
+        <!-- Mission, Vision, Values -->
+        <div class="mvv-section">
+            <div class="mvv-grid">
+                <div class="mvv-card fade-up">
+                    <div class="mvv-icon"><i class="bi bi-bullseye"></i></div>
+                    <h3>Our Mission</h3>
+                    <p>To deliver consistent excellence in every shipment by providing safe, timely, and cost-effective trucking and logistics services that empower Filipino businesses to grow. We are committed to bridging the distances across the Philippine archipelago, ensuring that every cargo — big or small — arrives at its destination with care, precision, and reliability.</p>
+                </div>
+                <div class="mvv-card fade-up">
+                    <div class="mvv-icon"><i class="bi bi-eye-fill"></i></div>
+                    <h3>Our Vision</h3>
+                    <p>To become the Philippines' most trusted and leading trucking and logistics provider, setting the national standard for reliability, innovation, and service quality in land freight transportation. We aspire to build a seamless logistics network connecting every province, city, and municipality — driving economic growth and opportunity for all Filipinos.</p>
+                </div>
+                <div class="mvv-card fade-up">
+                    <div class="mvv-icon"><i class="bi bi-gem"></i></div>
+                    <h3>Our Values</h3>
+                    <p>Rooted in integrity, reliability, and malasakit — a distinctly Filipino sense of genuine care for our clients, our team, and the communities we serve. We uphold transparency in every transaction, prioritize safety in every journey, and commit to accountability, respect, and continuous improvement in all that we do.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Banner -->
+    <section class="stats-banner">
+        <div class="stats-container">
+            <div class="stat-box fade-up">
+                <div class="icon"><i class="bi bi-globe-americas"></i></div>
+                <div class="number" data-target="50">0</div>
+                <div class="label">Provinces Covered</div>
+            </div>
+            <div class="stat-box fade-up">
+                <div class="icon"><i class="bi bi-box-seam-fill"></i></div>
+                <div class="number" data-target="10000">0</div>
+                <div class="label">Monthly Deliveries</div>
+            </div>
+            <div class="stat-box fade-up">
+                <div class="icon"><i class="bi bi-emoji-smile-fill"></i></div>
+                <div class="number" data-target="10000">0</div>
+                <div class="label">Clients</div>
+            </div>
+            <div class="stat-box fade-up">
+                <div class="icon"><i class="bi bi-truck"></i></div>
+                <div class="number" data-target="200">0</div>
+                <div class="label">Fleet Vehicles</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Routes -->
+    <section class="routes" id="routes">
+        <div class="routes-container">
+            <div class="section-header fade-up">
+                <span class="section-tag">Coverage</span>
+                <h2>We Deliver Nationwide!</h2>
+                <p>We deliver across Luzon, Visayas, and Mindanao.</p>
+            </div>
+            <div class="routes-grid">
+                <div class="route-card fade-up">
+                    <div class="route-icon"><i class="bi bi-buildings"></i></div>
+                    <div class="route-info"><h4>Metro Manila</h4><p>NCR & nearby provinces</p></div>
+                </div>
+                <div class="route-card fade-up">
+                    <div class="route-icon"><i class="bi bi-geo-alt"></i></div>
+                    <div class="route-info"><h4>North Luzon</h4><p>Ilocos, Cagayan, Baguio</p></div>
+                </div>
+                <div class="route-card fade-up">
+                    <div class="route-icon"><i class="bi bi-signpost-split"></i></div>
+                    <div class="route-info"><h4>South Luzon</h4><p>Batangas, Quezon, Bicol</p></div>
+                </div>
+                <div class="route-card fade-up">
+                    <div class="route-icon"><i class="bi bi-water"></i></div>
+                    <div class="route-info"><h4>Visayas</h4><p>Cebu, Iloilo, Bacolod</p></div>
+                </div>
+                <div class="route-card fade-up">
+                    <div class="route-icon"><i class="bi bi-tree-fill"></i></div>
+                    <div class="route-info"><h4>Mindanao</h4><p>Davao, CDO, General Santos</p></div>
+                </div>
+                <div class="route-card fade-up">
+                    <div class="route-icon"><i class="bi bi-arrow-left-right"></i></div>
+                    <div class="route-info"><h4>Inter-Island</h4><p>Ro-Ro & ferry services</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <div class="cta-content fade-up">
+            <h2>Ready to Ship?</h2>
+            <p>Get a free quote for your trucking needs. Contact us today!</p>
+            <a href="#contact" class="btn btn-primary">Get Free Quote <i class="bi bi-clipboard-check"></i></a>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="contact" id="contact">
+        <div class="contact-container">
+            <div class="contact-info fade-up">
+                <span class="section-tag">Contact Us</span>
+                <h2>Get in Touch</h2>
+                <p>Have questions? Reach out to us and our team will be happy to assist you.</p>
+                <div class="contact-details">
+                    <div class="contact-item">
+                        <div class="contact-item-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                        <div>
+                            <h4>Main Office</h4>
+                            <p>Lot 10 Block 6 BF Martinville Manuyo Dos,<br>Las Piñas, Philippines</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-item-icon"><i class="bi bi-telephone-fill"></i></div>
+                        <div>
+                            <h4>Phone</h4>
+                            <p>+63 933 810 2144 (Smart)</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-item-icon"><i class="bi bi-envelope-fill"></i></div>
+                        <div>
+                            <h4>Email</h4>
+                            <p>ultimateexpress.socials@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-item-icon"><i class="bi bi-clock-fill"></i></div>
+                        <div>
+                            <h4>Operating Hours</h4>
+                            <p>Monday – Saturday: 8:00 AM – 6:00 PM<br>Sunday: Closed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="contact-form fade-up">
+                <form id="contactForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Full Name</label>
+                            <input type="text" id="name" placeholder="Juan Dela Cruz" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="company">Company Name</label>
+                            <input type="text" id="company" placeholder="ABC Corporation">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" placeholder="juan@example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Mobile Number</label>
+                            <input type="tel" id="phone" placeholder="0917 123 4567">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" placeholder="Tell us about your trucking needs... Truck Specifications, Cargo Details, or contact our team directly for professional assistance." required></textarea>
+                    </div>
+<button type="submit" class="btn btn-primary" style="width:100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
+  Send Inquiry <i class="bi bi-send"></i>
+</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-left">
+                &copy; 2012 Ultimate Express. All rights reserved. <i class="bi bi-flag-fill"></i>
+            </div>
+            <div class="footer-right">
+                <a href="#">Privacy Policy</a>
+                <a href="#" id="termsLink">Terms of Service</a>
+                <button type="button" class="footer-link-btn" id="openModalBtn">
+                    <i class="bi bi-file-text"></i> Terms & Conditions
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Terms & Conditions Modal -->
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <h2>
+                <i class="bi bi-file-earmark-text"></i>
+                Terms & Conditions
+            </h2>
+            <p class="modal-sub">Please read carefully before proceeding.</p>
+
+            <div class="modal-body" id="termsBody">
+                <p><strong>1. Acceptance of Terms</strong><br />By requesting and using our services, you agree to these terms. If you do not agree, do not submit a service request.</p>
+                <p><strong>2. Services</strong><br />Ultimate Express provides trucking and logistics services across the Philippines. All services are subject to availability and may be modified or discontinued at any time without prior notice.</p>
+                <p><strong>3. User Responsibilities</strong><br />Users agree to provide accurate and complete information when booking services. Users are responsible for maintaining the confidentiality of their account credentials.</p>
+                <p><strong>4. Payment Terms</strong><br />Payments for services must be made in full prior to delivery unless otherwise agreed in writing. Late payments may incur additional charges.</p>
+                <p><strong>5. Liability</strong><br />Ultimate Express shall not be liable for any indirect, incidental, or consequential damages arising from the use of our services. Our liability is limited to the value of the services provided.</p>
+                <p><strong>6. Cargo Insurance</strong><br />Clients may opt for cargo insurance at an additional cost. Ultimate Express is not responsible for loss or damage to cargo unless insurance has been purchased and confirmed in writing.</p>
+                <p><strong>7. Delivery Timeframes</strong><br />Delivery times are estimates and not guaranteed. Ultimate Express shall not be liable for delays caused by traffic, weather, road conditions, or other circumstances beyond our control.</p>
+                <p><strong>8. Cancellation Policy</strong><br />Cancellations must be made at least 24 hours prior to scheduled pickup to avoid cancellation fees. No-shows will be charged the full service fee.</p>
+                <p><strong>9. Privacy Policy</strong><br />We collect and process personal data in accordance with applicable privacy laws. Please review our Privacy Policy for more information on how we handle your data.</p>
+                <p><strong>10. Governing Law</strong><br />These terms shall be governed by and construed in accordance with the laws of the Republic of the Philippines. Any disputes shall be resolved in the appropriate courts of Las Piñas, Philippines.</p>
+                <p><strong>11. Changes to Terms</strong><br />Ultimate Express reserves the right to modify these terms at any time. Continued use of our services constitutes acceptance of the revised terms.</p>
+                <p><strong>12. Contact Information</strong><br />For questions regarding these terms, please contact us at:<br /><i class="bi bi-envelope"></i> ultimateexpress.socials@gmail.com<br /><i class="bi bi-telephone"></i> +63 933 810 2144</p>
+                
+            </div>
+
+            <div class="scroll-indicator" id="scrollIndicator">
+                <i class="bi bi-chevron-double-down"></i> Scroll to the bottom to enable agreement
+            </div>
+
+            <div class="modal-footer">
+                <input type="checkbox" id="agreeCheckbox" disabled />
+                <label for="agreeCheckbox" id="agreeLabel">I have read and agree to the terms.</label>
+                <button id="closeBtn" disabled>Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="api-config.js"></script>
+    <script>
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        const mobileToggle = document.getElementById('mobileToggle');
+        const mobileMenu = document.getElementById('mobileMenu');
+        mobileToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('active');
+            const spans = mobileToggle.querySelectorAll('span');
+            if (mobileMenu.classList.contains('active')) {
+                spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
+                spans[1].style.opacity = '0';
+                spans[2].style.transform = 'rotate(-45deg) translate(6px, -6px)';
+            } else {
+                spans[0].style.transform = 'none';
+                spans[1].style.opacity = '1';
+                spans[2].style.transform = 'none';
+            }
+        });
+
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.remove('active');
+                const spans = mobileToggle.querySelectorAll('span');
+                spans[0].style.transform = 'none';
+                spans[1].style.opacity = '1';
+                spans[2].style.transform = 'none';
+            });
+        });
+
+        const fadeElements = document.querySelectorAll('.fade-up');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+        fadeElements.forEach(el => observer.observe(el));
+
+        const counters = document.querySelectorAll('.stat-box .number');
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const target = parseInt(entry.target.dataset.target);
+                    animateCounter(entry.target, target);
+                    counterObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+        counters.forEach(c => counterObserver.observe(c));
+
+        function animateCounter(el, target) {
+            let current = 0;
+            const inc = target / 40;
+            const timer = setInterval(() => {
+                current += inc;
+                if (current >= target) { el.textContent = target.toLocaleString() + '+'; clearInterval(timer); }
+                else { el.textContent = Math.floor(current).toLocaleString(); }
+            }, 50);
+        }
+
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.currentTarget;
+            const payload = {
+                name: document.getElementById('name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                company: document.getElementById('company').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                message: document.getElementById('message').value.trim()
+            };
+            if (!payload.name || !payload.email || !payload.message) {
+                alert('Please complete the required fields before submitting.');
+                return;
+            }
+            try {
+                const response = await fetch(`${window.UE_API_URL}/customer-account-requests`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || 'Unable to submit your account request.');
+                form.reset();
+                alert('Thank you! Our team will review your request and contact you.');
+            } catch (error) {
+                console.error('Customer account request error:', error);
+                alert(error.message || 'Unable to submit your request right now. Please try again later.');
+            }
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const t = document.querySelector(this.getAttribute('href'));
+                if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+
+        const modal = document.getElementById('termsModal');
+        const termsBody = document.getElementById('termsBody');
+        const agreeCheckbox = document.getElementById('agreeCheckbox');
+        const agreeLabel = document.getElementById('agreeLabel');
+        const closeBtn = document.getElementById('closeBtn');
+        const scrollIndicator = document.getElementById('scrollIndicator');
+        const openModalBtn = document.getElementById('openModalBtn');
+        const termsLink = document.getElementById('termsLink');
+        function showModal() {
+            if (modal.classList.contains('active')) return;
+
+            modal.style.display = 'flex';
+            modal.classList.add('active');
+            document.body.classList.add('modal-open');
+            termsBody.scrollTop = 0;
+            agreeCheckbox.checked = false;
+            agreeCheckbox.disabled = true;
+            closeBtn.disabled = true;
+            scrollIndicator.classList.remove('hidden');
+            agreeLabel.classList.add('disabled');
+            setTimeout(checkScroll, 100);
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            modal.classList.remove('active');
+            document.body.classList.remove('modal-open');
+        }
+
+        function checkScroll() {
+            const isAtBottom = termsBody.scrollHeight - termsBody.scrollTop <= termsBody.clientHeight + 2;
+            if (isAtBottom) {
+                agreeCheckbox.disabled = false;
+                agreeLabel.classList.remove('disabled');
+                scrollIndicator.classList.add('hidden');
+            } else {
+                agreeCheckbox.disabled = true;
+                agreeLabel.classList.add('disabled');
+                scrollIndicator.classList.remove('hidden');
+            }
+        }
+
+        termsBody.addEventListener('scroll', checkScroll);
+        agreeCheckbox.addEventListener('change', () => {
+            closeBtn.disabled = !agreeCheckbox.checked;
+        });
+        closeBtn.addEventListener('click', closeModal);
+        openModalBtn.addEventListener('click', showModal);
+        if (termsLink) {
+            termsLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showModal();
+            });
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                if (agreeCheckbox.checked) {
+                    closeModal();
+                } else {
+                    modal.style.animation = 'none';
+                    setTimeout(() => {
+                        modal.style.animation = 'fadeIn 0.3s ease';
+                    }, 10);
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.style.display === 'flex') {
+                if (agreeCheckbox.checked) {
+                    closeModal();
+                }
+            }
+        });
+
+        window.addEventListener('resize', checkScroll);
+    </script>
+</body>
+</html>

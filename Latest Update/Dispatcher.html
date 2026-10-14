@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dispatcher Dashboard - Ultimate Express</title>
+    <script src="api-config.js"></script>
+    <script src="auth.js"></script>
+    <script>if (!requireRole('dispatcher')) document.documentElement.style.display = 'none';</script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="route-map.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #e07b39;
+            --primary-dark: #c4652c;
+            --secondary: #4a5d3a;
+            --dark: #2d3a24;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --success: #28a745;
+            --warning: #f59e0b;
+            --danger: #dc2626;
+            --info: #0369a1;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+            color: var(--dark);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo { display: flex; align-items: center; text-decoration: none; gap: .6rem; font-weight: 800; font-size: 1.25rem; color: var(--secondary); }
+        .logo img { height: 40px; width: auto; border-radius: 6px; }
+        .logo span { color: var(--primary); }
+
+        .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+        .user-profile { display: flex; align-items: center; gap: 1rem; }
+        .user-info { text-align: right; line-height: 1.2; }
+        .user-info .name { display: block; font-weight: 600; font-size: 0.9rem; }
+        .user-info .role { font-size: 0.75rem; color: var(--gray); }
+        .logout-btn { color: var(--gray); font-size: 1.2rem; text-decoration: none; padding: 8px; border-radius: 8px; }
+        .logout-btn:hover { background: #fee2e2; color: var(--danger); }
+
+        .main-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .page-header h1 { font-size: 1.8rem; color: var(--secondary); }
+        .page-header p { color: var(--gray); font-size: 0.9rem; }
+
+        .manual-quote-btn {
+            background: linear-gradient(135deg, var(--secondary), var(--dark));
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .manual-quote-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(74,93,58,0.3); }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        }
+        .stat-icon { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .stat-icon.blue { background: #e0f2fe; color: var(--info); }
+        .stat-icon.orange { background: #fef3c7; color: var(--warning); }
+        .stat-icon.green { background: #dcfce7; color: var(--success); }
+        .stat-icon.red { background: #fee2e2; color: var(--danger); }
+        .stat-details h3 { font-size: 1.8rem; font-weight: 700; }
+        .stat-details p { font-size: 0.85rem; color: var(--gray); }
+
+        .inquiries-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .inquiries-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .inquiries-header h2 { display: flex; align-items: center; gap: 0.75rem; font-size: 1.3rem; color: var(--secondary); }
+        .tabs { display: flex; gap: 0.5rem; }
+        .tab {
+            padding: 0.5rem 1.2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--gray);
+            border-radius: 30px;
+            transition: all 0.3s;
+        }
+        .tab:hover { background: var(--light-gray); }
+        .tab.active { background: var(--primary); color: white; }
+
+        .inquiry-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+        .inquiry-card {
+            background: var(--light);
+            border-radius: 16px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .inquiry-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .inquiry-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .inquiry-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; margin-bottom: 0.7rem; }
+        .inquiry-actions .btn { padding: 0.35rem 0.65rem; font-size: 0.75rem; }
+        .inquiry-actions .status-select { min-width: 112px; padding: 0.38rem 0.5rem; border: 1px solid var(--light-gray); border-radius: 6px; color: var(--dark); background: white; font: inherit; font-size: 0.75rem; cursor: pointer; }
+        .inquiry-id { font-weight: 700; color: var(--primary); font-size: 0.85rem; }
+        .status-badge { padding: 4px 12px; border-radius: 50px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .status-new { background: #e0f2fe; color: var(--info); }
+        .status-pending { background: #fef3c7; color: var(--warning); }
+        .status-approved { background: #dcfce7; color: var(--success); }
+        .status-ongoing { background: #e0f2fe; color: var(--info); }
+        .status-completed { background: #dcfce7; color: var(--success); }
+        .customer-name { font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .route-info { font-size: 0.85rem; color: var(--gray); margin: 0.5rem 0; display: flex; align-items: center; gap: 0.5rem; }
+        .route-info i { color: var(--primary); }
+        .cargo-preview { font-size: 0.75rem; color: var(--gray); margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--light-gray); }
+        .inquiry-date { font-size: 0.7rem; color: var(--gray); margin-top: 0.5rem; }
+        .empty-state { text-align: center; padding: 4rem; color: var(--gray); }
+        .empty-state i { font-size: 4rem; color: var(--light-gray); margin-bottom: 1rem; }
+
+        /* Modal Styles with Two Columns */
+        .modal-content-large {
+            max-width: 1200px !important;
+        }
+        .two-column-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        .form-column {
+            overflow-y: auto;
+            max-height: 65vh;
+            padding-right: 0.5rem;
+        }
+        .map-column {
+            background: #e9ecef;
+            border-radius: 16px;
+            overflow: hidden;
+            position: sticky;
+            top: 0;
+            height: 500px;
+        }
+        .route-map {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+        }
+        .route-map i { font-size: 3rem; margin-bottom: 1rem; color: var(--primary); opacity: 0.5; }
+        .route-map p { font-size: 0.85rem; text-align: center; padding: 0 1rem; }
+        .leaflet-map { width: 100%; height: 100%; min-height: 300px; z-index: 1; }
+        .map-status { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 500; background: rgba(255,255,255,0.94); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: var(--gray); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlide 0.3s ease;
+        }
+        @keyframes modalSlide {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--light);
+            border-radius: 24px 24px 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .modal-title { font-size: 1.3rem; font-weight: 700; color: var(--secondary); display: flex; align-items: center; gap: 0.75rem; }
+        .modal-close { font-size: 1.5rem; cursor: pointer; color: var(--gray); transition: all 0.3s; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+        .modal-close:hover { background: #fee2e2; color: var(--danger); }
+        .modal-body { padding: 2rem; }
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            background: var(--light);
+            border-radius: 0 0 24px 24px;
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+        }
+
+        .form-section { margin-bottom: 1.5rem; }
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title::after { content: ""; flex: 1; height: 1px; background: var(--light-gray); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .form-group.full { grid-column: span 2; }
+        .form-group label { font-size: 0.75rem; font-weight: 600; color: var(--secondary); }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 0.75rem;
+            border: 1.5px solid var(--light-gray);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            background: white;
+            transition: all 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(224,123,57,0.1);
+        }
+
+        /* Searchable Select Styles */
+        .searchable-select {
+            position: relative;
+            width: 100%;
+        }
+        .searchable-select-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1.5px solid var(--light-gray);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .searchable-select-input:hover { border-color: var(--primary); }
+        .searchable-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1.5px solid var(--light-gray);
+            border-radius: 10px;
+            margin-top: 4px;
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        .searchable-dropdown.active { display: block; }
+        .dropdown-search {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--light-gray);
+            position: sticky;
+            top: 0;
+            background: white;
+        }
+        .dropdown-search input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        .dropdown-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        .dropdown-item:hover { background: var(--light); }
+        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item.unavailable { opacity: 0.5; cursor: not-allowed; background: #f5f5f5; }
+        .driver-detail, .truck-detail { font-size: 0.7rem; color: var(--gray); margin-top: 2px; }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #1e7e34; transform: translateY(-2px); }
+        .btn-secondary { background: var(--secondary); color: white; }
+        .btn-outline { background: transparent; color: var(--secondary); border: 2px solid var(--secondary); }
+        .btn-outline:hover { background: var(--secondary); color: white; }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--secondary);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 3000;
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+
+        @media (max-width: 900px) {
+            .two-column-layout { grid-template-columns: 1fr; }
+            .map-column { height: 300px; position: relative; }
+            .main-container { padding: 1rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .inquiry-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="#" class="logo"><img src="images/logo.jpg" alt="Logo" onerror="this.src='https://placehold.co/40x40?text=UE'">Ultimate<span>Express</span></a>
+        <div class="nav-right">
+            <div class="user-profile"><div class="user-info"><span class="name">Loading...</span><span class="role">Dispatcher</span></div><a href="login.html?logout=1" class="logout-btn"><i class="bi bi-box-arrow-right"></i></a></div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="page-header">
+            <div><h1><i class="bi bi-headset" style="color: var(--primary);"></i> Dispatcher Dashboard</h1><p>Manage inquiries, assign drivers & trucks, and optimize delivery routes</p></div>
+            <button class="manual-quote-btn" id="openManualQuoteModal"><i class="bi bi-file-earmark-plus"></i> Manual Quotation (Call-in)</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-icon blue"><i class="bi bi-inbox-fill"></i></div><div class="stat-details"><h3 id="statNew">0</h3><p>New Inquiries</p></div></div>
+            <div class="stat-card"><div class="stat-icon orange"><i class="bi bi-clock-history"></i></div><div class="stat-details"><h3 id="statPending">0</h3><p>Pending Deals</p></div></div>
+            <div class="stat-card"><div class="stat-icon green"><i class="bi bi-truck"></i></div><div class="stat-details"><h3 id="statOngoing">0</h3><p>Ongoing Deals</p></div></div>
+            <div class="stat-card"><div class="stat-icon red"><i class="bi bi-people-fill"></i></div><div class="stat-details"><h3 id="statTotal">0</h3><p>Total Inquiries</p></div></div>
+        </div>
+
+        <div class="inquiries-container">
+            <div class="inquiries-header">
+                <h2><i class="bi bi-chat-dots" style="color: var(--primary);"></i> Customer Inquiries</h2>
+                <div class="tabs">
+                    <div class="tab active" onclick="filterInquiries('all')">All</div>
+                    <div class="tab" onclick="filterInquiries('new')">New</div>
+                    <div class="tab" onclick="filterInquiries('pending')">Pending</div>
+                    <div class="tab" onclick="filterInquiries('ongoing')">Ongoing</div>
+                    <div class="tab" onclick="filterInquiries('completed')">Completed</div>
+                </div>
+            </div>
+            <div class="inquiry-grid" id="inquiryGrid"></div>
+        </div>
+    </div>
+
+    <!-- Inquiry Edit Modal -->
+    <div class="modal-overlay" id="inquiryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title"><i class="bi bi-pencil-square"></i> Edit Inquiry & Assign Resources</div>
+                <span class="modal-close" onclick="closeInquiryModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="two-column-layout">
+                    <div class="form-column" id="inquiryFormColumn"></div>
+                    <div class="map-column">
+                        <div class="leaflet-map" id="inquiryMap"></div>
+                        <div class="map-status" id="inquiryMapStatus">Enter valid pickup and delivery addresses to display the route.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeInquiryModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveInquiryChanges()">Save Changes</button>
+                <button class="btn btn-success" onclick="approveWithAssignment()">Approve & Assign</button>
+                <button class="btn btn-success" id="completeDealBtn" onclick="completeInquiry()">Mark Completed</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="receiptModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title"><i class="bi bi-receipt"></i> Service Receipt / Transaction Details</div>
+                <span class="modal-close" onclick="closeReceiptModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="receiptContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeReceiptModal()">Close</button>
+                <button class="btn btn-primary" onclick="window.print()">Print Receipt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Quotation Modal -->
+    <div class="modal-overlay" id="manualQuoteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title"><i class="bi bi-file-earmark-plus"></i> Manual Quotation (Call-in Customer)</div>
+                <span class="modal-close" onclick="closeManualQuoteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="two-column-layout">
+                    <div class="form-column">
+                        <form id="manualQuoteForm">
+                            <div class="form-section">
+                                <div class="section-title"><i class="bi bi-person"></i> Contact Information</div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label>Full Name *</label><input type="text" id="manualName" required></div>
+                                    <div class="form-group"><label>Company Name</label><input type="text" id="manualCompany"></div>
+                                    <div class="form-group"><label>Email Address *</label><input type="email" id="manualEmail" required></div>
+                                    <div class="form-group"><label>Mobile Number *</label><input type="tel" id="manualPhone" required></div>
+                                </div>
+                            </div>
+                            <div class="form-section">
+                                <div class="section-title"><i class="bi bi-geo-alt"></i> Pickup Address</div>
+                                <div class="form-group full"><input type="text" id="pickupFull" placeholder="Complete pickup address" required></div>
+                            </div>
+                            <div class="form-section">
+                                <div class="section-title"><i class="bi bi-truck"></i> Delivery Address</div>
+                                <div class="form-group full"><input type="text" id="deliveryFull" placeholder="Complete delivery address" required></div>
+                            </div>
+                            <div class="form-section">
+                                <div class="section-title"><i class="bi bi-box-seam"></i> Cargo Information</div>
+                                <div class="form-group full"><textarea id="manualCargo" rows="2" placeholder="Description & weight/volume" required></textarea></div>
+                            </div>
+                            <div class="form-section">
+                                <div class="section-title"><i class="bi bi-currency-exchange"></i> Pricing & Payment</div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label>Estimated Price (₱) *</label><input type="number" id="manualPrice" min="0.01" step="0.01" required></div>
+                                    <div class="form-group"><label>Payment Method</label>
+                                        <select id="paymentMethod">
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                            <option value="Online Payment">Online Payment (GCash/PayMaya)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-section">
+                                <div class="section-title"><i class="bi bi-person-badge"></i> Driver Assignment</div>
+                                <div class="searchable-select" id="driverSelectContainer"></div>
+                            </div>
+                            <div class="form-section">
+                                <div class="section-title"><i class="bi bi-truck"></i> Truck Assignment</div>
+                                <div class="searchable-select" id="truckSelectContainer"></div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="map-column">
+                        <div class="leaflet-map" id="manualMap"></div>
+                        <div class="map-status" id="manualMapStatus">Enter pickup and delivery addresses to display the route.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeManualQuoteModal()">Cancel</button>
+                <button class="btn btn-success" id="submitManualQuoteBtn" onclick="submitManualQuote()">Create & Assign Deal</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"><i class="bi bi-check-circle-fill"></i><span id="toastMessage">Success</span></div>
+
+    <script>
+        const API_URL = window.UE_API_URL;
+        let drivers = [];
+        let trucks = [];
+        let inquiries = [];
+
+        let selectedInquiry = null;
+        let currentFilter = 'all';
+        let selectedDriverId = null;
+        let selectedTruckId = null;
+        const dispatcherMaps = {};
+        let manualMapTimer;
+
+        function getDispatcherMap(mapKey, elementId) {
+            if (!dispatcherMaps[mapKey]) {
+                const statusId = mapKey === 'inquiry' ? 'inquiryMapStatus' : 'manualMapStatus';
+                dispatcherMaps[mapKey] = window.UE.RouteMap.create(elementId, document.getElementById(statusId));
+            }
+            window.UE.RouteMap.invalidate(dispatcherMaps[mapKey]);
+            return dispatcherMaps[mapKey];
+        }
+
+        function getMapStatusElement(mapKey) {
+            const statusId = mapKey === 'inquiry' ? 'inquiryMapStatus' : 'manualMapStatus';
+            return document.getElementById(statusId);
+        }
+
+        async function drawDispatcherRoute(mapKey, elementId, pickupAddress, deliveryAddress) {
+            const map = getDispatcherMap(mapKey, elementId);
+            return window.UE.RouteMap.draw(map, pickupAddress, deliveryAddress, getMapStatusElement(mapKey));
+        }
+
+        function updateManualMap() {
+            drawDispatcherRoute(
+                'manual',
+                'manualMap',
+                document.getElementById('pickupFull').value,
+                document.getElementById('deliveryFull').value
+            );
+        }
+
+        function scheduleManualMapUpdate() {
+            clearTimeout(manualMapTimer);
+            manualMapTimer = setTimeout(updateManualMap, 700);
+        }
+
+        async function loadDispatcherData() {
+            try {
+                const [driversRes, trucksRes, requestsRes] = await Promise.all([
+                    fetch(`${API_URL}/drivers`, { headers: authenticatedApiHeaders() }),
+                    fetch(`${API_URL}/trucks`, { headers: authenticatedApiHeaders() }),
+                    fetch(`${API_URL}/service-requests`, { headers: authenticatedApiHeaders() })
+                ]);
+
+                if (driversRes.ok) {
+                    const driverData = await driversRes.json();
+                    drivers = driverData.map(driver => ({
+                        ...driver,
+                        id: String(driver.id),
+                        license: driver.license || driver.license_number || '',
+                        experience: driver.experience || ''
+                    }));
+                }
+                if (trucksRes.ok) {
+                    const truckData = await trucksRes.json();
+                    trucks = truckData.map(truck => ({
+                        ...truck,
+                        id: String(truck.id),
+                        plate: truck.plate || truck.license_plate || '',
+                        capacity: truck.capacity || '',
+                        location: truck.location || ''
+                    }));
+                }
+
+                if (requestsRes.ok) {
+                    const serviceRequests = await requestsRes.json();
+                    inquiries = serviceRequests.map(item => ({
+                        id: `REQ-${item.id}`,
+                        requestId: item.id,
+                        status: (item.status || 'new').toLowerCase(),
+                        date: item.created_at ? new Date(item.created_at).toLocaleString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleString('en-PH'),
+                        driverId: item.assigned_driver_id ? String(item.assigned_driver_id) : null,
+                        truckId: item.assigned_truck_id ? String(item.assigned_truck_id) : null,
+                        paymentMethod: 'Bank Transfer',
+                        customer: {
+                            name: item.contact_person || item.customer_name || 'Unknown Customer',
+                            company: item.customer_company || '',
+                            email: item.contact_email || '',
+                            phone: item.contact_phone || ''
+                        },
+                        pickup: { full: item.pickup_location || 'Unknown pickup location' },
+                        delivery: { full: item.delivery_location || 'Unknown delivery location' },
+                        cargo: item.cargo_type ? `${item.cargo_type}${item.special_requirements ? ' • ' + item.special_requirements : ''}` : item.special_requirements || 'No cargo details provided',
+                        cargoWeight: item.cargo_weight || '',
+                        pickupDate: item.pickup_date || null,
+                        preferredTime: item.preferred_time || '',
+                        truckType: item.truck_type || '',
+                        estimatedPrice: item.quoted_amount == null ? 0 : Number(item.quoted_amount),
+                        paidAmount: item.paid_amount == null ? null : Number(item.paid_amount),
+                        paidAt: item.paid_at || null,
+                        notes: item.special_requirements || ''
+                    }));
+                }
+            } catch (err) {
+                console.error('Dispatcher load error:', err);
+                showToast('Unable to load backend data. Showing local sample records.', 'error');
+                if (drivers.length === 0) {
+                    drivers = [
+                        { id: 'DRV-001', name: 'Roberto Garcia', status: 'available', phone: '09171234567', license: 'N12345678', experience: '5 years' },
+                        { id: 'DRV-002', name: 'Eduardo Cruz', status: 'available', phone: '09181234567', license: 'N87654321', experience: '3 years' }
+                    ];
+                }
+                if (trucks.length === 0) {
+                    trucks = [
+                        { id: 'TRK-001', plate: 'ABC-123', type: '10-Wheeler Wing Van', status: 'available', capacity: '15,000 kg', location: 'Manila' },
+                        { id: 'TRK-002', plate: 'XYZ-456', type: '6-Wheeler Closed Van', status: 'available', capacity: '8,000 kg', location: 'Manila' }
+                    ];
+                }
+            } finally {
+                renderInquiries();
+            }
+        }
+
+        async function saveDriver(driverData) {
+            try {
+                const payload = {
+                    name: driverData.name,
+                    license_number: driverData.license,
+                    phone: driverData.phone,
+                    status: driverData.status
+                };
+                const method = driverData.id && drivers.some(d => d.id === driverData.id) ? 'PUT' : 'POST';
+                const url = driverData.id && method === 'PUT' ? `${API_URL}/drivers/${driverData.id}` : `${API_URL}/drivers`;
+                const response = await fetch(url, {
+                    method,
+                    headers: authenticatedApiHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error('Driver save failed');
+                const saved = await response.json();
+                if (method === 'PUT') {
+                    drivers = drivers.map(d => d.id === driverData.id ? { ...d, ...driverData } : d);
+                } else {
+                    drivers.push({ id: saved.id ? saved.id.toString() : driverData.id || `DRV-${Date.now()}`, ...driverData });
+                }
+                showToast('Driver saved successfully', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Unable to save driver. Check backend server.', 'error');
+            }
+        }
+
+        async function deleteDriver(id) {
+            try {
+                const response = await fetch(`${API_URL}/drivers/${id}`, { method: 'DELETE', headers: authenticatedApiHeaders() });
+                if (!response.ok) throw new Error('Delete failed');
+                drivers = drivers.filter(d => d.id !== id);
+                showToast('Driver deleted successfully', 'success');
+                renderInquiries();
+            } catch (err) {
+                console.error(err);
+                showToast('Unable to delete driver. Check backend server.', 'error');
+            }
+        }
+
+        async function saveTruck(truckData) {
+            try {
+                const payload = {
+                    type: truckData.type,
+                    license_plate: truckData.plate,
+                    daily_rate: 0,
+                    status: truckData.status
+                };
+                const method = truckData.id && trucks.some(t => t.id === truckData.id) ? 'PUT' : 'POST';
+                const url = truckData.id && method === 'PUT' ? `${API_URL}/trucks/${truckData.id}` : `${API_URL}/trucks`;
+                const response = await fetch(url, {
+                    method,
+                    headers: authenticatedApiHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error('Truck save failed');
+                const saved = await response.json();
+                if (method === 'PUT') {
+                    trucks = trucks.map(t => t.id === truckData.id ? { ...t, ...truckData } : t);
+                } else {
+                    trucks.push({ id: saved.id ? saved.id.toString() : truckData.id || `TRK-${Date.now()}`, ...truckData });
+                }
+                showToast('Truck saved successfully', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Unable to save truck. Check backend server.', 'error');
+            }
+        }
+
+        async function deleteTruck(id) {
+            try {
+                const response = await fetch(`${API_URL}/trucks/${id}`, { method: 'DELETE', headers: authenticatedApiHeaders() });
+                if (!response.ok) throw new Error('Delete failed');
+                trucks = trucks.filter(t => t.id !== id);
+                showToast('Truck deleted successfully', 'success');
+                renderInquiries();
+            } catch (err) {
+                console.error(err);
+                showToast('Unable to delete truck. Check backend server.', 'error');
+            }
+        }
+
+        // Create searchable select component
+        function createSearchableSelect(containerId, items, type, selectedId = null, onSelect) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const availableItems = items.filter(i => i.status === 'available');
+            const selectedItem = items.find(i => i.id === selectedId);
+            
+            container.innerHTML = `
+                <div class="searchable-select">
+                    <div class="searchable-select-input" onclick="toggleDropdown('${containerId}')">
+                        <span id="${containerId}_selected">${selectedItem ? (type === 'driver' ? selectedItem.name : `${selectedItem.plate} - ${selectedItem.type}`) : `Select ${type === 'driver' ? 'Driver' : 'Truck'}...`}</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="searchable-dropdown" id="${containerId}_dropdown">
+                        <div class="dropdown-search"><input type="text" placeholder="Search..." id="${containerId}_search" oninput="filterDropdown('${containerId}', '${type}')"></div>
+                        <div id="${containerId}_list"></div>
+                    </div>
+                </div>
+            `;
+            renderDropdownList(containerId, items, type, selectedId, onSelect);
+        }
+
+        function renderDropdownList(containerId, items, type, selectedId, onSelect) {
+            const listContainer = document.getElementById(`${containerId}_list`);
+            if (!listContainer) return;
+            const searchInput = document.getElementById(`${containerId}_search`);
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            const filtered = items.filter(i => {
+                if (type === 'driver') return i.status === 'available' && ((i.name || '').toLowerCase().includes(searchTerm) || (i.phone || '').includes(searchTerm));
+                return i.status === 'available' && ((i.plate || '').toLowerCase().includes(searchTerm) || (i.type || '').toLowerCase().includes(searchTerm));
+            });
+            
+            listContainer.innerHTML = filtered.map(item => `
+                <div class="dropdown-item" onclick="selectItem('${containerId}', '${item.id}', '${type}')">
+                    ${type === 'driver' ? 
+                        `<strong>${item.name}</strong><div class="driver-detail">${item.phone} • ${item.experience}</div>` :
+                        `<strong>${item.plate}${item.third_party ? ' <span class="status-badge status-pending">Third-Party</span>' : ''}</strong><div class="truck-detail">${item.type} • ${item.capacity} • ${item.location}</div>`
+                    }
+                </div>
+            `).join('');
+            if (filtered.length === 0) listContainer.innerHTML = '<div class="dropdown-item">No available resources</div>';
+        }
+
+        function toggleDropdown(containerId) {
+            document.querySelectorAll('.searchable-dropdown').forEach(d => d.classList.remove('active'));
+            const dropdown = document.getElementById(`${containerId}_dropdown`);
+            if (dropdown) dropdown.classList.toggle('active');
+        }
+
+        function selectItem(containerId, itemId, type) {
+            const items = type === 'driver' ? drivers : trucks;
+            const item = items.find(i => i.id === itemId);
+            if (item && item.status === 'available') {
+                document.getElementById(`${containerId}_selected`).innerHTML = type === 'driver' ? item.name : `${item.plate} - ${item.type}`;
+                document.getElementById(`${containerId}_dropdown`).classList.remove('active');
+                if (type === 'driver') selectedDriverId = itemId;
+                else selectedTruckId = itemId;
+                if (type === 'driver' && selectedTruckId) checkAssignmentComplete();
+                if (type === 'truck' && selectedDriverId) checkAssignmentComplete();
+            }
+        }
+
+        function filterDropdown(containerId, type) {
+            const items = type === 'driver' ? drivers : trucks;
+            renderDropdownList(containerId, items, type, null, null);
+        }
+
+        function checkAssignmentComplete() {
+            const approveBtn = document.getElementById('approveDealBtn');
+            if (approveBtn) approveBtn.disabled = !(selectedDriverId && selectedTruckId);
+        }
+
+        function renderInquiries() {
+            const filtered = currentFilter === 'all' ? inquiries : inquiries.filter(i => i.status === currentFilter);
+            const grid = document.getElementById('inquiryGrid');
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><h3>No inquiries found</h3></div>';
+            } else {
+                grid.innerHTML = filtered.map(inq => {
+                    const driver = drivers.find(d => d.id === inq.driverId);
+                    const truck = trucks.find(t => t.id === inq.truckId);
+                    const isCompleted = inq.status === 'completed';
+                    return `
+                        <div class="inquiry-card" data-inquiry-id="${inq.id}" role="button" tabindex="0" aria-label="${isCompleted ? `View completed inquiry ${inq.id}` : `Edit inquiry ${inq.id}`}" onclick="openInquiryModal('${inq.id}')" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openInquiryModal('${inq.id}'); }">
+                            <div class="inquiry-actions">
+                                <button class="btn btn-outline" onclick="event.stopPropagation(); openInquiryReceipt('${inq.id}')"><i class="bi bi-receipt"></i> Receipt</button>
+                                ${isCompleted ? '<span class="status-badge status-completed">Completed</span>' : `<button class="btn btn-outline" onclick="event.stopPropagation(); openInquiryModal('${inq.id}')"><i class="bi bi-pencil"></i> Edit</button><select class="status-select" aria-label="Change status for ${inq.id}" onchange="changeInquiryStatus('${inq.id}', this.value)" onclick="event.stopPropagation()"><option value="new" ${inq.status === 'new' ? 'selected' : ''}>New</option><option value="pending" ${inq.status === 'pending' ? 'selected' : ''}>Pending</option><option value="approved" ${inq.status === 'approved' ? 'selected' : ''}>Approved</option><option value="ongoing" ${inq.status === 'ongoing' ? 'selected' : ''}>Ongoing</option><option value="completed" ${inq.status === 'completed' ? 'selected' : ''}>Completed</option></select>`}
+                            </div>
+                            <div class="inquiry-card-header"><span class="inquiry-id">${inq.id}</span></div>
+                            <div class="customer-name"><i class="bi bi-person-circle"></i> ${inq.customer.name}</div>
+                            <div class="route-info"><i class="bi bi-geo-alt"></i> ${inq.pickup.full.substring(0, 40)} → ${inq.delivery.full.substring(0, 40)}</div>
+                            <div class="cargo-preview"><i class="bi bi-box"></i> ${inq.cargo.substring(0, 60)}${inq.cargo.length > 60 ? '...' : ''}</div>
+                            <div class="inquiry-date"><i class="bi bi-calendar"></i> ${inq.date} • ₱${inq.estimatedPrice.toLocaleString()}</div>
+                            ${driver || truck ? `<div class="cargo-preview"><i class="bi bi-person-badge"></i> ${driver ? driver.name : 'Unassigned'} | <i class="bi bi-truck"></i> ${truck ? truck.plate : 'Unassigned'}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+            document.getElementById('statNew').innerText = inquiries.filter(i => i.status === 'new').length;
+            document.getElementById('statPending').innerText = inquiries.filter(i => i.status === 'pending').length;
+            document.getElementById('statOngoing').innerText = inquiries.filter(i => ['approved', 'ongoing'].includes(i.status)).length;
+            document.getElementById('statTotal').innerText = inquiries.length;
+        }
+
+        function openInquiryModal(id) {
+            selectedInquiry = inquiries.find(i => i.id === id);
+            if (!selectedInquiry) return;
+            if (selectedInquiry.status === 'completed') {
+                showToast('Completed inquiries are locked and cannot be edited.', 'error');
+                return;
+            }
+            const i = selectedInquiry;
+            selectedDriverId = i.driverId;
+            selectedTruckId = i.truckId;
+            
+            document.getElementById('inquiryFormColumn').innerHTML = `
+                <div class="form-section">
+                    <div class="section-title"><i class="bi bi-person"></i> Customer Information</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>Name</label><input type="text" id="editName" value="${i.customer.name.replace(/"/g, '&quot;')}"></div>
+                        <div class="form-group"><label>Company</label><input type="text" id="editCompany" value="${(i.customer.company || '').replace(/"/g, '&quot;')}"></div>
+                        <div class="form-group"><label>Email</label><input type="email" id="editEmail" value="${i.customer.email}"></div>
+                        <div class="form-group"><label>Phone</label><input type="text" id="editPhone" value="${i.customer.phone}"></div>
+                    </div>
+                </div>
+                <div class="form-section"><div class="section-title"><i class="bi bi-geo-alt"></i> Pickup Address</div><div class="form-group"><input type="text" id="editPickup" value="${i.pickup.full.replace(/"/g, '&quot;')}"></div></div>
+                <div class="form-section"><div class="section-title"><i class="bi bi-truck"></i> Delivery Address</div><div class="form-group"><input type="text" id="editDelivery" value="${i.delivery.full.replace(/"/g, '&quot;')}"></div></div>
+                <div class="form-section"><div class="section-title"><i class="bi bi-box-seam"></i> Cargo</div><div class="form-group"><textarea id="editCargo" rows="2">${i.cargo.replace(/"/g, '&quot;')}</textarea></div></div>
+                <div class="form-section"><div class="section-title"><i class="bi bi-currency-exchange"></i> Pricing & Payment</div><div class="form-grid">
+                    <div class="form-group"><label>Dispatcher quote (₱)</label><input type="number" id="editPrice" min="0.01" step="0.01" value="${i.estimatedPrice || ''}"><small>The manager reviews this quote before recording the final paid amount.</small></div>
+                    <div class="form-group"><label>Payment Method</label><select id="editPayment"><option ${i.paymentMethod === 'Bank Transfer' ? 'selected' : ''}>Bank Transfer</option><option ${i.paymentMethod === 'Online Payment' ? 'selected' : ''}>Online Payment</option></select></div>
+                </div></div>
+                <div class="form-section"><div class="section-title"><i class="bi bi-person-badge"></i> Assign Driver</div><div id="inquiryDriverSelect"></div></div>
+                <div class="form-section"><div class="section-title"><i class="bi bi-truck"></i> Assign Truck</div><div id="inquiryTruckSelect"></div></div>
+                <div class="form-section"><div class="section-title"><i class="bi bi-flag"></i> Status</div><div class="form-group"><select id="editStatus"><option value="new" ${i.status === 'new' ? 'selected' : ''}>New</option><option value="pending" ${i.status === 'pending' ? 'selected' : ''}>Pending</option><option value="approved" ${i.status === 'approved' ? 'selected' : ''}>Approved</option><option value="ongoing" ${i.status === 'ongoing' ? 'selected' : ''}>Ongoing</option><option value="completed" ${i.status === 'completed' ? 'selected' : ''}>Completed</option></select></div></div>
+            `;
+            
+            createSearchableSelect('inquiryDriverSelect', drivers, 'driver', i.driverId, null);
+            createSearchableSelect('inquiryTruckSelect', trucks, 'truck', i.truckId, null);
+            document.getElementById('completeDealBtn').style.display = ['approved', 'ongoing'].includes(i.status) ? '' : 'none';
+            
+            document.getElementById('inquiryModal').classList.add('active');
+            const pickupInput = document.getElementById('editPickup');
+            const deliveryInput = document.getElementById('editDelivery');
+            const updateInquiryRoute = () => drawDispatcherRoute(
+                'inquiry',
+                'inquiryMap',
+                pickupInput.value,
+                deliveryInput.value
+            );
+            pickupInput.addEventListener('change', updateInquiryRoute);
+            deliveryInput.addEventListener('change', updateInquiryRoute);
+            pickupInput.addEventListener('blur', updateInquiryRoute);
+            deliveryInput.addEventListener('blur', updateInquiryRoute);
+            setTimeout(updateInquiryRoute, 180);
+        }
+
+        function escapeReceiptText(value) {
+            return String(value ?? 'Not provided').replace(/[&<>"']/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[character]));
+        }
+
+        function openInquiryReceipt(id) {
+            const inquiry = inquiries.find(item => item.id === id);
+            if (!inquiry) return showToast('Transaction not found.', 'error');
+            const driver = drivers.find(item => String(item.id) === String(inquiry.driverId));
+            const truck = trucks.find(item => String(item.id) === String(inquiry.truckId));
+            const rows = [
+                ['Booking ID', inquiry.id],
+                ['Customer', inquiry.customer.name],
+                ['Company', inquiry.customer.company],
+                ['Email', inquiry.customer.email],
+                ['Phone', inquiry.customer.phone],
+                ['Status', inquiry.status],
+                ['Pickup address', inquiry.pickup.full],
+                ['Delivery address', inquiry.delivery.full],
+                ['Cargo', inquiry.cargo],
+                ['Pickup date', inquiry.pickupDate],
+                ['Preferred time', inquiry.preferredTime],
+                ['Truck type', inquiry.truckType],
+                ['Assigned driver', driver ? driver.name : 'Unassigned'],
+                ['Assigned truck', truck ? `${truck.plate} (${truck.type})` : 'Unassigned'],
+                ['Paid amount', inquiry.paidAmount == null ? 'Not recorded' : `₱${inquiry.paidAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+                ['Payment recorded', inquiry.paidAt ? new Date(inquiry.paidAt).toLocaleString('en-PH') : 'Not recorded']
+            ];
+            const directions = new URL('https://www.google.com/maps/dir/');
+            directions.searchParams.set('api', '1');
+            directions.searchParams.set('origin', inquiry.pickup.full || '');
+            directions.searchParams.set('destination', inquiry.delivery.full || '');
+            document.getElementById('receiptContent').innerHTML = `
+                <div class="form-grid">${rows.map(([label, value]) => `
+                    <div class="form-group"><strong>${escapeReceiptText(label)}</strong><div>${escapeReceiptText(value || 'Not provided')}</div></div>
+                `).join('')}</div>
+                <p><strong>Route:</strong> <a href="${escapeReceiptText(directions.toString())}" target="_blank" rel="noopener">Open address directions in Google Maps</a>
+                <small>(address-based directions, not live GPS tracking)</small></p>`;
+            document.getElementById('receiptModal').classList.add('active');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').classList.remove('active');
+        }
+
+        async function persistInquiry(inquiry) {
+            const response = await fetch(`${API_URL}/service-requests/${inquiry.requestId}`, {
+                method: 'PUT',
+                headers: authenticatedApiHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({
+                    status: inquiry.status,
+                    cargo_type: inquiry.cargo,
+                    cargo_weight: inquiry.cargoWeight || '',
+                    special_requirements: inquiry.notes || inquiry.cargo,
+                    pickup_location: inquiry.pickup.full,
+                    delivery_location: inquiry.delivery.full,
+                    pickup_date: inquiry.pickupDate || null,
+                    preferred_time: inquiry.preferredTime || '',
+                    truck_type: inquiry.truckType || '',
+                    contact_person: inquiry.customer.name,
+                    contact_phone: inquiry.customer.phone,
+                    contact_email: inquiry.customer.email,
+                    driver_id: inquiry.driverId || null,
+                    truck_id: inquiry.truckId || null,
+                    quoted_amount: inquiry.estimatedPrice > 0 ? inquiry.estimatedPrice : null
+                })
+            });
+            if (!response.ok) throw new Error('Unable to save service request');
+        }
+
+        async function changeInquiryStatus(id, nextStatus) {
+            const inquiry = inquiries.find(item => item.id === id);
+            if (!inquiry || inquiry.status === 'completed') return;
+            if (nextStatus === 'completed') {
+                selectedInquiry = inquiry;
+                selectedDriverId = inquiry.driverId;
+                selectedTruckId = inquiry.truckId;
+                await completeInquiry();
+                return;
+            }
+            const previousStatus = inquiry.status;
+            if (!confirm(`Are you sure you want to change this request from ${previousStatus} to ${nextStatus}?`)) {
+                renderInquiries();
+                return;
+            }
+            inquiry.status = nextStatus;
+
+            try {
+                await persistInquiry(inquiry);
+                renderInquiries();
+                showToast(`Status changed to ${nextStatus}.`, 'success');
+            } catch (error) {
+                inquiry.status = previousStatus;
+                renderInquiries();
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function saveInquiryChanges() {
+            if (!selectedInquiry || selectedInquiry.status === 'completed') return;
+            const nextStatus = document.getElementById('editStatus').value;
+            if (nextStatus !== selectedInquiry.status && !confirm(`Are you sure you want to change this request to ${nextStatus}?`)) return;
+            const priceInput = document.getElementById('editPrice').value.trim();
+            const quotedAmount = priceInput ? Number(priceInput) : null;
+            if (quotedAmount !== null && (!Number.isFinite(quotedAmount) || quotedAmount <= 0 || quotedAmount >= 10000000000 ||
+                Math.abs(quotedAmount * 100 - Math.round(quotedAmount * 100)) > 1e-7)) {
+                showToast('Enter a quote greater than zero with no more than two decimal places.', 'error');
+                return;
+            }
+            selectedInquiry.customer.name = document.getElementById('editName').value;
+            selectedInquiry.customer.company = document.getElementById('editCompany').value;
+            selectedInquiry.customer.email = document.getElementById('editEmail').value;
+            selectedInquiry.customer.phone = document.getElementById('editPhone').value;
+            selectedInquiry.pickup.full = document.getElementById('editPickup').value;
+            selectedInquiry.delivery.full = document.getElementById('editDelivery').value;
+            selectedInquiry.cargo = document.getElementById('editCargo').value;
+            selectedInquiry.estimatedPrice = quotedAmount || 0;
+            selectedInquiry.paymentMethod = document.getElementById('editPayment').value;
+            selectedInquiry.status = nextStatus;
+            selectedInquiry.driverId = selectedDriverId;
+            selectedInquiry.truckId = selectedTruckId;
+
+            if (selectedInquiry.status === 'completed') {
+                await completeInquiry();
+                return;
+            }
+            
+            try {
+                await persistInquiry(selectedInquiry);
+                closeInquiryModal();
+                renderInquiries();
+                showToast('Changes saved successfully', 'success');
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function approveWithAssignment() {
+            if (!selectedInquiry) return;
+            if (!selectedDriverId || !selectedTruckId) {
+                showToast('Please assign both driver and truck before approving', 'error');
+                return;
+            }
+            if (!confirm('Are you sure you want to approve this request and assign the selected driver and truck?')) return;
+            selectedInquiry.status = 'approved';
+            selectedInquiry.driverId = selectedDriverId;
+            selectedInquiry.truckId = selectedTruckId;
+            const driver = drivers.find(d => d.id === selectedDriverId);
+            const truck = trucks.find(t => t.id === selectedTruckId);
+            if (driver) driver.status = 'busy';
+            if (truck) truck.status = 'busy';
+            try {
+                await persistInquiry(selectedInquiry);
+                closeInquiryModal();
+                renderInquiries();
+                showToast(`Deal approved! Assigned to ${driver.name} with ${truck.plate}`, 'success');
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function completeInquiry() {
+            if (!selectedInquiry || !['approved', 'ongoing', 'completed'].includes(selectedInquiry.status)) return;
+            if (!confirm('Are you sure you want to mark this delivery as completed?')) return;
+            const previousStatus = selectedInquiry.status;
+            selectedInquiry.status = 'completed';
+            const driver = drivers.find(item => item.id === selectedInquiry.driverId);
+            const truck = trucks.find(item => item.id === selectedInquiry.truckId);
+            if (driver) driver.status = 'available';
+            if (truck) truck.status = 'available';
+            try {
+                await persistInquiry(selectedInquiry);
+                closeInquiryModal();
+                renderInquiries();
+                showToast('Delivery marked as completed.', 'success');
+            } catch (error) {
+                selectedInquiry.status = previousStatus;
+                if (driver) driver.status = 'busy';
+                if (truck) truck.status = 'busy';
+                renderInquiries();
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function completeInquiryById(id) {
+            const inquiry = inquiries.find(item => item.id === id);
+            if (!inquiry) return;
+            selectedInquiry = inquiry;
+            selectedDriverId = inquiry.driverId;
+            selectedTruckId = inquiry.truckId;
+            await completeInquiry();
+        }
+
+        function closeInquiryModal() {
+            document.getElementById('inquiryModal').classList.remove('active');
+            const inquiry = selectedInquiry;
+            if (dispatcherMaps.inquiry) dispatcherMaps.inquiry._ueRouteRequestId += 1;
+            selectedInquiry = null;
+            selectedDriverId = null;
+            selectedTruckId = null;
+            if (inquiry && dispatcherMaps.inquiry) window.UE.RouteMap.invalidate(dispatcherMaps.inquiry);
+        }
+
+        function filterInquiries(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderInquiries();
+        }
+
+        function openManualQuoteModal() {
+            createSearchableSelect('driverSelectContainer', drivers, 'driver', null, null);
+            createSearchableSelect('truckSelectContainer', trucks, 'truck', null, null);
+            selectedDriverId = null;
+            selectedTruckId = null;
+            document.getElementById('manualQuoteModal').classList.add('active');
+            setTimeout(() => {
+                getDispatcherMap('manual', 'manualMap');
+                updateManualMap();
+            }, 50);
+        }
+        
+        function closeManualQuoteModal() {
+            document.getElementById('manualQuoteModal').classList.remove('active');
+            document.getElementById('manualQuoteForm').reset();
+            selectedDriverId = null;
+            selectedTruckId = null;
+        }
+        
+        async function submitManualQuote() {
+            const form = document.getElementById('manualQuoteForm');
+            if (!form.reportValidity()) return;
+
+            const name = document.getElementById('manualName').value.trim();
+            const email = document.getElementById('manualEmail').value.trim();
+            const phone = document.getElementById('manualPhone').value.trim();
+            const pickupFull = document.getElementById('pickupFull').value.trim();
+            const deliveryFull = document.getElementById('deliveryFull').value.trim();
+            const cargo = document.getElementById('manualCargo').value.trim();
+            const quotedAmount = Number(document.getElementById('manualPrice').value);
+            const driver = drivers.find(item => item.id === selectedDriverId);
+            const truck = trucks.find(item => item.id === selectedTruckId);
+            if (!driver || !truck || driver.status !== 'available' || truck.status !== 'available') {
+                showToast('Select an available driver and truck before creating this quotation.', 'error');
+                return;
+            }
+            if (!Number.isFinite(quotedAmount) || quotedAmount <= 0 || quotedAmount >= 10000000000 ||
+                Math.abs(quotedAmount * 100 - Math.round(quotedAmount * 100)) > 1e-7) {
+                showToast('Enter a quote greater than zero with no more than two decimal places.', 'error');
+                return;
+            }
+
+            const now = new Date();
+            const pickupDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const requestDetails = {
+                customer_id: null,
+                cargo_type: 'General Cargo',
+                cargo_weight: '0',
+                special_requirements: cargo,
+                pickup_location: pickupFull,
+                delivery_location: deliveryFull,
+                pickup_date: pickupDate,
+                preferred_time: 'Call-in',
+                truck_type: truck.type,
+                contact_person: name,
+                contact_phone: phone,
+                contact_email: email,
+                quoted_amount: quotedAmount
+            };
+            const submitButton = document.getElementById('submitManualQuoteBtn');
+            submitButton.disabled = true;
+            try {
+                const createResponse = await fetch(`${API_URL}/service-requests`, {
+                    method: 'POST',
+                    headers: authenticatedApiHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify(requestDetails)
+                });
+                const created = await createResponse.json();
+                if (!createResponse.ok) throw new Error(created.error || 'Unable to create the call-in request.');
+
+                const assignmentResponse = await fetch(`${API_URL}/service-requests/${created.id}`, {
+                    method: 'PUT',
+                    headers: authenticatedApiHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify({
+                        ...requestDetails,
+                        status: 'approved',
+                        driver_id: selectedDriverId,
+                        truck_id: selectedTruckId
+                    })
+                });
+                const assignment = await assignmentResponse.json();
+                await loadDispatcherData();
+                closeManualQuoteModal();
+                if (!assignmentResponse.ok) {
+                    showToast(`Request REQ-${created.id} was saved, but assignment failed: ${assignment.error || 'please open the request and assign resources.'}`, 'error');
+                    return;
+                }
+                showToast(`Request REQ-${created.id} created, quoted, and assigned to ${driver.name} with ${truck.plate}.`, 'success');
+            } catch (error) {
+                console.error('Manual quotation save failed:', error);
+                showToast(error.message || 'Unable to save the call-in quotation.', 'error');
+            } finally {
+                submitButton.disabled = false;
+            }
+        }
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.className = `toast ${type}`;
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        window.onclick = function(e) {
+            if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('active');
+        };
+        
+        window.toggleDropdown = toggleDropdown;
+        window.filterDropdown = filterDropdown;
+        window.selectItem = selectItem;
+
+        document.getElementById('openManualQuoteModal').onclick = openManualQuoteModal;
+        document.getElementById('pickupFull').addEventListener('input', scheduleManualMapUpdate);
+        document.getElementById('deliveryFull').addEventListener('input', scheduleManualMapUpdate);
+        loadDispatcherData();
+    </script>
+</body>
+</html>
