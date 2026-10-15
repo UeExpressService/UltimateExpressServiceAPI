@@ -1,0 +1,13 @@
+{
+  "name": "ultimate-express",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ultimate Express - root launcher for Railway",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "postinstall": "npm install --prefix server",
+    "start": "node server/server.js"
+  }
+}
