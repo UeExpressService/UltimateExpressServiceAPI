@@ -2,6 +2,7 @@
     const addressCache = new Map();
     let lastGeocodeAt = 0;
     let geocodeQueue = Promise.resolve();
+    const REGION_WORDS = /^(NCR|CAR|BARMM|Region [IVX]+(-[AB])?)$/i;
 
     function setStatus(statusElement, message) {
         if (statusElement) statusElement.textContent = message;
@@ -42,36 +43,61 @@
         setTimeout(() => map.invalidateSize({ pan: false }), 150);
     }
 
+    // One request to Nominatim (max 1 per ~1.1 seconds, as their usage policy requires).
+    async function nominatimSearch(query) {
+        const waitTime = Math.max(0, 1100 - (Date.now() - lastGeocodeAt));
+        if (waitTime) await new Promise(resolve => setTimeout(resolve, waitTime));
+        const url = new URL('https://nominatim.openstreetmap.org/search');
+        url.search = new URLSearchParams({
+            q: query,
+            format: 'jsonv2',
+            limit: '1',
+            countrycodes: 'ph'
+        });
+        lastGeocodeAt = Date.now();
+        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (!response.ok) throw new Error(`Address lookup failed (${response.status}).`);
+        const results = await response.json();
+        if (!Array.isArray(results) || results.length === 0) return null;
+        const location = {
+            lat: Number(results[0].lat),
+            lng: Number(results[0].lon),
+            label: String(results[0].display_name || query)
+        };
+        if (!Number.isFinite(location.lat) || !Number.isFinite(location.lng)) {
+            throw new Error('Address lookup returned invalid coordinates.');
+        }
+        return location;
+    }
+
+    // Detailed Philippine addresses (house no., barangay, "NCR") often fail in OpenStreetMap.
+    // Try the full address first, then simpler versions (dropping the most detailed parts).
+    function addressCandidates(address) {
+        const parts = address.split(',').map(part => part.trim()).filter(Boolean);
+        const cleaned = parts.filter(part => !REGION_WORDS.test(part) && !/^\d{4}$/.test(part));
+        const candidates = [parts.join(', '), cleaned.join(', ')];
+        for (let index = 1; index < cleaned.length - 1 && candidates.length < 6; index += 1) {
+            candidates.push(cleaned.slice(index).join(', '));
+        }
+        return [...new Set(candidates.filter(Boolean))];
+    }
+
     function geocodeAddress(address) {
         const normalizedAddress = String(address || '').trim();
         const cacheKey = normalizedAddress.toLowerCase();
         if (!cacheKey) return null;
         const lookup = geocodeQueue.then(async () => {
             if (addressCache.has(cacheKey)) return addressCache.get(cacheKey);
-            const waitTime = Math.max(0, 1100 - (Date.now() - lastGeocodeAt));
-            if (waitTime) await new Promise(resolve => setTimeout(resolve, waitTime));
-            const url = new URL('https://nominatim.openstreetmap.org/search');
-            url.search = new URLSearchParams({
-                q: normalizedAddress,
-                format: 'jsonv2',
-                limit: '1',
-                countrycodes: 'ph'
-            });
-            lastGeocodeAt = Date.now();
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
-            if (!response.ok) throw new Error(`Address lookup failed (${response.status}).`);
-            const results = await response.json();
-            if (!Array.isArray(results) || results.length === 0) return null;
-            const location = {
-                lat: Number(results[0].lat),
-                lng: Number(results[0].lon),
-                label: String(results[0].display_name || normalizedAddress)
-            };
-            if (!Number.isFinite(location.lat) || !Number.isFinite(location.lng)) {
-                throw new Error('Address lookup returned invalid coordinates.');
+            const candidates = addressCandidates(normalizedAddress);
+            for (let index = 0; index < candidates.length; index += 1) {
+                const location = await nominatimSearch(candidates[index]);
+                if (location) {
+                    location.approximate = index > 0;
+                    addressCache.set(cacheKey, location);
+                    return location;
+                }
             }
-            addressCache.set(cacheKey, location);
-            return location;
+            return null;
         });
         geocodeQueue = lookup.catch(() => {});
         return lookup;
@@ -111,6 +137,9 @@
             if (!pickup || !delivery) {
                 throw new Error('We could not locate one or both addresses. Check the address details.');
             }
+            const approximateNote = (pickup.approximate || delivery.approximate)
+                ? ' Some street details could not be found, so the pin is at the nearest known area.'
+                : '';
 
             const pickupPoint = [pickup.lat, pickup.lng];
             const deliveryPoint = [delivery.lat, delivery.lng];
@@ -138,7 +167,7 @@
                 distanceMeters = Number.isFinite(Number(route.distance)) ? Number(route.distance) : null;
                 if (routePoints.length < 2) throw new Error('The route service returned no road geometry.');
                 window.L.polyline(routePoints, { color: '#e07b39', weight: 5, opacity: 0.85 }).addTo(map._ueRouteLayer);
-                setStatus(statusElement, `Road route${distanceMeters ? ` · ${(distanceMeters / 1000).toFixed(1)} km` : ''}. Estimated map route; not live vehicle tracking.`);
+                setStatus(statusElement, `Road route${distanceMeters ? ` · ${(distanceMeters / 1000).toFixed(1)} km` : ''}. Estimated map route; not live vehicle tracking.${approximateNote}`);
             } catch (routeError) {
                 console.warn('Road route unavailable; displaying a straight-line estimate:', routeError);
                 window.L.polyline([pickupPoint, deliveryPoint], {
@@ -147,7 +176,7 @@
                     opacity: 0.85,
                     dashArray: '8 8'
                 }).addTo(map._ueRouteLayer);
-                setStatus(statusElement, 'Road route service is unavailable. Dashed line shows a straight-line estimate, not the road route or live tracking.');
+                setStatus(statusElement, `Road route service is unavailable. Dashed line shows a straight-line estimate, not the road route or live tracking.${approximateNote}`);
             }
 
             if (map._ueRouteRequestId !== requestId) return false;
