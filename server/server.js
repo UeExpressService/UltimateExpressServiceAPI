@@ -143,18 +143,42 @@ function verifySessionToken(token) {
     }
 }
 
-function getPublicBaseUrl() {
-    const configured = String(process.env.PUBLIC_BASE_URL || `http://localhost:${port}`).trim();
-    const url = new URL(configured);
-    if (!['http:', 'https:'].includes(url.protocol)) {
-        throw new Error('PUBLIC_BASE_URL must use HTTP or HTTPS.');
+// The website address used in the links inside emails (sign-in link, password reset link).
+const DEFAULT_RAILWAY_URL = 'https://ultimateexpressserviceapi-production.up.railway.app';
+const runningOnRailway = Boolean(
+    process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID
+);
+
+function normalizeBaseUrl(value) {
+    let text = String(value || '').trim();
+    if (!text) return null;
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(text)) {
+        const isLocal = /^(localhost|127\.0\.0\.1)/i.test(text);
+        text = `${isLocal ? 'http' : 'https'}://${text}`;
     }
-    return url.toString().replace(/\/$/, '');
+    try {
+        const url = new URL(text);
+        if (!['http:', 'https:'].includes(url.protocol)) return null;
+        // *.proxy.rlwy.net is the DATABASE address, never the website.
+        if (/\.proxy\.rlwy\.net$/i.test(url.hostname)) return null;
+        return url.toString().replace(/\/$/, '');
+    } catch {
+        return null;
+    }
+}
+
+function getPublicBaseUrl() {
+    return normalizeBaseUrl(process.env.PUBLIC_BASE_URL) ||
+        normalizeBaseUrl(process.env.RAILWAY_PUBLIC_DOMAIN) ||
+        (runningOnRailway ? DEFAULT_RAILWAY_URL : null) ||
+        `http://localhost:${port}`;
 }
 
 function getPublicPageUrl(pagePath) {
     return new URL(pagePath.replace(/^\/+/, ''), `${getPublicBaseUrl()}/`);
 }
+
+console.log(`Public base URL for email links: ${getPublicBaseUrl()}`);
 
 function isBcryptHash(value) {
     return typeof value === 'string' && /^\$2[aby]\$\d{2}\$/.test(value);
