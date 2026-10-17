@@ -195,6 +195,15 @@ function hashPassword(password) {
     return bcrypt.hash(password, 12);
 }
 
+async function verifyStoredPassword(password, storedPassword) {
+    if (!isBcryptHash(storedPassword) || !(await bcrypt.compare(password, storedPassword))) {
+        throw new HttpError(
+            500,
+            'The database could not store the account password correctly. Apply the user password column migration before creating accounts.'
+        );
+    }
+}
+
 function hashResetToken(token) {
     return crypto.createHash('sha256').update(token).digest('hex');
 }
@@ -1236,10 +1245,21 @@ app.post('/api/users', requireManager, auditManagerAction('account.created', 'us
     try {
         const loginLink = getPublicPageUrl('login.html');
         const hashedPassword = await hashPassword(temporaryPassword);
-        const [result] = await dbp.query(
-            sql,
-            [normalizedName, normalizedEmail, hashedPassword, role, company || null, phone || null, address || null, employee_id || null, department || null]
-        );
+        const result = await withTransaction(async connection => {
+            const [inserted] = await connection.query(
+                sql,
+                [normalizedName, normalizedEmail, hashedPassword, role, company || null, phone || null, address || null, employee_id || null, department || null]
+            );
+            const [accounts] = await connection.query(
+                'SELECT password FROM users WHERE id = ? LIMIT 1',
+                [inserted.insertId]
+            );
+            if (accounts.length !== 1) {
+                throw new HttpError(500, 'The account password could not be verified after saving.');
+            }
+            await verifyStoredPassword(temporaryPassword, accounts[0].password);
+            return inserted;
+        });
         res.locals.auditEntityId = result.insertId;
         try {
             await sendEmail({
@@ -1345,6 +1365,14 @@ app.post('/api/users/create-customer', requireManager, auditManagerAction('custo
                  VALUES (?, ?, ?, 'customer', ?, ?, 1, 1)`,
                 [normalizedName, normalizedEmail, hashedPassword, customer.company || null, customer.phone || null]
             );
+            const [accounts] = await connection.query(
+                'SELECT password FROM users WHERE id = ? LIMIT 1',
+                [result.insertId]
+            );
+            if (accounts.length !== 1) {
+                throw new HttpError(500, 'The account password could not be verified after saving.');
+            }
+            await verifyStoredPassword(temporaryPassword, accounts[0].password);
             if (requestId !== undefined) {
                 await connection.query('UPDATE customer_account_requests SET status = ? WHERE id = ?', ['processed', Number(requestId)]);
             }
