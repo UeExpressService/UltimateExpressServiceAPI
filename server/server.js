@@ -430,7 +430,7 @@ function findFrontendDir() {
 const frontendPath = findFrontendDir();
 console.log(`Serving front-end files from: ${frontendPath}`);
 
-const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js']);
+const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js']);
 const publicExtensions = /\.(html|css|js|png|jpe?g|webp|gif|svg|ico|woff2?)$/i;
 
 app.get('/health', (req, res) => res.json({ ok: true }));
@@ -1309,9 +1309,29 @@ app.post('/api/customer-account-requests', accountRequestLimiter, (req, res) => 
         INSERT INTO customer_account_requests (name, email, company, phone, message, status)
         VALUES (?, ?, ?, ?, ?, 'pending')
     `;
-    db.query(sql, [name, email, cleanText(req.body.company, 255) || null, cleanText(req.body.phone, 64) || null, message], (err, result) => {
+    const company = cleanText(req.body.company, 255);
+    const phone = cleanText(req.body.phone, 64);
+    db.query(sql, [name, email, company || null, phone || null, message], (err, result) => {
         if (err) return sendError(res, err, 'Unable to save your request.');
         res.status(201).json({ id: result.insertId, message: 'Request received' });
+
+        // Tell the company about the new inquiry (the inquiry is already saved in the Manager page).
+        if (process.env.ADMIN_EMAIL && hasEmailProvider()) {
+            sendEmail({
+                to: process.env.ADMIN_EMAIL,
+                subject: 'New Ultimate Express website inquiry',
+                html: `<p>A new inquiry was sent from the website contact form.</p>
+                    <ul>
+                        <li><strong>Name:</strong> ${escapeHtml(name)}</li>
+                        <li><strong>Company:</strong> ${escapeHtml(company || '-')}</li>
+                        <li><strong>Email:</strong> ${escapeHtml(email)}</li>
+                        <li><strong>Phone:</strong> ${escapeHtml(phone || '-')}</li>
+                    </ul>
+                    <p><strong>Message:</strong></p>
+                    <p>${escapeHtml(message)}</p>
+                    <p>You can review it in the Manager dashboard under Accounts, Customer Account Requests.</p>`
+            }).catch(emailError => console.error('Inquiry notification email failed:', emailError));
+        }
     });
 });
 
