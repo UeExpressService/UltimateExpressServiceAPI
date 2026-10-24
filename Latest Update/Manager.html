@@ -6,6 +6,7 @@
     <title>Manager Dashboard - Ultimate Express</title>
     <script src="api-config.js"></script>
     <script src="auth.js"></script>
+    <script src="ue-dialog.js"></script>
     <script>if (!requireRole('manager')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -529,10 +530,32 @@
             @page { size: auto; margin: 16mm; }
         }
 
+        /* Mobile menu button (hidden on desktop) */
+        .nav-left { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+        .menu-toggle { display: none; width: 42px; height: 42px; border: 0; border-radius: 10px; background: var(--light); color: var(--secondary); font-size: 1.5rem; line-height: 1; cursor: pointer; align-items: center; justify-content: center; flex: 0 0 auto; }
+        .menu-toggle:hover { background: rgba(224,123,57,0.12); color: var(--primary); }
+        .sidebar-mobile-head { display: none; }
+        .sidebar-backdrop { display: none; }
+
         @media (max-width: 768px) {
+            .navbar { padding: .7rem 1rem; gap: .5rem; }
+            .logo { font-size: 1.05rem; }
+            .nav-right { gap: .5rem; }
+            .menu-toggle { display: inline-flex; }
+            .user-info .name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
             .main-content { margin-left: 0; padding: 1rem; }
-            .sidebar { transform: translateX(-100%); position: fixed; }
-            body.sidebar-open .sidebar { transform: translateX(0); }
+
+            /* Sidebar becomes a slide-in menu */
+            .sidebar { top: 0; width: 280px; max-width: 85vw; z-index: 1300; transform: translateX(-105%); transition: transform .25s ease; box-shadow: none; padding-bottom: 1.5rem; }
+            body.sidebar-open .sidebar { transform: translateX(0); box-shadow: 8px 0 30px rgba(0,0,0,0.25); }
+            .sidebar-mobile-head { display: flex; align-items: center; justify-content: space-between; padding: .9rem 1rem; border-bottom: 1px solid var(--light-gray); font-weight: 700; color: var(--secondary); }
+            .sidebar-close { width: 36px; height: 36px; border: 0; border-radius: 10px; background: var(--light); color: var(--gray); font-size: 1.1rem; cursor: pointer; }
+            .sidebar-close:hover { background: #fee2e2; color: var(--danger); }
+            .sidebar-backdrop { position: fixed; inset: 0; z-index: 1250; background: rgba(0,0,0,0.45); }
+            body.sidebar-open .sidebar-backdrop { display: block; }
+            body.sidebar-open { overflow: hidden; }
+
             .revenue-kpi-row { grid-template-columns: repeat(2, 1fr); }
             .stats-grid { grid-template-columns: 1fr; }
             .modal-overlay { padding: .75rem; }
@@ -544,19 +567,37 @@
             .receipt-number { text-align: left; }
             .receipt-total { align-items: flex-start; flex-direction: column; }
             .receipt-modal-content .modal-footer { padding: .75rem 1rem; gap: .5rem; }
+
+            /* Tables scroll sideways so the action buttons are never cut off */
+            .card-body { padding: 1rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .data-table { min-width: 620px; }
+            .data-table td .btn-outline-sm { margin: 2px 0; white-space: nowrap; }
+            .page-header { align-items: flex-start; }
+            .page-header h1 { font-size: 1.4rem; }
+            .card-header { padding: 1rem; }
+            .filter-bar { width: 100%; }
+            .search-box { flex: 1 1 160px; }
+            .search-box input { width: 100%; min-width: 0; }
+            .tab-pills { flex-wrap: wrap; }
+            .form-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <a href="#" class="logo"><img src="images/logo.jpg" alt="Logo" onerror="this.src='https://placehold.co/40x40?text=UE'">Ultimate<span>Express</span></a>
+        <div class="nav-left">
+            <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-controls="managerSidebar" aria-expanded="false"><i class="bi bi-list"></i></button>
+            <a href="#" class="logo"><img src="images/logo.jpg" alt="Logo" onerror="this.src='https://placehold.co/40x40?text=UE'">Ultimate<span>Express</span></a>
+        </div>
         <div class="nav-right">
             <div class="user-profile"><div class="user-info"><span class="name">Loading...</span><span class="role">Manager</span></div><a href="login.html?logout=1" class="logout-btn"><i class="bi bi-box-arrow-right"></i></a></div>
         </div>
     </nav>
 
-    <div class="sidebar">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <div class="sidebar" id="managerSidebar">
+        <div class="sidebar-mobile-head"><span>Menu</span><button class="sidebar-close" id="sidebarClose" type="button" aria-label="Close menu"><i class="bi bi-x-lg"></i></button></div>
         <div class="sidebar-label">Overview</div>
         <div class="nav-item active" onclick="showPanel('dashboard')"><i class="bi bi-speedometer2"></i> Dashboard</div>
         <div class="sidebar-label">Management</div>
@@ -568,20 +609,20 @@
         <div class="nav-item" onclick="showPanel('revenue')"><i class="bi bi-graph-up"></i> Revenue</div>
     </div>
 
-    <div id="panel-audit" class="panel" style="display:none;">
-        <div class="page-header">
-            <div><h1>Manager <span style="color:var(--primary);">Activity Log</span></h1><p>Recent account, transaction, payment, and partner changes</p></div>
-            <button class="btn-outline-sm" type="button" onclick="fetchAuditLogs()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
-        </div>
-        <div class="card"><div class="card-body" style="overflow-x:auto;">
-            <table class="data-table">
-                <thead><tr><th>Date and Time</th><th>Manager</th><th>Activity</th><th>Record</th><th>Details</th></tr></thead>
-                <tbody id="auditLogsBody"><tr><td colspan="5">Loading activity...</td></tr></tbody>
-            </table>
-        </div></div>
-    </div>
-
     <div class="main-content">
+        <div id="panel-audit" class="panel" style="display:none;">
+            <div class="page-header">
+                <div><h1>Manager <span style="color:var(--primary);">Activity Log</span></h1><p>Recent account, transaction, payment, and partner changes</p></div>
+                <button class="btn-outline-sm" type="button" onclick="fetchAuditLogs()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+            </div>
+            <div class="card"><div class="card-body" style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead><tr><th>Date and Time</th><th>Manager</th><th>Activity</th><th>Record</th><th>Details</th></tr></thead>
+                    <tbody id="auditLogsBody"><tr><td colspan="5">Loading activity...</td></tr></tbody>
+                </table>
+            </div></div>
+        </div>
+
         <!-- Dashboard Panel -->
         <div id="panel-dashboard" class="panel">
             <div class="page-header"><div><h1>Dashboard <span style="color:var(--primary);">Overview</span></h1><p>Welcome back, David. Here's what's happening today.</p></div><div class="date-chip" id="todayDate"></div></div>
@@ -906,7 +947,7 @@
         }
         function renderPartners() { let f=partners.filter(p=>(p.company||p.name||'').toLowerCase().includes(document.getElementById('partnerSearch').value.toLowerCase())&&(!document.getElementById('partnerTypeFilter').value||(p.partnership_type||p.type)===document.getElementById('partnerTypeFilter').value)); document.getElementById('partnersBody').innerHTML=f.map(p=>`<tr><td><strong>${p.company||p.name}</strong></td><td>${p.contact_person||p.contact||'—'}</td><td>${p.email||'—'}</td><td>${p.phone||'—'}</td><td><span class="badge ${(p.partnership_type||p.type)==='Premium'?'badge-orange':(p.partnership_type||p.type)==='Corporate'?'badge-purple':'badge-green'}">${p.partnership_type||p.type||'Regular'}</span></td><td><span class="badge badge-green">Active</span></td><td><button class="btn-outline-sm" style="background:var(--danger);color:white;border:none;" onclick="deletePartner(${p.id})">Delete</button></td></tr>`).join('')||'<tr><td colspan="7"><div class="empty-state"><i class="bi bi-building"></i><p>No partners found</p></div></td></tr>'; }
         async function deleteUser(id){
-            if(!confirm('Are you sure you want to delete this user?')) return;
+            if(!(await UE.confirm('Are you sure you want to delete this user?', { type: 'danger', title: 'Delete account', confirmText: 'Delete account' }))) return;
             try {
                 const res = await fetch(`${API_URL}/users/${encodeURIComponent(id)}`, { method:'DELETE', headers: managerAuthHeaders() });
                 const data = await res.json().catch(() => ({}));
@@ -922,7 +963,7 @@
             }
         }
         async function deletePartner(id) {
-            if (!confirm('Are you sure you want to remove this partner?')) return;
+            if (!(await UE.confirm('Are you sure you want to remove this partner?', { type: 'danger', title: 'Remove partner', confirmText: 'Remove partner' }))) return;
             try {
                 const response = await fetch(`${API_URL}/partners/${encodeURIComponent(id)}`, {
                     method: 'DELETE',
@@ -1120,7 +1161,7 @@
         async function createAccountFromRequest(requestId) {
             const request = customerRequests.find(item => Number(item.id) === requestId);
             if (!request) return toast('Customer request not found.', 'error');
-            if (!confirm(`Create a customer account for ${request.name}?`)) return;
+            if (!(await UE.confirm(`Create a customer account for ${request.name}?`, { title: 'Create customer account', confirmText: 'Create account' }))) return;
             try {
                 const response = await fetch(`${API_URL}/users/create-customer`, {
                     method: 'POST',
@@ -1397,7 +1438,14 @@
             URL.revokeObjectURL(link.href);
         }
 
-        function showPanel(name){document.querySelectorAll('.panel').forEach(p=>p.style.display='none');document.getElementById(`panel-${name}`).style.display='block';document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));event.target.closest('.nav-item')?.classList.add('active');if(name==='revenue')loadManagerReport();if(name==='audit')fetchAuditLogs();}
+        function showPanel(name){closeSidebar();document.querySelectorAll('.panel').forEach(p=>p.style.display='none');document.getElementById(`panel-${name}`).style.display='block';document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));event.target.closest('.nav-item')?.classList.add('active');if(name==='revenue')loadManagerReport();if(name==='audit')fetchAuditLogs();}
+        function openSidebar(){document.body.classList.add('sidebar-open');document.getElementById('menuToggle').setAttribute('aria-expanded','true');}
+        function closeSidebar(){document.body.classList.remove('sidebar-open');const toggle=document.getElementById('menuToggle');if(toggle)toggle.setAttribute('aria-expanded','false');}
+        document.getElementById('menuToggle').addEventListener('click',()=>document.body.classList.contains('sidebar-open')?closeSidebar():openSidebar());
+        document.getElementById('sidebarClose').addEventListener('click',closeSidebar);
+        document.getElementById('sidebarBackdrop').addEventListener('click',closeSidebar);
+        document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSidebar();});
+        window.addEventListener('resize',()=>{if(window.innerWidth>768)closeSidebar();});
         function openModal(id){document.getElementById(id).classList.add('active');}
         function closeModal(id){document.getElementById(id).classList.remove('active');}
         function toast(msg,type,duration=3000){let t=document.getElementById('toast');t.className=`toast ${type}`;document.getElementById('toastMsg').innerText=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),duration);}
