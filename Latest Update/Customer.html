@@ -6,6 +6,7 @@
     <title>Customer Portal - Ultimate Express</title>
     <script src="api-config.js"></script>
     <script src="auth.js"></script>
+    <script src="ue-dialog.js"></script>
     <script>if (!requireRole('customer')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -768,10 +769,10 @@
                     .catch(() => {})
                 : Promise.resolve();
 
-            verifyAccount.then(() => {
+            verifyAccount.then(async () => {
                 const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
                 if (!currentUser || currentUser.role !== 'customer') {
-                    alert('Please log in as a customer before requesting a service.');
+                    await UE.alert('Please log in as a customer before requesting a service.', { type: 'warning', title: 'Sign in required' });
                     window.location.href = 'login.html';
                     return;
                 }
@@ -810,7 +811,7 @@
                 submitBtn.disabled = false;
                 return;
             }
-            if (!confirm('Are you sure you want to submit this quote request?')) {
+            if (!(await UE.confirm('Are you sure you want to submit this quote request?', { title: 'Submit quote request', confirmText: 'Submit request', cancelText: 'Review again' }))) {
                 submitBtn.innerHTML = originalContent;
                 submitBtn.disabled = false;
                 return;
@@ -849,9 +850,9 @@
                     throw new Error(errorData.error || 'Failed to create request');
                 }
 
-                showSuccess('Quotation request submitted successfully.', 'quoteSuccess');
                 this.reset();
                 modal.classList.remove('active');
+                UE.alert('Your quotation request was submitted. Our dispatch team will contact you soon.', { type: 'success', title: 'Request submitted' });
                 await loadTransactions();
             } catch (err) {
                 console.error(err);
