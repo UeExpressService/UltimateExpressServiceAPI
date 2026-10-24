@@ -889,6 +889,7 @@
     </div>
 
     <script src="api-config.js"></script>
+    <script src="ue-dialog.js"></script>
     <script>
         const navbar = document.getElementById('navbar');
         window.addEventListener('scroll', () => {
@@ -952,6 +953,7 @@
         document.getElementById('contactForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.currentTarget;
+            const submitButton = form.querySelector('button[type="submit"]');
             const payload = {
                 name: document.getElementById('name').value.trim(),
                 email: document.getElementById('email').value.trim(),
@@ -960,9 +962,17 @@
                 message: document.getElementById('message').value.trim()
             };
             if (!payload.name || !payload.email || !payload.message) {
-                alert('Please complete the required fields before submitting.');
+                await UE.alert('Please enter your name, email address and message before sending.', { type: 'warning', title: 'Missing details' });
                 return;
             }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+                await UE.alert('That email address does not look right. Please check it and try again.', { type: 'warning', title: 'Check your email' });
+                return;
+            }
+
+            const originalLabel = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = 'Sending... <i class="bi bi-hourglass-split"></i>';
             try {
                 const response = await fetch(`${window.UE_API_URL}/customer-account-requests`, {
                     method: 'POST',
@@ -970,12 +980,19 @@
                     body: JSON.stringify(payload)
                 });
                 const data = await response.json().catch(() => ({}));
-                if (!response.ok) throw new Error(data.error || 'Unable to submit your account request.');
+                if (!response.ok) throw new Error(data.error || 'Unable to send your inquiry right now. Please try again later.');
                 form.reset();
-                alert('Thank you! Our team will review your request and contact you.');
+                UE.alert('Thank you! Our team received your inquiry and will contact you soon.', { type: 'success', title: 'Inquiry sent' });
             } catch (error) {
-                console.error('Customer account request error:', error);
-                alert(error.message || 'Unable to submit your request right now. Please try again later.');
+                console.error('Inquiry error:', error);
+                const offline = error instanceof TypeError;
+                UE.alert(
+                    offline ? 'We could not reach the server. Please check your internet connection and try again.' : (error.message || 'Unable to send your inquiry right now. Please try again later.'),
+                    { type: 'error', title: 'Inquiry not sent' }
+                );
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalLabel;
             }
         });
 
