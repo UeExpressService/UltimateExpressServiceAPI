@@ -6,6 +6,7 @@
     <title>Supervisor Dashboard - Ultimate Express</title>
     <script src="api-config.js"></script>
     <script src="auth.js"></script>
+    <script src="ue-dialog.js"></script>
     <script>if (!requireRole('supervisor')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -906,7 +907,7 @@
         }
 
         async function deleteDriver(id) {
-            if (!confirm('Are you sure you want to delete this driver?')) return;
+            if (!(await UE.confirm('Are you sure you want to delete this driver?', { type: 'danger', title: 'Delete driver', confirmText: 'Delete driver' }))) return;
             try {
                 const res = await fetch(`${API_URL}/drivers/${id}`, { method: 'DELETE', headers: authenticatedApiHeaders() });
                 if (!res.ok) throw new Error('Delete failed');
@@ -1008,7 +1009,7 @@
         }
 
         async function deleteTruck(id) {
-            if (!confirm('Are you sure you want to delete this truck?')) return;
+            if (!(await UE.confirm('Are you sure you want to delete this truck?', { type: 'danger', title: 'Delete truck', confirmText: 'Delete truck' }))) return;
             try {
                 const res = await fetch(`${API_URL}/trucks/${id}`, { method: 'DELETE', headers: authenticatedApiHeaders() });
                 if (!res.ok) throw new Error('Delete failed');
