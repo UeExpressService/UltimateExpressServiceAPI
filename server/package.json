@@ -15,7 +15,8 @@
     "export:accounts": "node export-accounts.js",
     "seed:test-accounts": "node seed-test-accounts.js",
     "clean:test-data": "node clean-test-data.js",
-    "test:login-codes": "node test-login-codes.js"
+    "test:login-codes": "node test-login-codes.js",
+    "test:waybills": "node test-waybills.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.4",

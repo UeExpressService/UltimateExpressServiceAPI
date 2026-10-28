@@ -430,7 +430,7 @@ function findFrontendDir() {
 const frontendPath = findFrontendDir();
 console.log(`Serving front-end files from: ${frontendPath}`);
 
-const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js']);
+const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js', 'waybills.js']);
 const publicExtensions = /\.(html|css|js|png|jpe?g|webp|gif|svg|ico|woff2?)$/i;
 
 app.get('/health', (req, res) => res.json({ ok: true }));
@@ -448,6 +448,8 @@ app.use((req, res, next) => {
 app.use(express.static(frontendPath));
 
 // ---------- API Routes ----------
+
+require('./waybills')(app, { dbp, withTransaction, requireRoles, rateLimit, HttpError, sendError });
 
 app.post('/api/account/first-login-password', requireRoles('customer', 'dispatcher', 'supervisor', 'manager'), async (req, res) => {
     if (req.auth.mustChangePassword !== true) {
