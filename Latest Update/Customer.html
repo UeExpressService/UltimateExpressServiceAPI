@@ -7,6 +7,8 @@
     <script src="api-config.js"></script>
     <script src="auth.js"></script>
     <script src="ue-dialog.js"></script>
+    <link rel="stylesheet" href="waybills.css">
+    <script src="waybills.js"></script>
     <script>if (!requireRole('customer')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -385,6 +387,7 @@
             <span class="modal-close" id="closeTransactionDetails" role="button" tabindex="0" aria-label="Close transaction details">&times;</span>
             <h2 class="modal-title"><i class="bi bi-receipt"></i> Order Summary</h2>
             <div class="details-grid" id="transactionDetailsContent"></div>
+            <div id="customerWaybills"></div>
             <section class="customer-route-summary" aria-labelledby="customerRouteHeading">
                 <h3 id="customerRouteHeading"><i class="bi bi-map"></i> Shipment Route</h3>
                 <div class="customer-route-map" id="customerRouteMap" role="img" aria-label="Map showing pickup and delivery route"></div>
@@ -712,6 +715,7 @@
             directionsLink.hidden = !transaction.pickup_location || !transaction.delivery_location;
             document.getElementById('customerRouteStatus').textContent = 'Preparing the route map...';
             document.getElementById('transactionDetailsModal').classList.add('active');
+            window.UE.Waybills.mount(document.getElementById('customerWaybills'), transaction.id);
             if (!customerRouteMap) {
                 customerRouteMap = window.UE.RouteMap.create(
                     'customerRouteMap',

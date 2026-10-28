@@ -1,0 +1,18 @@
+.waybill-panel { margin-top: 1.5rem; padding: 1.25rem; border: 1px solid #dde3d8; border-radius: 12px; background: #fafbf8; }
+.waybill-panel h3 { margin: 0 0 .4rem; color: #4b5b36; font-size: 1.05rem; }
+.waybill-panel p { margin: .4rem 0 .8rem; font-size: .85rem; line-height: 1.5; color: #64705c; }
+.waybill-drop { padding: 1.2rem; margin: 1rem 0; border: 2px dashed #a8b897; border-radius: 10px; text-align: center; background: white; }
+.waybill-drop.dragging { border-color: #ed8936; background: #fff5eb; }
+.waybill-panel button { padding: .5rem .8rem; border: 1px solid #718355; border-radius: 7px; color: #4b5b36; background: white; cursor: pointer; font: inherit; font-size: .82rem; }
+.waybill-panel button:hover { background: #edf2e7; }
+.waybill-panel button:focus-visible { outline: 3px solid #ed8936; outline-offset: 2px; }
+.waybill-panel button:disabled { opacity: .6; cursor: wait; }
+.waybill-panel input[type=file] { display: block; width: 100%; margin: .75rem 0; font: inherit; font-size: .82rem; }
+.waybill-files { padding: 0; margin: 1rem 0 0; list-style: none; }
+.waybill-file { padding: .8rem 0; border-top: 1px solid #dde3d8; }
+.waybill-file strong { display: block; overflow-wrap: anywhere; font-size: .88rem; }
+.waybill-file small { display: block; color: #64705c; margin: .3rem 0 .6rem; }
+.waybill-file button + button { margin-left: .5rem; }
+.waybill-status { min-height: 1.5em; }
+.waybill-status.error { color: #a52a20; }
+.waybill-modal .modal-content { max-width: 620px; }

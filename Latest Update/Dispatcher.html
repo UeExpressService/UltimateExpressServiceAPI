@@ -7,6 +7,8 @@
     <script src="api-config.js"></script>
     <script src="auth.js"></script>
     <script src="ue-dialog.js"></script>
+    <link rel="stylesheet" href="waybills.css">
+    <script src="waybills.js"></script>
     <script>if (!requireRole('dispatcher')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -150,7 +152,7 @@
         }
         .inquiry-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
         .inquiry-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-        .inquiry-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; margin-bottom: 0.7rem; }
+        .inquiry-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; margin-bottom: 0.7rem; }
         .inquiry-actions .btn { padding: 0.35rem 0.65rem; font-size: 0.75rem; }
         .inquiry-actions .status-select { min-width: 112px; padding: 0.38rem 0.5rem; border: 1px solid var(--light-gray); border-radius: 6px; color: var(--dark); background: white; font: inherit; font-size: 0.75rem; cursor: pointer; }
         .inquiry-id { font-weight: 700; color: var(--primary); font-size: 0.85rem; }
@@ -477,6 +479,16 @@
                 <button class="btn btn-outline" onclick="closeReceiptModal()">Close</button>
                 <button class="btn btn-primary" onclick="window.print()">Print Receipt</button>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay waybill-modal" id="waybillModal" role="dialog" aria-modal="true" aria-labelledby="waybillModalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="waybillModalTitle">Booking Waybills</h2>
+                <button type="button" class="btn btn-outline" id="closeWaybillModal">Close</button>
+            </div>
+            <div class="modal-body" id="dispatcherWaybills"></div>
         </div>
     </div>
 
@@ -841,6 +853,7 @@
                     return `
                         <div class="inquiry-card" data-inquiry-id="${inq.id}" role="button" tabindex="0" aria-label="${isCompleted ? `View completed inquiry ${inq.id}` : `Edit inquiry ${inq.id}`}" onclick="openInquiryModal('${inq.id}')" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openInquiryModal('${inq.id}'); }">
                             <div class="inquiry-actions">
+                                <button class="btn btn-outline" onkeydown="event.stopPropagation()" onclick="event.stopPropagation(); openWaybillModal('${inq.id}')"><i class="bi bi-file-earmark-arrow-up"></i> Waybills</button>
                                 <button class="btn btn-outline" onclick="event.stopPropagation(); openInquiryReceipt('${inq.id}')"><i class="bi bi-receipt"></i> Receipt</button>
                                 ${isCompleted ? '<span class="status-badge status-completed">Completed</span>' : `<button class="btn btn-outline" onclick="event.stopPropagation(); openInquiryModal('${inq.id}')"><i class="bi bi-pencil"></i> Edit</button><select class="status-select" aria-label="Change status for ${inq.id}" onchange="changeInquiryStatus('${inq.id}', this.value)" onclick="event.stopPropagation()"><option value="new" ${inq.status === 'new' ? 'selected' : ''}>New</option><option value="pending" ${inq.status === 'pending' ? 'selected' : ''}>Pending</option><option value="approved" ${inq.status === 'approved' ? 'selected' : ''}>Approved</option><option value="ongoing" ${inq.status === 'ongoing' ? 'selected' : ''}>Ongoing</option><option value="completed" ${inq.status === 'completed' ? 'selected' : ''}>Completed</option></select>`}
                             </div>
@@ -859,6 +872,36 @@
             document.getElementById('statOngoing').innerText = inquiries.filter(i => ['approved', 'ongoing'].includes(i.status)).length;
             document.getElementById('statTotal').innerText = inquiries.length;
         }
+
+        let waybillTrigger = null;
+        function openWaybillModal(id) {
+            const inquiry = inquiries.find(item => item.id === id);
+            if (!inquiry) return;
+            waybillTrigger = document.activeElement;
+            document.getElementById('waybillModalTitle').textContent = `Waybills · ${inquiry.id}`;
+            window.UE.Waybills.mount(document.getElementById('dispatcherWaybills'), inquiry.requestId, { canUpload: true });
+            document.getElementById('waybillModal').classList.add('active');
+            document.getElementById('closeWaybillModal').focus();
+        }
+        function closeWaybillModal() {
+            document.getElementById('waybillModal').classList.remove('active');
+            if (waybillTrigger?.isConnected) waybillTrigger.focus();
+        }
+        document.getElementById('closeWaybillModal').addEventListener('click', closeWaybillModal);
+        document.getElementById('waybillModal').addEventListener('click', event => {
+            if (event.target.id === 'waybillModal') closeWaybillModal();
+        });
+        document.addEventListener('keydown', event => {
+            const modal = document.getElementById('waybillModal');
+            if (!modal.classList.contains('active')) return;
+            if (event.key === 'Escape') closeWaybillModal();
+            if (event.key === 'Tab') {
+                const controls = [...modal.querySelectorAll('button:not(:disabled), input:not(:disabled)')];
+                const first = controls[0], last = controls[controls.length - 1];
+                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+                else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+            }
+        });
 
         function openInquiryModal(id) {
             selectedInquiry = inquiries.find(i => i.id === id);
