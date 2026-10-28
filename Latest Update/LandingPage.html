@@ -50,7 +50,7 @@
         .nav-links a { text-decoration: none; color: var(--secondary); font-weight: 500; transition: color .3s; font-size: .95rem; }
         .nav-links a:hover { color: var(--primary); }
 
-        .nav-cta { background: var(--primary); color: white !important; padding: .7rem 1.5rem; border-radius: 50px; transition: all .3s ease !important; }
+        .nav-cta { background: var(--primary); color: white !important; padding: .7rem 1.5rem; border-radius: 50px; white-space: nowrap; transition: all .3s ease !important; }
         .nav-cta:hover { background: var(--primary-dark); transform: translateY(-2px); }
 
         .mobile-toggle { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 5px; }
@@ -456,6 +456,10 @@
         .fade-up.visible { opacity: 1; transform: translateY(0); }
 
         /* ── Responsive ── */
+        @media (max-width: 1100px) {
+            .nav-links { display: none; }
+            .mobile-toggle { display: flex; }
+        }
         @media (max-width: 1024px) {
             .hero-container, .about-container, .contact-container { grid-template-columns: 1fr; gap: 2.5rem; }
             .stats-container { grid-template-columns: repeat(2, 1fr); }
@@ -500,6 +504,7 @@
             <li><a href="#about">About</a></li>
             <li><a href="#routes">Routes</a></li>
             <li><a href="#contact">Contact</a></li>
+            <li><a href="/login.html" class="nav-cta">Customer Login</a></li>
         </ul>
         <div class="mobile-toggle" id="mobileToggle">
             <span></span><span></span><span></span>
@@ -514,6 +519,7 @@
         <a href="#about"><i class="bi bi-info-circle"></i> About</a>
         <a href="#routes"><i class="bi bi-map"></i> Routes</a>
         <a href="#contact"><i class="bi bi-envelope"></i> Contact</a>
+        <a href="/login.html"><i class="bi bi-box-arrow-in-right"></i> Customer Login</a>
     </div>
 
     <!-- Hero -->
@@ -802,6 +808,7 @@
                 </div>
             </div>
             <div class="contact-form fade-up">
+                <p style="margin-bottom:1.25rem;">Already registered? <a href="/login.html" style="color:var(--primary-dark);font-weight:600;">Log in to your customer account</a>.</p>
                 <form id="contactForm">
                     <div class="form-row">
                         <div class="form-group">
