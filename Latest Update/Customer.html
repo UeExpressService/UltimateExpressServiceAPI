@@ -35,6 +35,7 @@
             background-color: var(--light);
             color: var(--dark);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
         }
@@ -46,19 +47,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.5rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
             position: sticky;
             top: 0;
             z-index: 1000;
         }
 
-        .logo { display: flex; align-items: center; text-decoration: none; gap: .6rem; font-weight: 800; font-size: 1.25rem; color: var(--secondary); }
+        .logo { display: flex; flex-shrink: 0; align-items: center; text-decoration: none; gap: .6rem; font-weight: 800; font-size: 1.25rem; color: var(--secondary); }
         .logo img { height: 48px; width: auto; border-radius: 6px; }
         .logo span { color: var(--primary); }
 
-        .user-profile { display: flex; align-items: center; gap: 1rem; }
-        .user-info { text-align: right; line-height: 1.2; }
-        .user-info .name { display: block; font-weight: 600; font-size: 0.9rem; }
+        .user-profile { display: flex; align-items: center; gap: 1rem; min-width: 0; max-width: 100%; }
+        .user-info { text-align: right; line-height: 1.2; min-width: 0; }
+        .user-info .name { display: block; font-weight: 600; font-size: 0.9rem; overflow-wrap: anywhere; }
         .user-info .role { font-size: 0.75rem; color: var(--gray); }
 
         .logout-btn { color: var(--gray); font-size: 1.2rem; text-decoration: none; padding: 8px; border-radius: 8px; transition: all 0.3s; }
@@ -93,7 +96,8 @@
             margin-bottom: 2rem;
         }
         .profile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
-        .profile-item { padding: 0.85rem 1rem; background: var(--light); border-radius: 10px; }
+        .profile-item { padding: 0.85rem 1rem; background: var(--light); border-radius: 10px; min-width: 0; }
+        .dashboard-grid > *, .card, .details, .form-group, .detail-group { min-width: 0; }
         .profile-item .label { display: block; margin-bottom: 0.25rem; color: var(--gray); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
         .profile-item .value { color: var(--dark); font-size: 0.95rem; overflow-wrap: anywhere; }
         .form-group input[type="checkbox"] { width: auto; }
@@ -122,14 +126,15 @@
 
         /* ── Transaction Tabs ── */
         .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--light-gray); }
-        .tab { padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; color: var(--gray); font-size: 0.9rem; border-bottom: 3px solid transparent; }
+        .tab { padding: 0.75rem 1rem; min-height: 44px; cursor: pointer; font: inherit; font-weight: 600; color: var(--gray); font-size: 0.9rem; border: 0; border-bottom: 3px solid transparent; background: transparent; }
         .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab:focus-visible, .btn:focus-visible, .logout-btn:focus-visible, .modal-close:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
 
         /* ── Transaction List ── */
         .transaction-list { display: flex; flex-direction: column; gap: 1rem; }
         .transaction-item {
             display: grid;
-            grid-template-columns: auto 1fr auto auto;
+            grid-template-columns: auto minmax(0, 1fr) auto auto;
             align-items: center;
             gap: 1.5rem;
             padding: 1rem;
@@ -149,13 +154,13 @@
         }
 
         .details .id { font-weight: 700; font-size: 0.9rem; display: block; }
-        .details .route { font-size: 0.85rem; color: var(--gray); }
+        .details .route { font-size: 0.85rem; color: var(--gray); overflow-wrap: anywhere; }
 
         .status-badge { padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
         .status-ongoing { background: #e0f2fe; color: #0369a1; }
         .status-pending { background: #fef3c7; color: #92400e; }
         .status-completed { background: #dcfce7; color: #166534; }
-        .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1.25rem; }
+        .details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1.25rem; }
         .detail-group { padding: 0.85rem 1rem; background: var(--light); border-radius: 10px; }
         .detail-group.full-width { grid-column: 1 / -1; }
         .detail-label { display: block; margin-bottom: 0.25rem; color: var(--gray); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
@@ -174,7 +179,6 @@
             padding: 0.85rem 1.5rem;
             border-radius: 10px;
             border: none;
-            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
             display: inline-flex;
@@ -182,6 +186,9 @@
             justify-content: center;
             gap: 0.5rem;
             text-decoration: none;
+            min-height: 44px;
+            font: inherit;
+            font-weight: 700;
         }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
@@ -192,7 +199,7 @@
         .btn-block { width: 100%; }
 
         /* ── Modal Overlay ── */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; padding: 1rem; overflow-y: auto; overscroll-behavior: contain; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
 
         .modal-content {
@@ -201,13 +208,15 @@
             width: 90%;
             max-width: 800px;
             max-height: 90vh;
+            max-height: 90dvh;
             overflow-y: auto;
+            overscroll-behavior: contain;
             padding: 2rem;
             position: relative;
             box-shadow: 0 8px 40px rgba(0,0,0,0.15);
         }
 
-        .modal-close { position: absolute; top: 1rem; right: 1.5rem; font-size: 1.5rem; cursor: pointer; color: var(--gray); transition: color 0.3s; }
+        .modal-close { position: absolute; top: 0.75rem; right: 0.75rem; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--gray); transition: color 0.3s; }
         .modal-close:hover { color: var(--primary); }
 
         .modal-title {
@@ -217,6 +226,8 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            padding-right: 2.5rem;
+            line-height: 1.35;
         }
 
         .modal-title i { color: var(--primary); }
@@ -229,7 +240,7 @@
         }
         .form-section-label::after { content: ""; flex: 1; height: 1px; background: var(--light-gray); }
 
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
         .form-group { margin-bottom: 0.8rem; }
         .form-group.full { grid-column: span 2; }
         .form-group.third { grid-column: span 1; }
@@ -268,15 +279,56 @@
         /* ── Responsive ── */
         @media (max-width: 968px) {
             .dashboard-grid { grid-template-columns: 1fr; }
-            .transaction-item { grid-template-columns: auto; } 
+            .transaction-item { grid-template-columns: 45px minmax(0, 1fr) auto; gap: 1rem; }
+            .transaction-item > .price { grid-column: 2 / -1; }
+            .form-group input, .form-group textarea { font-size: 16px; }
         }
 
-        @media (max-width: 580px) {
+        @media (max-width: 600px) {
+            .navbar { padding: 0.75rem 1rem; gap: 0.5rem; }
+            .logo { font-size: 1.05rem; gap: 0.35rem; }
+            .logo img { height: 36px; }
+            .user-profile { width: 100%; justify-content: space-between; gap: 0.75rem; }
+            .user-info { flex: 1; text-align: left; line-height: 1.4; }
+            .logout-btn { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; }
+            .container { margin: 1.25rem auto; padding: 0 0.75rem; }
+            .welcome-header { margin-bottom: 1.25rem; }
+            .welcome-header h1 { font-size: 1.45rem; }
+            .welcome-header p { font-size: 0.9rem; line-height: 1.6; }
+            .dashboard-grid { gap: 1rem; }
+            .card { padding: 1rem; border-radius: 12px; margin-bottom: 1.25rem; }
+            .card-title { font-size: 1rem; gap: 0.5rem; margin-bottom: 1.25rem; padding-bottom: 0.85rem; }
+            .profile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+            .profile-item { padding: 0.75rem; }
+            .profile-item .value { font-size: 0.85rem; }
+            .tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem 0.5rem; margin-bottom: 1rem; }
+            .tab { padding: 0.7rem 0.35rem; text-align: center; }
             .form-grid { grid-template-columns: 1fr; }
             .form-group.full, .form-group.third, .form-grid > div { grid-column: span 1; }
-            .transaction-item { grid-template-columns: auto 1fr; }
-            .status-badge, .price { grid-column: span 2; width: max-content; margin-left: 60px; }
-            .action-buttons-row { flex-direction: column; }
+            .transaction-item { grid-template-columns: 40px minmax(0, 1fr); gap: 0.65rem 0.85rem; padding: 0.85rem; }
+            .transaction-item:hover { transform: none; }
+            .transaction-item .icon-box { width: 40px; height: 40px; align-self: start; }
+            .transaction-item > .status-badge, .transaction-item > .price { grid-column: 2; justify-self: start; max-width: 100%; margin: 0; overflow-wrap: anywhere; }
+            .action-buttons-row { flex-direction: column; gap: 0.65rem; }
+            .action-buttons-row .btn { width: 100%; }
+            .modal { padding: 0.5rem; }
+            .modal-content { width: 100%; max-height: calc(100vh - 1rem); max-height: calc(100dvh - 1rem); padding: 1.25rem 1rem; border-radius: 12px; }
+            .modal-title { font-size: 1.2rem; gap: 0.5rem; margin-bottom: 1rem; }
+            .modal-close { top: 0.5rem; right: 0.5rem; }
+            .form-group label { font-size: 0.85rem; line-height: 1.6; }
+            .form-group input, .form-group textarea { min-width: 0; min-height: 44px; font-size: 16px; }
+            .form-group input[type="checkbox"] { min-height: 0; width: 18px; height: 18px; margin-right: 0.35rem; vertical-align: middle; }
+            .form-group textarea { min-height: 110px; resize: vertical; }
+            .detail-group { padding: 0.75rem; }
+            .customer-route-map { height: 240px; min-height: 220px; }
+            .customer-route-directions { overflow-wrap: anywhere; }
+            #customerWaybills .waybill-panel { padding: 1rem; }
+            #customerWaybills .waybill-panel button { min-height: 44px; margin-bottom: 0.35rem; }
+            footer { padding: 1.25rem 1rem; }
+        }
+
+        @media (max-width: 360px) {
+            .profile-grid { grid-template-columns: minmax(0, 1fr); }
         }
 
         footer { background: var(--dark); color: white; padding: 2rem; text-align: center; font-size: 0.85rem; }
@@ -295,7 +347,7 @@
                 <span class="name">Loading...</span>
                 <span class="role">Customer</span>
             </div>
-            <a href="login.html?logout=1" class="logout-btn" title="Logout">
+            <a href="login.html?logout=1" class="logout-btn" title="Logout" aria-label="Log out">
                 <i class="bi bi-box-arrow-right"></i>
             </a>
         </div>
@@ -337,11 +389,11 @@
                         </a>
                     </div>
 
-                    <div class="tabs">
-                        <div class="tab active" onclick="renderTransactions('all')">All</div>
-                        <div class="tab" onclick="renderTransactions('ongoing')">Ongoing</div>
-                        <div class="tab" onclick="renderTransactions('pending')">Pending</div>
-                        <div class="tab" onclick="renderTransactions('completed')">Completed</div>
+                    <div class="tabs" role="group" aria-label="Filter transactions">
+                        <button type="button" class="tab active" aria-pressed="true" onclick="renderTransactions('all')">All</button>
+                        <button type="button" class="tab" aria-pressed="false" onclick="renderTransactions('ongoing')">Ongoing</button>
+                        <button type="button" class="tab" aria-pressed="false" onclick="renderTransactions('pending')">Pending</button>
+                        <button type="button" class="tab" aria-pressed="false" onclick="renderTransactions('completed')">Completed</button>
                     </div>
 
                     <div class="transaction-list" id="transactionContainer">
@@ -384,7 +436,7 @@
     <!-- Read-only transaction details modal -->
     <div class="modal" id="transactionDetailsModal">
         <div class="modal-content">
-            <span class="modal-close" id="closeTransactionDetails" role="button" tabindex="0" aria-label="Close transaction details">&times;</span>
+            <button type="button" class="modal-close" id="closeTransactionDetails" aria-label="Close transaction details">&times;</button>
             <h2 class="modal-title"><i class="bi bi-receipt"></i> Order Summary</h2>
             <div class="details-grid" id="transactionDetailsContent"></div>
             <div id="customerWaybills"></div>
@@ -401,7 +453,7 @@
     <!-- Modal: Quotation Form -->
     <div class="modal" id="quoteModal">
         <div class="modal-content">
-            <span class="modal-close" id="closeQuoteModal">&times;</span>
+            <button type="button" class="modal-close" id="closeQuoteModal" aria-label="Close quotation form">&times;</button>
             <h2 class="modal-title"><i class="bi bi-file-earmark-plus"></i> Request a Quotation</h2>                <div id="quoteError" class="error-message" style="display:none;"></div>
                 <div id="quoteSuccess" class="success-message" style="display:none;"></div>
             <form id="quoteForm">
@@ -640,6 +692,7 @@
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => {
                 tab.classList.toggle('active', tab.textContent.toLowerCase().includes(category) || (category === 'all' && tab.textContent.toLowerCase().includes('all')));
+                tab.setAttribute('aria-pressed', String(tab.classList.contains('active')));
             });
 
             const container = document.getElementById('transactionContainer');
@@ -748,12 +801,6 @@
         });
         closeBtn.addEventListener('click', () => modal.classList.remove('active'));
         closeTransactionDetails.addEventListener('click', closeTransactionDetailsModal);
-        closeTransactionDetails.addEventListener('keydown', event => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                closeTransactionDetailsModal();
-            }
-        });
         window.addEventListener('click', (e) => {
             if (e.target === modal) modal.classList.remove('active');
             if (e.target === transactionDetailsModal) closeTransactionDetailsModal();
