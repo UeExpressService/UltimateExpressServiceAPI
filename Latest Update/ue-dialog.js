@@ -28,45 +28,8 @@
         danger: 'Please confirm'
     };
 
-    const STYLE = `
-.ue-dlg-backdrop{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(20,28,16,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;transition:opacity .18s ease}
-.ue-dlg-backdrop.ue-show{opacity:1}
-.ue-dlg{box-sizing:border-box;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;padding:1.75rem 1.5rem 1.25rem;border-radius:22px;background:#fff;color:#2d3a24;text-align:center;font-family:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;box-shadow:0 24px 60px rgba(0,0,0,.35);transform:translateY(14px) scale(.96);transition:transform .22s cubic-bezier(.2,.9,.3,1.2)}
-.ue-dlg-backdrop.ue-show .ue-dlg{transform:none}
-.ue-dlg-icon{width:68px;height:68px;margin:0 auto 1rem;border-radius:50%;display:flex;align-items:center;justify-content:center}
-.ue-dlg-icon.success{background:#dcfce7;color:#28a745}
-.ue-dlg-icon.error,.ue-dlg-icon.danger{background:#fee2e2;color:#dc2626}
-.ue-dlg-icon.warning{background:#fef3c7;color:#f59e0b}
-.ue-dlg-icon.info{background:#e0f2fe;color:#0369a1}
-.ue-dlg-icon.question{background:#fff1e7;color:#e07b39}
-.ue-dlg-title{margin:0 0 .45rem;font-size:1.15rem;font-weight:700;line-height:1.3;color:#2d3a24}
-.ue-dlg-message{margin:0;font-size:.92rem;line-height:1.6;color:#6c757d;white-space:pre-line;overflow-wrap:anywhere}
-.ue-dlg-actions{display:flex;gap:.75rem;margin-top:1.5rem}
-.ue-dlg-btn{flex:1;padding:.8rem 1rem;border:2px solid transparent;border-radius:12px;font:600 .9rem 'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s}
-.ue-dlg-btn:hover{transform:translateY(-1px)}
-.ue-dlg-btn:focus-visible{outline:3px solid rgba(224,123,57,.45);outline-offset:2px}
-.ue-dlg-btn.primary{background:#e07b39;color:#fff;box-shadow:0 6px 16px rgba(224,123,57,.3)}
-.ue-dlg-btn.primary:hover{background:#c4652c}
-.ue-dlg-btn.danger{background:#dc2626;color:#fff;box-shadow:0 6px 16px rgba(220,38,38,.28)}
-.ue-dlg-btn.danger:hover{background:#b91c1c}
-.ue-dlg-btn.secondary{background:#fff;color:#4a5d3a;border-color:#4a5d3a}
-.ue-dlg-btn.secondary:hover{background:#4a5d3a;color:#fff}
-@media (max-width:420px){.ue-dlg-actions{flex-direction:column-reverse}}
-@media (prefers-reduced-motion:reduce){.ue-dlg-backdrop,.ue-dlg,.ue-dlg-btn{transition:none}}
-`;
-
-    let styleAdded = false;
     const queue = [];
     let busy = false;
-
-    function addStyle() {
-        if (styleAdded) return;
-        const style = document.createElement('style');
-        style.setAttribute('data-ue-dialog', '');
-        style.textContent = STYLE;
-        document.head.appendChild(style);
-        styleAdded = true;
-    }
 
     function show(config) {
         return new Promise(resolve => {
@@ -83,7 +46,6 @@
     }
 
     function render({ config, resolve }) {
-        addStyle();
         const type = ICONS[config.type] ? config.type : 'info';
         const previouslyFocused = document.activeElement;
         const uid = 'ue-dlg-' + Math.random().toString(36).slice(2, 8);
