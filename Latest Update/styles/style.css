@@ -1,0 +1,2519 @@
+/*
+ * Ultimate Express — all first-party presentation styles.
+ * Search the numbered section headings below to find a page or component.
+ * Third-party fonts, Bootstrap Icons and Leaflet retain their vendor stylesheets.
+ * Page selectors use :where() to preserve specificity and prevent layout leakage.
+ * JavaScript only sets styles for runtime state (visibility, progress and transforms).
+ *
+ * Contents:
+ * 01. Shared authentication forms — login, forgot password, reset password
+ * 02. Shared waybill uploads and downloads
+ * 03. landing page
+ * 04. customer page
+ * 05. dispatcher page
+ * 06. manager page
+ * 07. supervisor page
+ * 08. login page
+ * 09. forgot-password page
+ * 10. reset-password page
+ * 11. terms page
+ * 12. Shared presentation helpers — runtime visibility can override these classes
+ * 13. Shared UE alerts and confirmation dialogs — after page styles to preserve priority
+ */
+
+/* ==========================================================================
+   01. Shared authentication forms — login, forgot password, reset password
+   ========================================================================== */
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"]), html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"]) *) {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-image: url('../images/backgroundhome.jpg');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .container {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    width: 100%;
+    max-width: 400px;
+    animation: ue-auth-slideUp 0.5s ease-out;
+}
+
+@keyframes ue-auth-slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-header {
+    background: none;
+    color: #de6d20;
+    padding: 30px;
+    text-align: center;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-header h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-header p {
+    opacity: 0.9;
+    font-size: 14px;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-content {
+    padding: 30px;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-group {
+    margin-bottom: 20px;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #de6d20;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-group input:focus {
+    outline: none;
+    border-color: #98b981;
+    box-shadow: 0 0 0 3px rgba(152, 185, 129, 0.1);
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: #de6d20;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(99, 123, 56, 0.4);
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .submit-btn:active {
+    transform: translateY(0);
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-footer {
+    text-align: center;
+    margin-top: 20px;
+    color: white;
+    font-size: 14px;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-footer a {
+    color: #de6d20;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-footer a:hover {
+    text-decoration: underline;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .error-message {
+    color: #e74c3c;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    display: none;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .password-strength {
+    height: 4px;
+    background: #e1e5e9;
+    border-radius: 2px;
+    margin-top: 5px;
+    overflow: hidden;
+    display: none;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .password-strength-bar {
+    height: 100%;
+    width: 0;
+    transition: all 0.3s ease;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .password-strength-text {
+    font-size: 12px;
+    margin-top: 5px;
+    color: #666;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .strength-weak {
+    background: #e74c3c;
+    color: #e74c3c;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .strength-medium {
+    background: #f39c12;
+    color: #f39c12;
+}
+
+:where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .strength-strong {
+    background: #27ae60;
+    color: #27ae60;
+}
+
+@media (max-width: 480px) {
+    :where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .container {
+        max-width: 100%;
+    }
+    
+    :where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-header {
+        padding: 20px;
+    }
+    
+    :where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-content {
+        padding: 20px;
+    }
+}
+
+/* ==========================================================================
+   02. Shared waybill uploads and downloads
+   ========================================================================== */
+
+.waybill-panel { margin-top: 1.5rem; padding: 1.25rem; border: 1px solid #dde3d8; border-radius: 12px; background: #fafbf8; }
+.waybill-panel h3 { margin: 0 0 .4rem; color: #4b5b36; font-size: 1.05rem; }
+.waybill-panel p { margin: .4rem 0 .8rem; font-size: .85rem; line-height: 1.5; color: #64705c; }
+.waybill-drop { padding: 1.2rem; margin: 1rem 0; border: 2px dashed #a8b897; border-radius: 10px; text-align: center; background: white; }
+.waybill-drop.dragging { border-color: #ed8936; background: #fff5eb; }
+.waybill-panel button { padding: .5rem .8rem; border: 1px solid #718355; border-radius: 7px; color: #4b5b36; background: white; cursor: pointer; font: inherit; font-size: .82rem; }
+.waybill-panel button:hover { background: #edf2e7; }
+.waybill-panel button:focus-visible { outline: 3px solid #ed8936; outline-offset: 2px; }
+.waybill-panel button:disabled { opacity: .6; cursor: wait; }
+.waybill-panel input[type=file] { display: block; width: 100%; margin: .75rem 0; font: inherit; font-size: .82rem; }
+.waybill-files { padding: 0; margin: 1rem 0 0; list-style: none; }
+.waybill-file { padding: .8rem 0; border-top: 1px solid #dde3d8; }
+.waybill-file strong { display: block; overflow-wrap: anywhere; font-size: .88rem; }
+.waybill-file small { display: block; color: #64705c; margin: .3rem 0 .6rem; }
+.waybill-file button + button { margin-left: .5rem; }
+.waybill-status { min-height: 1.5em; }
+.waybill-status.error { color: #a52a20; }
+.waybill-modal .modal-content { max-width: 620px; }
+
+/* ==========================================================================
+   03. landing page
+   ========================================================================== */
+
+:where(html[data-page="landing"], html[data-page="landing"] *) { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root:where([data-page="landing"]) {
+            --primary: #e07b39;
+            --primary-dark: #c4652c;
+            --secondary: #4a5d3a;
+            --dark: #2d3a24;
+            --light: #f8f9fa;
+            --accent: #6b7f5a;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --olive: #556b2f;
+        }
+
+        html:where([data-page="landing"]) { scroll-behavior: smooth; }
+
+        :where(html[data-page="landing"]) body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        :where(html[data-page="landing"]) .navbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: white; z-index: 1000;
+            padding: 1rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 20px rgba(0,0,0,.08);
+            transition: all .3s ease;
+        }
+        :where(html[data-page="landing"]) .navbar.scrolled { padding: .7rem 5%; }
+
+        :where(html[data-page="landing"]) .logo { display: flex; align-items: center; text-decoration: none; gap: .6rem; font-weight: 800; font-size: 1.25rem; color: var(--secondary); }
+        :where(html[data-page="landing"]) .logo img { height: 48px; width: auto; display: block; object-fit: contain; border-radius: 6px; }
+        :where(html[data-page="landing"]) .logo span { color: var(--primary); }
+
+        :where(html[data-page="landing"]) .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        :where(html[data-page="landing"]) .nav-links a { text-decoration: none; color: var(--secondary); font-weight: 500; transition: color .3s; font-size: .95rem; }
+        :where(html[data-page="landing"]) .nav-links a:hover { color: var(--primary); }
+
+        :where(html[data-page="landing"]) .nav-cta { background: var(--primary); color: white !important; padding: .7rem 1.5rem; border-radius: 50px; transition: all .3s ease !important; }
+        :where(html[data-page="landing"]) .nav-cta:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+        :where(html[data-page="landing"]) .mobile-toggle { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 5px; }
+        :where(html[data-page="landing"]) .mobile-toggle span { width: 25px; height: 3px; background: var(--secondary); border-radius: 3px; transition: all .3s ease; }
+
+        /* ── Hero ── */
+        :where(html[data-page="landing"]) .hero {
+            min-height: 100vh;
+            background: linear-gradient(135deg, rgba(0,0,0,.75), rgba(45,58,36,.6)), url('../images/backgroundhome.jpg');
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            display: flex; align-items: center;
+            padding: 120px 5% 80px;
+        }
+        :where(html[data-page="landing"]) .hero-container { max-width: 1200px; margin: 0 auto; width: 100%; }
+        :where(html[data-page="landing"]) .hero-content { color: white; max-width: 680px; }
+
+        :where(html[data-page="landing"]) .hero-badge {
+            display: inline-flex; align-items: center; gap: .5rem;
+            background: rgba(255,255,255,.12); padding: .5rem 1rem;
+            border-radius: 50px; font-size: .85rem; margin-bottom: 1.5rem;
+            border: 1px solid rgba(255,255,255,.18);
+        }
+        :where(html[data-page="landing"]) .hero-badge i { color: var(--primary); }
+
+        :where(html[data-page="landing"]) .hero h1 { font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.15; margin-bottom: 1.5rem; }
+        :where(html[data-page="landing"]) .hero h1 .highlight { color: var(--primary); }
+        :where(html[data-page="landing"]) .hero p { font-size: 1.05rem; opacity: .95; margin-bottom: 2rem; max-width: 520px; }
+
+        :where(html[data-page="landing"]) .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+        :where(html[data-page="landing"]) .btn { display: inline-flex; align-items: center; gap: .5rem; padding: .9rem 1.8rem; border-radius: 50px; font-weight: 600; text-decoration: none; transition: all .3s ease; cursor: pointer; border: none; font-size: .95rem; font-family: inherit; }
+        :where(html[data-page="landing"]) .btn-primary { background: var(--primary); color: white; }
+        :where(html[data-page="landing"]) .btn-primary:hover { background: var(--primary-dark); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(224,123,57,.3); }
+        :where(html[data-page="landing"]) .btn-outline { background: transparent; color: white; border: 2px solid rgba(255,255,255,.4); }
+        :where(html[data-page="landing"]) .btn-outline:hover { background: white; color: var(--secondary); border-color: white; }
+
+        :where(html[data-page="landing"]) .hero-stats { display: flex; gap: 2.5rem; margin-top: 2.5rem; flex-wrap: wrap; }
+        :where(html[data-page="landing"]) .stat-item { text-align: left; }
+        :where(html[data-page="landing"]) .stat-number { font-size: 2.2rem; font-weight: 800; color: var(--primary); }
+        :where(html[data-page="landing"]) .stat-label { font-size: .85rem; opacity: .85; }
+
+        /* ── Services ── */
+        :where(html[data-page="landing"]) .services { padding: 80px 5%; background: var(--light); }
+
+        :where(html[data-page="landing"]) .section-header { text-align: center; max-width: 600px; margin: 0 auto 3rem; }
+        :where(html[data-page="landing"]) .section-tag { display: inline-block; background: rgba(224,123,57,.12); color: var(--primary-dark); padding: .4rem 1rem; border-radius: 50px; font-size: .85rem; font-weight: 600; margin-bottom: .8rem; text-transform: uppercase; letter-spacing: .5px; }
+        :where(html[data-page="landing"]) .section-header h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); color: var(--secondary); margin-bottom: .8rem; }
+        :where(html[data-page="landing"]) .section-header p { color: var(--gray); font-size: 1rem; }
+
+        :where(html[data-page="landing"]) .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 0 auto; }
+
+        :where(html[data-page="landing"]) .service-card { background: white; padding: 2rem; border-radius: 16px; transition: all .3s ease; position: relative; overflow: hidden; }
+        :where(html[data-page="landing"]) .service-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--primary), var(--accent)); transform: scaleX(0); transition: transform .3s ease; }
+        :where(html[data-page="landing"]) .service-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,.1); }
+        :where(html[data-page="landing"]) .service-card:hover::before { transform: scaleX(1); }
+
+        :where(html[data-page="landing"]) .service-icon { width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.2rem; color: white; }
+        :where(html[data-page="landing"]) .service-card h3 { color: var(--secondary); font-size: 1.15rem; margin-bottom: .8rem; }
+        :where(html[data-page="landing"]) .service-card p { color: var(--gray); font-size: .9rem; margin-bottom: 1rem; }
+
+        :where(html[data-page="landing"]) .service-link { color: var(--primary); text-decoration: none; font-weight: 600; font-size: .9rem; display: inline-flex; align-items: center; gap: .4rem; transition: gap .3s ease; }
+        :where(html[data-page="landing"]) .service-link:hover { gap: .8rem; }
+
+        /* ── Fleet Section ── */
+        :where(html[data-page="landing"]) .fleet-section {
+            height: 500px;
+            display: flex;
+            width: calc(100% + 0px);
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e07b39 0%, #4a5d3a 100%);
+            box-shadow: none;
+        }
+        :where(html[data-page="landing"]) .blade {
+            flex: 1;
+            position: relative;
+            clip-path: polygon(15% 0, 100% 0, 85% 100%, 0% 100%);
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-end;
+            padding: 24px;
+            margin: 0 2px;
+        }
+        :where(html[data-page="landing"]) .blade:hover { flex: 2.5; clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%); }
+        :where(html[data-page="landing"]) .blade-content {
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            position: relative;
+            z-index: 1;
+            max-width: 260px;
+        }
+        :where(html[data-page="landing"]) .blade-content h3 { font-size: 1.2rem; margin-bottom: .35rem; }
+        :where(html[data-page="landing"]) .blade-content p { font-size: .9rem; margin-bottom: .45rem; color: rgba(255,255,255,.95); }
+        :where(html[data-page="landing"]) .blade-content .blade-price {
+            display: inline-block;
+            background: rgba(224,123,57,.95);
+            color: white;
+            padding: .35rem .7rem;
+            border-radius: 999px;
+            font-size: .8rem;
+            font-weight: 600;
+        }
+        :where(html[data-page="landing"]) .blade:hover .blade-content { opacity: 1; pointer-events: all; }
+        :where(html[data-page="landing"]) .blade::after { content: ''; position: absolute; inset: 0; background: transparent; transition: background 0.3s; }
+        :where(html[data-page="landing"]) .blade:hover::after { background: transparent; }
+
+        @media (max-width: 768px) {
+            :where(html[data-page="landing"]) .fleet-section { height: auto; flex-direction: column; }
+            :where(html[data-page="landing"]) .blade { min-height: 220px; clip-path: none; }
+            :where(html[data-page="landing"]) .blade:hover { flex: 1; clip-path: none; }
+            :where(html[data-page="landing"]) .blade-content { opacity: 1; pointer-events: all; }
+        }
+
+        /* ── About ── */
+        :where(html[data-page="landing"]) .about { padding: 80px 5%; background: white; }
+
+        :where(html[data-page="landing"]) .about-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+
+        :where(html[data-page="landing"]) .about-images { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; position: relative; }
+
+        :where(html[data-page="landing"]) .about-img {
+            border-radius: 12px; display: flex; align-items: flex-end; justify-content: flex-start;
+            padding: 16px; font-size: 1rem; color: white; font-weight: 700; letter-spacing: .5px;
+            text-shadow: 0 2px 8px rgba(0,0,0,.5); overflow: hidden; position: relative;
+        }
+        :where(html[data-page="landing"]) .about-img::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.45), transparent 60%); border-radius: 12px; }
+        :where(html[data-page="landing"]) .about-img span { position: relative; z-index: 1; }
+
+        :where(html[data-page="landing"]) .about-img.img-1 { height: 200px; background: url(../images/extra.jpg) center/cover no-repeat; }
+        :where(html[data-page="landing"]) .about-img.img-2 { height: 200px; margin-top: 1.5rem; background: url(../images/luzon.png) center/cover no-repeat; }
+        :where(html[data-page="landing"]) .about-img.img-3 { height: 200px; margin-top: -1.5rem; background: url(../images/visayas.jpg) center/cover no-repeat; }
+        :where(html[data-page="landing"]) .about-img.img-4 { height: 200px; background: url(../images/mindanao.jpg) center/cover no-repeat; }
+
+        :where(html[data-page="landing"]) .about-badge { position: absolute; bottom: 15px; right: 15px; background: var(--primary); color: white; padding: 14px; border-radius: 12px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,.15); z-index: 2; }
+        :where(html[data-page="landing"]) .about-badge .number { font-size: 2rem; font-weight: 800; display: block; line-height: 1; }
+        :where(html[data-page="landing"]) .about-badge .text { font-size: .8rem; font-weight: 600; }
+
+        :where(html[data-page="landing"]) .about-content h2 { font-size: clamp(1.8rem, 4vw, 2.4rem); color: var(--secondary); margin-bottom: 1.2rem; }
+        :where(html[data-page="landing"]) .about-content > p { color: var(--gray); margin-bottom: 1.5rem; font-size: 1rem; line-height: 1.75; }
+
+        :where(html[data-page="landing"]) .about-highlights { display: flex; flex-wrap: wrap; gap: .8rem; margin-bottom: 1.5rem; }
+        :where(html[data-page="landing"]) .highlight-item { display: flex; align-items: center; gap: .5rem; background: rgba(224,123,57,.08); padding: .5rem 1rem; border-radius: 50px; font-size: .85rem; font-weight: 600; color: var(--secondary); }
+        :where(html[data-page="landing"]) .highlight-item i { color: var(--primary); font-size: 1rem; }
+
+        /* MVV Section */
+        :where(html[data-page="landing"]) .mvv-section { max-width: 1200px; margin: 4rem auto 0; }
+        :where(html[data-page="landing"]) .mvv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+
+        :where(html[data-page="landing"]) .mvv-card {
+            background: var(--light); padding: 2rem; border-radius: 16px;
+            border-left: 4px solid var(--primary);
+            transition: all .3s ease;
+        }
+        :where(html[data-page="landing"]) .mvv-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,.08); }
+
+        :where(html[data-page="landing"]) .mvv-icon { width: 55px; height: 55px; background: rgba(224,123,57,.12); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--primary); margin-bottom: 1rem; }
+        :where(html[data-page="landing"]) .mvv-card h3 { color: var(--secondary); font-size: 1.1rem; margin-bottom: .8rem; }
+        :where(html[data-page="landing"]) .mvv-card p { color: var(--gray); font-size: .9rem; line-height: 1.75; }
+
+        /* ── Stats Banner ── */
+        :where(html[data-page="landing"]) .stats-banner { background: linear-gradient(135deg, var(--secondary), var(--dark)); padding: 60px 5%; }
+        :where(html[data-page="landing"]) .stats-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+        :where(html[data-page="landing"]) .stat-box { text-align: center; color: white; }
+        :where(html[data-page="landing"]) .stat-box .icon { font-size: 2rem; margin-bottom: .8rem; color: var(--primary); }
+        :where(html[data-page="landing"]) .stat-box .number { font-size: 2.5rem; font-weight: 800; color: var(--primary); }
+        :where(html[data-page="landing"]) .stat-box .label { font-size: .9rem; opacity: .85; }
+
+        /* ── Routes ── */
+        :where(html[data-page="landing"]) .routes { padding: 80px 5%; background: var(--light); }
+        :where(html[data-page="landing"]) .routes-container { max-width: 1200px; margin: 0 auto; }
+        :where(html[data-page="landing"]) .routes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
+
+        :where(html[data-page="landing"]) .route-card { background: white; padding: 1.5rem; border-radius: 12px; display: flex; align-items: center; gap: 1rem; transition: all .3s ease; }
+        :where(html[data-page="landing"]) .route-card:hover { transform: translateX(5px); box-shadow: 0 10px 25px rgba(0,0,0,.08); }
+
+        :where(html[data-page="landing"]) .route-icon { width: 50px; height: 50px; background: rgba(224,123,57,.12); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--primary); flex-shrink: 0; }
+
+        :where(html[data-page="landing"]) .route-info h4 { color: var(--secondary); font-size: .95rem; margin-bottom: .2rem; }
+        :where(html[data-page="landing"]) .route-info p { color: var(--gray); font-size: .8rem; margin: 0; }
+
+        /* ── CTA ── */
+        :where(html[data-page="landing"]) .cta { padding: 80px 5%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); text-align: center; position: relative; overflow: hidden; }
+        :where(html[data-page="landing"]) .cta::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+        :where(html[data-page="landing"]) .cta-content { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; }
+        :where(html[data-page="landing"]) .cta h2 { color: white; font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: 1rem; }
+        :where(html[data-page="landing"]) .cta p { color: rgba(255,255,255,.95); font-size: 1.05rem; margin-bottom: 1.5rem; }
+        :where(html[data-page="landing"]) .cta .btn-primary { background: white; color: var(--primary); }
+        :where(html[data-page="landing"]) .cta .btn-primary:hover { background: var(--secondary); color: white; }
+
+        /* ── Contact ── */
+        :where(html[data-page="landing"]) .contact { padding: 80px 5%; background: white; }
+        :where(html[data-page="landing"]) .contact-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; }
+
+        :where(html[data-page="landing"]) .contact-info h2 { font-size: clamp(1.8rem, 4vw, 2.2rem); color: var(--secondary); margin-bottom: 1rem; }
+        :where(html[data-page="landing"]) .contact-info > p { color: var(--gray); margin-bottom: 1.5rem; }
+        :where(html[data-page="landing"]) .contact-details { display: flex; flex-direction: column; gap: 1.2rem; }
+
+        :where(html[data-page="landing"]) .contact-item { display: flex; gap: 1rem; align-items: flex-start; }
+        :where(html[data-page="landing"]) .contact-item-icon { width: 45px; height: 45px; background: rgba(224,123,57,.12); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; color: var(--primary); }
+        :where(html[data-page="landing"]) .contact-item h4 { color: var(--secondary); font-size: .95rem; margin-bottom: .2rem; }
+        :where(html[data-page="landing"]) .contact-item p { color: var(--gray); margin: 0; font-size: .9rem; }
+
+        :where(html[data-page="landing"]) .contact-form { background: var(--light); padding: 2rem; border-radius: 16px; }
+        :where(html[data-page="landing"]) .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        :where(html[data-page="landing"]) .form-group { margin-bottom: 1.2rem; }
+        :where(html[data-page="landing"]) .form-group label { display: block; color: var(--secondary); font-weight: 500; margin-bottom: .4rem; font-size: .9rem; }
+        :where(html[data-page="landing"]) .form-group input,:where(html[data-page="landing"])  .form-group textarea { width: 100%; padding: .85rem 1rem; border: 2px solid var(--light-gray); border-radius: 10px; font-family: inherit; font-size: .95rem; transition: border-color .3s ease; }
+        :where(html[data-page="landing"]) .form-group input:focus,:where(html[data-page="landing"])  .form-group textarea:focus { outline: none; border-color: var(--primary); }
+        :where(html[data-page="landing"]) .form-group textarea { min-height: 200px; resize: vertical; }
+
+        /* ── Footer ── */
+        :where(html[data-page="landing"]) .footer { background: var(--dark); color: white; padding: 30px 5%; }
+        :where(html[data-page="landing"]) .footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        :where(html[data-page="landing"]) .footer-left { display: flex; align-items: center; gap: .5rem; color: rgba(255,255,255,.8); font-size: .9rem; }
+        :where(html[data-page="landing"]) .footer-left i { color: var(--primary); }
+        :where(html[data-page="landing"]) .footer-right { display: flex; gap: 2rem; }
+        :where(html[data-page="landing"]) .footer-right a { color: rgba(255,255,255,.8); text-decoration: none; font-size: .9rem; transition: color .3s; }
+        :where(html[data-page="landing"]) .footer-right a:hover { color: var(--primary); }
+
+        /* ── Mobile Menu ── */
+        :where(html[data-page="landing"]) .mobile-menu { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 999; padding: 100px 8% 2rem; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1.5rem; }
+        :where(html[data-page="landing"]) .mobile-menu.active { display: flex; }
+        :where(html[data-page="landing"]) .mobile-menu a { font-size: 1.2rem; color: var(--secondary); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: .75rem; padding: .6rem 0; width: 100%; border-bottom: 1px solid var(--light-gray); transition: color .3s, padding-left .3s; }
+        :where(html[data-page="landing"]) .mobile-menu a:hover { color: var(--primary); padding-left: .5rem; }
+        :where(html[data-page="landing"]) .mobile-menu a i { color: var(--primary); font-size: 1.1rem; width: 28px; text-align: center; }
+        :where(html[data-page="landing"]) .mobile-menu .btn { border-bottom: none; justify-content: center; margin-top: .5rem; }
+
+        /* ── Terms Modal ── */
+        :where(html[data-page="landing"]) body.modal-open { overflow: hidden; }
+
+        :where(html[data-page="landing"]) .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: ue-landing-fadeIn 0.3s ease;
+        }
+
+        :where(html[data-page="landing"]) .modal.active { display: flex; }
+
+        @keyframes ue-landing-fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        :where(html[data-page="landing"]) .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 620px;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+            animation: ue-landing-slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes ue-landing-slideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        :where(html[data-page="landing"]) .modal-content h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        :where(html[data-page="landing"]) .modal-content h2 i { color: var(--primary); font-size: 1.4rem; }
+        :where(html[data-page="landing"]) .modal-sub { color: #64748b; font-size: 0.85rem; margin-bottom: 16px; flex-shrink: 0; }
+
+        :where(html[data-page="landing"]) .modal-body {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1.2rem 1.4rem;
+            margin: 0 0 1.2rem 0;
+            scroll-behavior: smooth;
+            line-height: 1.8;
+            color: #334155;
+            font-size: 0.92rem;
+            background: #fafbfc;
+            flex-shrink: 0;
+        }
+
+        :where(html[data-page="landing"]) .modal-body::-webkit-scrollbar { width: 6px; }
+        :where(html[data-page="landing"]) .modal-body::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        :where(html[data-page="landing"]) .modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        :where(html[data-page="landing"]) .modal-body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        :where(html[data-page="landing"]) .modal-body p { margin-bottom: 14px; }
+        :where(html[data-page="landing"]) .modal-body p:last-child { margin-bottom: 0; }
+        :where(html[data-page="landing"]) .modal-body strong { color: #0f172a; }
+
+        :where(html[data-page="landing"]) .modal-footer {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+            padding-top: 4px;
+        }
+
+        :where(html[data-page="landing"]) .modal-footer input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        :where(html[data-page="landing"]) .modal-footer input[type="checkbox"]:disabled {
+            accent-color: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        :where(html[data-page="landing"]) .modal-footer label {
+            font-size: 0.9rem;
+            color: #334155;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        :where(html[data-page="landing"]) .modal-footer label.disabled { color: #94a3b8; cursor: not-allowed; }
+
+        :where(html[data-page="landing"]) #closeBtn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 50px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        :where(html[data-page="landing"]) #closeBtn:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(224, 123, 57, 0.35);
+        }
+
+        :where(html[data-page="landing"]) #closeBtn:disabled {
+            background: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        :where(html[data-page="landing"]) .scroll-indicator {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            flex-shrink: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        :where(html[data-page="landing"]) .scroll-indicator.hidden { opacity: 0; }
+        :where(html[data-page="landing"]) .scroll-indicator i { color: var(--primary); animation: ue-landing-bounce 1.5s infinite; }
+
+        @keyframes ue-landing-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(4px); }
+        }
+
+        :where(html[data-page="landing"]) .footer-link-btn {
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,.8);
+            font-size: .9rem;
+            cursor: pointer;
+            font-family: inherit;
+            padding: 0;
+            transition: color .3s;
+        }
+
+        :where(html[data-page="landing"]) .footer-link-btn:hover { color: var(--primary); }
+
+        /* ── Animations ── */
+        :where(html[data-page="landing"]) .fade-up { opacity: 0; transform: translateY(25px); transition: all .5s ease; }
+        :where(html[data-page="landing"]) .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            :where(html[data-page="landing"]) .hero-container,:where(html[data-page="landing"])  .about-container,:where(html[data-page="landing"])  .contact-container { grid-template-columns: 1fr; gap: 2.5rem; }
+            :where(html[data-page="landing"]) .stats-container { grid-template-columns: repeat(2, 1fr); }
+            :where(html[data-page="landing"]) .routes-grid { grid-template-columns: repeat(2, 1fr); }
+            :where(html[data-page="landing"]) .mvv-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            :where(html[data-page="landing"]) .nav-links { display: none; }
+            :where(html[data-page="landing"]) .mobile-toggle { display: flex; }
+            :where(html[data-page="landing"]) .hero { padding: 110px 5% 60px; }
+            :where(html[data-page="landing"]) .hero-stats { gap: 2rem; }
+            :where(html[data-page="landing"]) .about-features { grid-template-columns: 1fr; }
+            :where(html[data-page="landing"]) .stats-container { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+            :where(html[data-page="landing"]) .routes-grid { grid-template-columns: 1fr; }
+            :where(html[data-page="landing"]) .mvv-grid { grid-template-columns: 1fr; }
+            :where(html[data-page="landing"]) .form-row { grid-template-columns: 1fr; }
+            :where(html[data-page="landing"]) .footer-container { flex-direction: column; text-align: center; }
+        }
+
+        @media (max-width: 480px) {
+            :where(html[data-page="landing"]) .hero h1 { font-size: 1.9rem; }
+            :where(html[data-page="landing"]) .about-images { grid-template-columns: 1fr; }
+            :where(html[data-page="landing"]) .about-img.img-2,:where(html[data-page="landing"])  .about-img.img-3 { margin: 0; }
+            :where(html[data-page="landing"]) .stat-number { font-size: 1.8rem; }
+            :where(html[data-page="landing"]) .about-highlights { flex-direction: column; }
+        }
+
+/* ==========================================================================
+   04. customer page
+   ========================================================================== */
+
+:where(html[data-page="customer"], html[data-page="customer"] *) { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root:where([data-page="customer"]) {
+            --primary: #e07b39;
+            --primary-dark: #c4652c;
+            --secondary: #4a5d3a;
+            --dark: #2d3a24;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --success: #28a745;
+        }
+
+        :where(html[data-page="customer"]) body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Navigation ── */
+        :where(html[data-page="customer"]) .navbar {
+            background: white;
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.5rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        :where(html[data-page="customer"]) .logo { display: flex; flex-shrink: 0; align-items: center; text-decoration: none; gap: .6rem; font-weight: 800; font-size: 1.25rem; color: var(--secondary); }
+        :where(html[data-page="customer"]) .logo img { height: 48px; width: auto; border-radius: 6px; }
+        :where(html[data-page="customer"]) .logo span { color: var(--primary); }
+
+        :where(html[data-page="customer"]) .user-profile { display: flex; align-items: center; gap: 1rem; min-width: 0; max-width: 100%; }
+        :where(html[data-page="customer"]) .user-info { text-align: right; line-height: 1.2; min-width: 0; }
+        :where(html[data-page="customer"]) .user-info .name { display: block; font-weight: 600; font-size: 0.9rem; overflow-wrap: anywhere; }
+        :where(html[data-page="customer"]) .user-info .role { font-size: 0.75rem; color: var(--gray); }
+
+        :where(html[data-page="customer"]) .logout-btn { color: var(--gray); font-size: 1.2rem; text-decoration: none; padding: 8px; border-radius: 8px; transition: all 0.3s; }
+        :where(html[data-page="customer"]) .logout-btn:hover { background: #fee2e2; color: #dc2626; }
+
+        /* ── Dashboard Content ── */
+        :where(html[data-page="customer"]) .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 5%;
+            flex: 1;
+            width: 100%;
+        }
+
+        :where(html[data-page="customer"]) .welcome-header { margin-bottom: 2rem; }
+        :where(html[data-page="customer"]) .welcome-header h1 { font-size: 1.8rem; color: var(--secondary); }
+        :where(html[data-page="customer"]) .welcome-header p { color: var(--gray); }
+
+        :where(html[data-page="customer"]) .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        /* ── Cards ── */
+        :where(html[data-page="customer"]) .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            border: 1px solid var(--light-gray);
+            margin-bottom: 2rem;
+        }
+        :where(html[data-page="customer"]) .profile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+        :where(html[data-page="customer"]) .profile-item { padding: 0.85rem 1rem; background: var(--light); border-radius: 10px; min-width: 0; }
+        :where(html[data-page="customer"]) .dashboard-grid > *,:where(html[data-page="customer"])  .card,:where(html[data-page="customer"])  .details,:where(html[data-page="customer"])  .form-group,:where(html[data-page="customer"])  .detail-group { min-width: 0; }
+        :where(html[data-page="customer"]) .profile-item .label { display: block; margin-bottom: 0.25rem; color: var(--gray); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        :where(html[data-page="customer"]) .profile-item .value { color: var(--dark); font-size: 0.95rem; overflow-wrap: anywhere; }
+        :where(html[data-page="customer"]) .form-group input[type="checkbox"] { width: auto; }
+
+        :where(html[data-page="customer"]) .card-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        :where(html[data-page="customer"]) .card-title i { color: var(--primary); font-size: 1.3rem; }
+
+        /* ── Action Buttons Row ── */
+        :where(html[data-page="customer"]) .action-buttons-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* ── Transaction Tabs ── */
+        :where(html[data-page="customer"]) .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--light-gray); }
+        :where(html[data-page="customer"]) .tab { padding: 0.75rem 1rem; min-height: 44px; cursor: pointer; font: inherit; font-weight: 600; color: var(--gray); font-size: 0.9rem; border: 0; border-bottom: 3px solid transparent; background: transparent; }
+        :where(html[data-page="customer"]) .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        :where(html[data-page="customer"]) .tab:focus-visible,:where(html[data-page="customer"])  .btn:focus-visible,:where(html[data-page="customer"])  .logout-btn:focus-visible,:where(html[data-page="customer"])  .modal-close:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+        /* ── Transaction List ── */
+        :where(html[data-page="customer"]) .transaction-list { display: flex; flex-direction: column; gap: 1rem; }
+        :where(html[data-page="customer"]) .transaction-item {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto auto;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1rem;
+            background: var(--light);
+            border-radius: 12px;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        :where(html[data-page="customer"]) .transaction-item:hover { transform: translateX(5px); }
+
+        :where(html[data-page="customer"]) .icon-box {
+            width: 45px; height: 45px;
+            background: white; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--primary); font-size: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        :where(html[data-page="customer"]) .details .id { font-weight: 700; font-size: 0.9rem; display: block; }
+        :where(html[data-page="customer"]) .details .route { font-size: 0.85rem; color: var(--gray); overflow-wrap: anywhere; }
+
+        :where(html[data-page="customer"]) .status-badge { padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        :where(html[data-page="customer"]) .status-ongoing { background: #e0f2fe; color: #0369a1; }
+        :where(html[data-page="customer"]) .status-pending { background: #fef3c7; color: #92400e; }
+        :where(html[data-page="customer"]) .status-completed { background: #dcfce7; color: #166534; }
+        :where(html[data-page="customer"]) .details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1.25rem; }
+        :where(html[data-page="customer"]) .detail-group { padding: 0.85rem 1rem; background: var(--light); border-radius: 10px; }
+        :where(html[data-page="customer"]) .detail-group.full-width { grid-column: 1 / -1; }
+        :where(html[data-page="customer"]) .detail-label { display: block; margin-bottom: 0.25rem; color: var(--gray); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        :where(html[data-page="customer"]) .detail-value { color: var(--dark); font-size: 0.9rem; word-break: break-word; }
+        :where(html[data-page="customer"]) .customer-route-summary { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--light-gray); }
+        :where(html[data-page="customer"]) .customer-route-summary h3 { margin-bottom: .85rem; color: var(--secondary); font-size: 1.05rem; }
+        :where(html[data-page="customer"]) .customer-route-map { width: 100%; height: 320px; min-height: 260px; border-radius: 12px; background: #e9ecef; }
+        :where(html[data-page="customer"]) .customer-route-status { margin: .75rem 0; color: var(--gray); font-size: .85rem; }
+        :where(html[data-page="customer"]) .customer-route-directions { color: var(--primary-dark); font-weight: 600; }
+        @media (max-width: 600px) { :where(html[data-page="customer"]) .details-grid { grid-template-columns: 1fr; } :where(html[data-page="customer"]) .detail-group.full-width { grid-column: auto; } }
+
+        :where(html[data-page="customer"]) .price { font-weight: 700; color: var(--secondary); font-size: 0.95rem; }
+
+        /* ── Buttons ── */
+        :where(html[data-page="customer"]) .btn {
+            padding: 0.85rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            min-height: 44px;
+            font: inherit;
+            font-weight: 700;
+        }
+        :where(html[data-page="customer"]) .btn-primary { background: var(--primary); color: white; }
+        :where(html[data-page="customer"]) .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+        :where(html[data-page="customer"]) .btn-secondary { background: var(--secondary); color: white; }
+        :where(html[data-page="customer"]) .btn-secondary:hover { background: var(--dark); transform: translateY(-2px); }
+
+        :where(html[data-page="customer"]) .btn-block { width: 100%; }
+
+        /* ── Modal Overlay ── */
+        :where(html[data-page="customer"]) .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; padding: 1rem; overflow-y: auto; overscroll-behavior: contain; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        :where(html[data-page="customer"]) .modal.active { display: flex; }
+
+        :where(html[data-page="customer"]) .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            max-height: 90dvh;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            padding: 2rem;
+            position: relative;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+        }
+
+        :where(html[data-page="customer"]) .modal-close { position: absolute; top: 0.75rem; right: 0.75rem; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--gray); transition: color 0.3s; }
+        :where(html[data-page="customer"]) .modal-close:hover { color: var(--primary); }
+
+        :where(html[data-page="customer"]) .modal-title {
+            font-size: 1.5rem;
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding-right: 2.5rem;
+            line-height: 1.35;
+        }
+
+        :where(html[data-page="customer"]) .modal-title i { color: var(--primary); }
+
+        /* ── Quotation Form inside Modal ── */
+        :where(html[data-page="customer"]) .form-section-label { 
+            font-size: 0.8rem; font-weight: 800; color: var(--primary); 
+            text-transform: uppercase; letter-spacing: 1px; 
+            margin: 1.5rem 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        :where(html[data-page="customer"]) .form-section-label::after { content: ""; flex: 1; height: 1px; background: var(--light-gray); }
+
+        :where(html[data-page="customer"]) .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        :where(html[data-page="customer"]) .form-group { margin-bottom: 0.8rem; }
+        :where(html[data-page="customer"]) .form-group.full { grid-column: span 2; }
+        :where(html[data-page="customer"]) .form-group.third { grid-column: span 1; }
+
+        :where(html[data-page="customer"]) .form-group label { display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.3rem; color: var(--secondary); }
+        :where(html[data-page="customer"]) .form-group input,:where(html[data-page="customer"])  .form-group textarea {
+            width: 100%;
+            padding: 0.65rem;
+            border: 1.5px solid var(--light-gray);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+        }
+        :where(html[data-page="customer"]) .form-group input:focus { outline: none; border-color: var(--primary); }
+
+        :where(html[data-page="customer"]) .error-message {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+            padding: 0.9rem 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        :where(html[data-page="customer"]) .success-message {
+            background: #d1fae5;
+            color: #166534;
+            border: 1px solid #86efac;
+            padding: 0.9rem 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 968px) {
+            :where(html[data-page="customer"]) .dashboard-grid { grid-template-columns: 1fr; }
+            :where(html[data-page="customer"]) .transaction-item { grid-template-columns: 45px minmax(0, 1fr) auto; gap: 1rem; }
+            :where(html[data-page="customer"]) .transaction-item > .price { grid-column: 2 / -1; }
+            :where(html[data-page="customer"]) .form-group input,:where(html[data-page="customer"])  .form-group textarea { font-size: 16px; }
+        }
+
+        @media (max-width: 600px) {
+            :where(html[data-page="customer"]) .navbar { padding: 0.75rem 1rem; gap: 0.5rem; }
+            :where(html[data-page="customer"]) .logo { font-size: 1.05rem; gap: 0.35rem; }
+            :where(html[data-page="customer"]) .logo img { height: 36px; }
+            :where(html[data-page="customer"]) .user-profile { width: 100%; justify-content: space-between; gap: 0.75rem; }
+            :where(html[data-page="customer"]) .user-info { flex: 1; text-align: left; line-height: 1.4; }
+            :where(html[data-page="customer"]) .logout-btn { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; }
+            :where(html[data-page="customer"]) .container { margin: 1.25rem auto; padding: 0 0.75rem; }
+            :where(html[data-page="customer"]) .welcome-header { margin-bottom: 1.25rem; }
+            :where(html[data-page="customer"]) .welcome-header h1 { font-size: 1.45rem; }
+            :where(html[data-page="customer"]) .welcome-header p { font-size: 0.9rem; line-height: 1.6; }
+            :where(html[data-page="customer"]) .dashboard-grid { gap: 1rem; }
+            :where(html[data-page="customer"]) .card { padding: 1rem; border-radius: 12px; margin-bottom: 1.25rem; }
+            :where(html[data-page="customer"]) .card-title { font-size: 1rem; gap: 0.5rem; margin-bottom: 1.25rem; padding-bottom: 0.85rem; }
+            :where(html[data-page="customer"]) .profile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+            :where(html[data-page="customer"]) .profile-item { padding: 0.75rem; }
+            :where(html[data-page="customer"]) .profile-item .value { font-size: 0.85rem; }
+            :where(html[data-page="customer"]) .tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem 0.5rem; margin-bottom: 1rem; }
+            :where(html[data-page="customer"]) .tab { padding: 0.7rem 0.35rem; text-align: center; }
+            :where(html[data-page="customer"]) .form-grid { grid-template-columns: 1fr; }
+            :where(html[data-page="customer"]) .form-group.full,:where(html[data-page="customer"])  .form-group.third,:where(html[data-page="customer"])  .form-grid > div { grid-column: span 1; }
+            :where(html[data-page="customer"]) .transaction-item { grid-template-columns: 40px minmax(0, 1fr); gap: 0.65rem 0.85rem; padding: 0.85rem; }
+            :where(html[data-page="customer"]) .transaction-item:hover { transform: none; }
+            :where(html[data-page="customer"]) .transaction-item .icon-box { width: 40px; height: 40px; align-self: start; }
+            :where(html[data-page="customer"]) .transaction-item > .status-badge,:where(html[data-page="customer"])  .transaction-item > .price { grid-column: 2; justify-self: start; max-width: 100%; margin: 0; overflow-wrap: anywhere; }
+            :where(html[data-page="customer"]) .action-buttons-row { flex-direction: column; gap: 0.65rem; }
+            :where(html[data-page="customer"]) .action-buttons-row .btn { width: 100%; }
+            :where(html[data-page="customer"]) .modal { padding: 0.5rem; }
+            :where(html[data-page="customer"]) .modal-content { width: 100%; max-height: calc(100vh - 1rem); max-height: calc(100dvh - 1rem); padding: 1.25rem 1rem; border-radius: 12px; }
+            :where(html[data-page="customer"]) .modal-title { font-size: 1.2rem; gap: 0.5rem; margin-bottom: 1rem; }
+            :where(html[data-page="customer"]) .modal-close { top: 0.5rem; right: 0.5rem; }
+            :where(html[data-page="customer"]) .form-group label { font-size: 0.85rem; line-height: 1.6; }
+            :where(html[data-page="customer"]) .form-group input,:where(html[data-page="customer"])  .form-group textarea { min-width: 0; min-height: 44px; font-size: 16px; }
+            :where(html[data-page="customer"]) .form-group input[type="checkbox"] { min-height: 0; width: 18px; height: 18px; margin-right: 0.35rem; vertical-align: middle; }
+            :where(html[data-page="customer"]) .form-group textarea { min-height: 110px; resize: vertical; }
+            :where(html[data-page="customer"]) .detail-group { padding: 0.75rem; }
+            :where(html[data-page="customer"]) .customer-route-map { height: 240px; min-height: 220px; }
+            :where(html[data-page="customer"]) .customer-route-directions { overflow-wrap: anywhere; }
+            :where(html[data-page="customer"]) #customerWaybills .waybill-panel { padding: 1rem; }
+            :where(html[data-page="customer"]) #customerWaybills .waybill-panel button { min-height: 44px; margin-bottom: 0.35rem; }
+            :where(html[data-page="customer"]) footer { padding: 1.25rem 1rem; }
+        }
+
+        @media (max-width: 360px) {
+            :where(html[data-page="customer"]) .profile-grid { grid-template-columns: minmax(0, 1fr); }
+        }
+
+        :where(html[data-page="customer"]) footer { background: var(--dark); color: white; padding: 2rem; text-align: center; font-size: 0.85rem; }
+
+/* ==========================================================================
+   05. dispatcher page
+   ========================================================================== */
+
+:where(html[data-page="dispatcher"], html[data-page="dispatcher"] *) { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root:where([data-page="dispatcher"]) {
+            --primary: #e07b39;
+            --primary-dark: #c4652c;
+            --secondary: #4a5d3a;
+            --dark: #2d3a24;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --success: #28a745;
+            --warning: #f59e0b;
+            --danger: #dc2626;
+            --info: #0369a1;
+        }
+
+        :where(html[data-page="dispatcher"]) body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+            color: var(--dark);
+            min-height: 100vh;
+        }
+
+        :where(html[data-page="dispatcher"]) .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        :where(html[data-page="dispatcher"]) .logo { display: flex; align-items: center; text-decoration: none; gap: .6rem; font-weight: 800; font-size: 1.25rem; color: var(--secondary); }
+        :where(html[data-page="dispatcher"]) .logo img { height: 40px; width: auto; border-radius: 6px; }
+        :where(html[data-page="dispatcher"]) .logo span { color: var(--primary); }
+
+        :where(html[data-page="dispatcher"]) .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+        :where(html[data-page="dispatcher"]) .user-profile { display: flex; align-items: center; gap: 1rem; }
+        :where(html[data-page="dispatcher"]) .user-info { text-align: right; line-height: 1.2; }
+        :where(html[data-page="dispatcher"]) .user-info .name { display: block; font-weight: 600; font-size: 0.9rem; }
+        :where(html[data-page="dispatcher"]) .user-info .role { font-size: 0.75rem; color: var(--gray); }
+        :where(html[data-page="dispatcher"]) .logout-btn { color: var(--gray); font-size: 1.2rem; text-decoration: none; padding: 8px; border-radius: 8px; }
+        :where(html[data-page="dispatcher"]) .logout-btn:hover { background: #fee2e2; color: var(--danger); }
+
+        :where(html[data-page="dispatcher"]) .main-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        :where(html[data-page="dispatcher"]) .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        :where(html[data-page="dispatcher"]) .page-header h1 { font-size: 1.8rem; color: var(--secondary); }
+        :where(html[data-page="dispatcher"]) .page-header p { color: var(--gray); font-size: 0.9rem; }
+
+        :where(html[data-page="dispatcher"]) .manual-quote-btn {
+            background: linear-gradient(135deg, var(--secondary), var(--dark));
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        :where(html[data-page="dispatcher"]) .manual-quote-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(74,93,58,0.3); }
+
+        :where(html[data-page="dispatcher"]) .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        :where(html[data-page="dispatcher"]) .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        }
+        :where(html[data-page="dispatcher"]) .stat-icon { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        :where(html[data-page="dispatcher"]) .stat-icon.blue { background: #e0f2fe; color: var(--info); }
+        :where(html[data-page="dispatcher"]) .stat-icon.orange { background: #fef3c7; color: var(--warning); }
+        :where(html[data-page="dispatcher"]) .stat-icon.green { background: #dcfce7; color: var(--success); }
+        :where(html[data-page="dispatcher"]) .stat-icon.red { background: #fee2e2; color: var(--danger); }
+        :where(html[data-page="dispatcher"]) .stat-details h3 { font-size: 1.8rem; font-weight: 700; }
+        :where(html[data-page="dispatcher"]) .stat-details p { font-size: 0.85rem; color: var(--gray); }
+
+        :where(html[data-page="dispatcher"]) .inquiries-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        :where(html[data-page="dispatcher"]) .inquiries-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        :where(html[data-page="dispatcher"]) .inquiries-header h2 { display: flex; align-items: center; gap: 0.75rem; font-size: 1.3rem; color: var(--secondary); }
+        :where(html[data-page="dispatcher"]) .tabs { display: flex; gap: 0.5rem; }
+        :where(html[data-page="dispatcher"]) .tab {
+            padding: 0.5rem 1.2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--gray);
+            border-radius: 30px;
+            transition: all 0.3s;
+        }
+        :where(html[data-page="dispatcher"]) .tab:hover { background: var(--light-gray); }
+        :where(html[data-page="dispatcher"]) .tab.active { background: var(--primary); color: white; }
+
+        :where(html[data-page="dispatcher"]) .inquiry-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+        :where(html[data-page="dispatcher"]) .inquiry-card {
+            background: var(--light);
+            border-radius: 16px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        :where(html[data-page="dispatcher"]) .inquiry-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        :where(html[data-page="dispatcher"]) .inquiry-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        :where(html[data-page="dispatcher"]) .inquiry-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; margin-bottom: 0.7rem; }
+        :where(html[data-page="dispatcher"]) .inquiry-actions .btn { padding: 0.35rem 0.65rem; font-size: 0.75rem; }
+        :where(html[data-page="dispatcher"]) .inquiry-actions .status-select { min-width: 112px; padding: 0.38rem 0.5rem; border: 1px solid var(--light-gray); border-radius: 6px; color: var(--dark); background: white; font: inherit; font-size: 0.75rem; cursor: pointer; }
+        :where(html[data-page="dispatcher"]) .inquiry-id { font-weight: 700; color: var(--primary); font-size: 0.85rem; }
+        :where(html[data-page="dispatcher"]) .status-badge { padding: 4px 12px; border-radius: 50px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        :where(html[data-page="dispatcher"]) .status-new { background: #e0f2fe; color: var(--info); }
+        :where(html[data-page="dispatcher"]) .status-pending { background: #fef3c7; color: var(--warning); }
+        :where(html[data-page="dispatcher"]) .status-approved { background: #dcfce7; color: var(--success); }
+        :where(html[data-page="dispatcher"]) .status-ongoing { background: #e0f2fe; color: var(--info); }
+        :where(html[data-page="dispatcher"]) .status-completed { background: #dcfce7; color: var(--success); }
+        :where(html[data-page="dispatcher"]) .customer-name { font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        :where(html[data-page="dispatcher"]) .route-info { font-size: 0.85rem; color: var(--gray); margin: 0.5rem 0; display: flex; align-items: center; gap: 0.5rem; }
+        :where(html[data-page="dispatcher"]) .route-info i { color: var(--primary); }
+        :where(html[data-page="dispatcher"]) .cargo-preview { font-size: 0.75rem; color: var(--gray); margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--light-gray); }
+        :where(html[data-page="dispatcher"]) .inquiry-date { font-size: 0.7rem; color: var(--gray); margin-top: 0.5rem; }
+        :where(html[data-page="dispatcher"]) .empty-state { text-align: center; padding: 4rem; color: var(--gray); }
+        :where(html[data-page="dispatcher"]) .empty-state i { font-size: 4rem; color: var(--light-gray); margin-bottom: 1rem; }
+
+        /* Modal Styles with Two Columns */
+        :where(html[data-page="dispatcher"]) .modal-content-large {
+            max-width: 1200px !important;
+        }
+        :where(html[data-page="dispatcher"]) .two-column-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        :where(html[data-page="dispatcher"]) .form-column {
+            overflow-y: auto;
+            max-height: 65vh;
+            padding-right: 0.5rem;
+        }
+        :where(html[data-page="dispatcher"]) .map-column {
+            background: #e9ecef;
+            border-radius: 16px;
+            overflow: hidden;
+            position: sticky;
+            top: 0;
+            height: 500px;
+        }
+        :where(html[data-page="dispatcher"]) .route-map {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+        }
+        :where(html[data-page="dispatcher"]) .route-map i { font-size: 3rem; margin-bottom: 1rem; color: var(--primary); opacity: 0.5; }
+        :where(html[data-page="dispatcher"]) .route-map p { font-size: 0.85rem; text-align: center; padding: 0 1rem; }
+        :where(html[data-page="dispatcher"]) .leaflet-map { width: 100%; height: 100%; min-height: 300px; z-index: 1; }
+        :where(html[data-page="dispatcher"]) .map-status { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 500; background: rgba(255,255,255,0.94); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: var(--gray); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+        :where(html[data-page="dispatcher"]) .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            backdrop-filter: blur(4px);
+        }
+        :where(html[data-page="dispatcher"]) .modal-overlay.active { display: flex; }
+        :where(html[data-page="dispatcher"]) .modal-content {
+            background: white;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: ue-dispatcher-modalSlide 0.3s ease;
+        }
+        @keyframes ue-dispatcher-modalSlide {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        :where(html[data-page="dispatcher"]) .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--light);
+            border-radius: 24px 24px 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        :where(html[data-page="dispatcher"]) .modal-title { font-size: 1.3rem; font-weight: 700; color: var(--secondary); display: flex; align-items: center; gap: 0.75rem; }
+        :where(html[data-page="dispatcher"]) .modal-close { font-size: 1.5rem; cursor: pointer; color: var(--gray); transition: all 0.3s; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+        :where(html[data-page="dispatcher"]) .modal-close:hover { background: #fee2e2; color: var(--danger); }
+        :where(html[data-page="dispatcher"]) .modal-body { padding: 2rem; }
+        :where(html[data-page="dispatcher"]) .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            background: var(--light);
+            border-radius: 0 0 24px 24px;
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+        }
+
+        :where(html[data-page="dispatcher"]) .form-section { margin-bottom: 1.5rem; }
+        :where(html[data-page="dispatcher"]) .section-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        :where(html[data-page="dispatcher"]) .section-title::after { content: ""; flex: 1; height: 1px; background: var(--light-gray); }
+        :where(html[data-page="dispatcher"]) .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        :where(html[data-page="dispatcher"]) .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        :where(html[data-page="dispatcher"]) .form-group.full { grid-column: span 2; }
+        :where(html[data-page="dispatcher"]) .form-group label { font-size: 0.75rem; font-weight: 600; color: var(--secondary); }
+        :where(html[data-page="dispatcher"]) .form-group input,:where(html[data-page="dispatcher"])  .form-group select,:where(html[data-page="dispatcher"])  .form-group textarea {
+            padding: 0.75rem;
+            border: 1.5px solid var(--light-gray);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            background: white;
+            transition: all 0.3s;
+        }
+        :where(html[data-page="dispatcher"]) .form-group input:focus,:where(html[data-page="dispatcher"])  .form-group select:focus,:where(html[data-page="dispatcher"])  .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(224,123,57,0.1);
+        }
+
+        /* Searchable Select Styles */
+        :where(html[data-page="dispatcher"]) .searchable-select {
+            position: relative;
+            width: 100%;
+        }
+        :where(html[data-page="dispatcher"]) .searchable-select-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1.5px solid var(--light-gray);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        :where(html[data-page="dispatcher"]) .searchable-select-input:hover { border-color: var(--primary); }
+        :where(html[data-page="dispatcher"]) .searchable-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1.5px solid var(--light-gray);
+            border-radius: 10px;
+            margin-top: 4px;
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        :where(html[data-page="dispatcher"]) .searchable-dropdown.active { display: block; }
+        :where(html[data-page="dispatcher"]) .dropdown-search {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--light-gray);
+            position: sticky;
+            top: 0;
+            background: white;
+        }
+        :where(html[data-page="dispatcher"]) .dropdown-search input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        :where(html[data-page="dispatcher"]) .dropdown-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        :where(html[data-page="dispatcher"]) .dropdown-item:hover { background: var(--light); }
+        :where(html[data-page="dispatcher"]) .dropdown-item:last-child { border-bottom: none; }
+        :where(html[data-page="dispatcher"]) .dropdown-item.unavailable { opacity: 0.5; cursor: not-allowed; background: #f5f5f5; }
+        :where(html[data-page="dispatcher"]) .driver-detail,:where(html[data-page="dispatcher"])  .truck-detail { font-size: 0.7rem; color: var(--gray); margin-top: 2px; }
+
+        :where(html[data-page="dispatcher"]) .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+        :where(html[data-page="dispatcher"]) .btn-primary { background: var(--primary); color: white; }
+        :where(html[data-page="dispatcher"]) .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        :where(html[data-page="dispatcher"]) .btn-success { background: var(--success); color: white; }
+        :where(html[data-page="dispatcher"]) .btn-success:hover { background: #1e7e34; transform: translateY(-2px); }
+        :where(html[data-page="dispatcher"]) .btn-secondary { background: var(--secondary); color: white; }
+        :where(html[data-page="dispatcher"]) .btn-outline { background: transparent; color: var(--secondary); border: 2px solid var(--secondary); }
+        :where(html[data-page="dispatcher"]) .btn-outline:hover { background: var(--secondary); color: white; }
+
+        :where(html[data-page="dispatcher"]) .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--secondary);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 3000;
+        }
+        :where(html[data-page="dispatcher"]) .toast.show { transform: translateX(0); }
+        :where(html[data-page="dispatcher"]) .toast.success { background: var(--success); }
+        :where(html[data-page="dispatcher"]) .toast.error { background: var(--danger); }
+
+        @media (max-width: 900px) {
+            :where(html[data-page="dispatcher"]) .two-column-layout { grid-template-columns: 1fr; }
+            :where(html[data-page="dispatcher"]) .map-column { height: 300px; position: relative; }
+            :where(html[data-page="dispatcher"]) .main-container { padding: 1rem; }
+            :where(html[data-page="dispatcher"]) .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            :where(html[data-page="dispatcher"]) .inquiry-grid { grid-template-columns: 1fr; }
+        }
+
+/* ==========================================================================
+   06. manager page
+   ========================================================================== */
+
+:where(html[data-page="manager"], html[data-page="manager"] *) { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root:where([data-page="manager"]) {
+            --primary: #e07b39;
+            --primary-dark: #c4652c;
+            --secondary: #4a5d3a;
+            --dark: #2d3a24;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --success: #28a745;
+            --warning: #f59e0b;
+            --danger: #dc2626;
+            --info: #0369a1;
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+        }
+
+        :where(html[data-page="manager"]) body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+            color: var(--dark);
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        :where(html[data-page="manager"]) .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        :where(html[data-page="manager"]) .logo { display: flex; align-items: center; text-decoration: none; gap: .6rem; font-weight: 800; font-size: 1.25rem; color: var(--secondary); }
+        :where(html[data-page="manager"]) .logo img { height: 40px; width: auto; border-radius: 6px; }
+        :where(html[data-page="manager"]) .logo span { color: var(--primary); }
+
+        :where(html[data-page="manager"]) .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+        :where(html[data-page="manager"]) .user-profile { display: flex; align-items: center; gap: 1rem; }
+        :where(html[data-page="manager"]) .user-info { text-align: right; line-height: 1.2; }
+        :where(html[data-page="manager"]) .user-info .name { display: block; font-weight: 600; font-size: 0.9rem; }
+        :where(html[data-page="manager"]) .user-info .role { font-size: 0.75rem; color: var(--primary); background: rgba(224,123,57,0.1); padding: 2px 8px; border-radius: 20px; }
+        :where(html[data-page="manager"]) .logout-btn { color: var(--gray); font-size: 1.2rem; text-decoration: none; padding: 8px; border-radius: 8px; }
+        :where(html[data-page="manager"]) .logout-btn:hover { background: #fee2e2; color: var(--danger); }
+
+        /* Sidebar */
+        :where(html[data-page="manager"]) .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid var(--light-gray);
+            position: fixed;
+            left: 0;
+            top: 70px;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.02);
+        }
+
+        :where(html[data-page="manager"]) .sidebar-label { font-size: 0.7rem; font-weight: 700; color: var(--gray); padding: 1rem 1rem 0.5rem 1rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        :where(html[data-page="manager"]) .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 1rem;
+            margin: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        :where(html[data-page="manager"]) .nav-item i { font-size: 1rem; width: 24px; text-align: center; }
+        :where(html[data-page="manager"]) .nav-item:hover { background: var(--light); color: var(--primary); }
+        :where(html[data-page="manager"]) .nav-item.active { background: rgba(224,123,57,0.1); color: var(--primary); }
+        :where(html[data-page="manager"]) .nav-item .nbadge {
+            margin-left: auto;
+            background: var(--danger);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 20px;
+        }
+
+        /* Main Content */
+        :where(html[data-page="manager"]) .main-content {
+            margin-left: 260px;
+            padding: 2rem;
+            min-height: calc(100vh - 70px);
+        }
+
+        /* Page Header */
+        :where(html[data-page="manager"]) .page-header {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        :where(html[data-page="manager"]) .page-header h1 { font-size: 1.8rem; color: var(--secondary); }
+        :where(html[data-page="manager"]) .page-header p { color: var(--gray); font-size: 0.9rem; }
+        :where(html[data-page="manager"]) .date-chip {
+            background: white;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* Stats Grid */
+        :where(html[data-page="manager"]) .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        :where(html[data-page="manager"]) .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            transition: all 0.3s;
+        }
+        :where(html[data-page="manager"]) .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        :where(html[data-page="manager"]) .stat-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+        }
+        :where(html[data-page="manager"]) .stat-icon.primary { background: rgba(224,123,57,0.1); color: var(--primary); }
+        :where(html[data-page="manager"]) .stat-icon.green { background: rgba(40,167,69,0.1); color: var(--success); }
+        :where(html[data-page="manager"]) .stat-icon.blue { background: rgba(3,105,161,0.1); color: var(--info); }
+        :where(html[data-page="manager"]) .stat-icon.purple { background: rgba(139,92,246,0.1); color: var(--purple); }
+        :where(html[data-page="manager"]) .stat-icon.cyan { background: rgba(6,182,212,0.1); color: var(--cyan); }
+        :where(html[data-page="manager"]) .stat-details h3 { font-size: 1.8rem; font-weight: 700; }
+        :where(html[data-page="manager"]) .stat-details p { font-size: 0.85rem; color: var(--gray); }
+
+        /* Dashboard Grid */
+        :where(html[data-page="manager"]) .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+        :where(html[data-page="manager"]) .full-width { grid-column: span 2; }
+        @media (max-width: 1100px) {
+            :where(html[data-page="manager"]) .dashboard-grid { grid-template-columns: 1fr; }
+            :where(html[data-page="manager"]) .full-width { grid-column: span 1; }
+            :where(html[data-page="manager"]) .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* Cards */
+        :where(html[data-page="manager"]) .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        :where(html[data-page="manager"]) .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        :where(html[data-page="manager"]) .card-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+        :where(html[data-page="manager"]) .card-title i { color: var(--primary); font-size: 1.2rem; }
+        :where(html[data-page="manager"]) .btn-add {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.3s;
+        }
+        :where(html[data-page="manager"]) .btn-add:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        :where(html[data-page="manager"]) .btn-outline-sm {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        :where(html[data-page="manager"]) .btn-outline-sm:hover { background: var(--primary); color: white; }
+
+        :where(html[data-page="manager"]) .card-body {
+            padding: 1.5rem;
+        }
+        :where(html[data-page="manager"]) .card-body.scroll { max-height: 400px; overflow-y: auto; }
+
+        /* Tables */
+        :where(html[data-page="manager"]) .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        :where(html[data-page="manager"]) .data-table th {
+            text-align: left;
+            padding: 0.75rem 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+        :where(html[data-page="manager"]) .data-table td {
+            padding: 0.85rem 0.5rem;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        :where(html[data-page="manager"]) .data-table tr:hover { background: var(--light); }
+        :where(html[data-page="manager"]) .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        :where(html[data-page="manager"]) .role-customer { background: #fef3c7; color: #d97706; }
+        :where(html[data-page="manager"]) .role-dispatcher { background: #e0f2fe; color: var(--info); }
+        :where(html[data-page="manager"]) .role-supervisor { background: #dcfce7; color: var(--success); }
+
+        /* Chart */
+        :where(html[data-page="manager"]) .chart-container { height: 280px; position: relative; }
+
+        /* Filter Bar */
+        :where(html[data-page="manager"]) .filter-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+        :where(html[data-page="manager"]) .search-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--light);
+            border: 1px solid var(--light-gray);
+            border-radius: 10px;
+            padding: 0.45rem 0.9rem;
+        }
+        :where(html[data-page="manager"]) .search-box input {
+            background: none;
+            border: none;
+            outline: none;
+            font-family: inherit;
+            font-size: 0.8rem;
+            width: 180px;
+        }
+        :where(html[data-page="manager"]) .filter-select {
+            background: var(--light);
+            border: 1px solid var(--light-gray);
+            border-radius: 10px;
+            padding: 0.45rem 0.8rem;
+            font-family: inherit;
+            font-size: 0.8rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Pagination */
+        :where(html[data-page="manager"]) .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        :where(html[data-page="manager"]) .page-info { font-size: 0.75rem; color: var(--gray); }
+        :where(html[data-page="manager"]) .page-btns { display: flex; gap: 0.4rem; }
+        :where(html[data-page="manager"]) .page-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--light);
+            border: 1px solid var(--light-gray);
+            color: var(--gray);
+            transition: all 0.2s;
+        }
+        :where(html[data-page="manager"]) .page-btn:hover,:where(html[data-page="manager"])  .page-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+
+        /* Tabs */
+        :where(html[data-page="manager"]) .tab-pills { display: flex; gap: 0.5rem; }
+        :where(html[data-page="manager"]) .pill {
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--light);
+            border: 1px solid var(--light-gray);
+            color: var(--gray);
+            transition: all 0.2s;
+        }
+        :where(html[data-page="manager"]) .pill:hover { background: var(--light-gray); }
+        :where(html[data-page="manager"]) .pill.active { background: var(--primary); border-color: var(--primary); color: white; }
+
+        /* Modal */
+        :where(html[data-page="manager"]) .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            backdrop-filter: blur(4px);
+        }
+        :where(html[data-page="manager"]) .modal-overlay.active { display: flex; }
+        :where(html[data-page="manager"]) .modal-content {
+            background: white;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 550px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: ue-manager-modalSlide 0.3s ease;
+        }
+        @keyframes ue-manager-modalSlide {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        :where(html[data-page="manager"]) .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--light);
+        }
+        :where(html[data-page="manager"]) .modal-title { font-size: 1.2rem; font-weight: 700; color: var(--secondary); }
+        :where(html[data-page="manager"]) .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+        :where(html[data-page="manager"]) .modal-close:hover { background: #fee2e2; color: var(--danger); }
+        :where(html[data-page="manager"]) .modal-body { padding: 1.5rem; }
+        :where(html[data-page="manager"]) .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            background: var(--light);
+        }
+
+        :where(html[data-page="manager"]) .form-group { margin-bottom: 1rem; }
+        :where(html[data-page="manager"]) .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--secondary); margin-bottom: 0.4rem; }
+        :where(html[data-page="manager"]) .form-group input,:where(html[data-page="manager"])  .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1.5px solid var(--light-gray);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.85rem;
+        }
+        :where(html[data-page="manager"]) .form-group input:focus,:where(html[data-page="manager"])  .form-group select:focus { outline: none; border-color: var(--primary); }
+        :where(html[data-page="manager"]) .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+        :where(html[data-page="manager"]) .btn {
+            padding: 0.7rem 1.2rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+        :where(html[data-page="manager"]) .btn-primary { background: var(--primary); color: white; }
+        :where(html[data-page="manager"]) .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        :where(html[data-page="manager"]) .btn-outline { background: transparent; color: var(--secondary); border: 2px solid var(--secondary); }
+        :where(html[data-page="manager"]) .btn-outline:hover { background: var(--secondary); color: white; }
+
+        :where(html[data-page="manager"]) .empty-state { text-align: center; padding: 2rem; color: var(--gray); }
+        :where(html[data-page="manager"]) .empty-state i { font-size: 2.5rem; color: var(--light-gray); margin-bottom: 0.5rem; }
+
+        :where(html[data-page="manager"]) .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--secondary);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 3000;
+        }
+        :where(html[data-page="manager"]) .toast.show { transform: translateX(0); }
+        :where(html[data-page="manager"]) .toast.success { background: var(--success); }
+        :where(html[data-page="manager"]) .toast.error { background: var(--danger); }
+
+        :where(html[data-page="manager"]) .badge { display: inline-block; padding: 4px 10px; border-radius: 50px; font-size: 0.7rem; font-weight: 600; }
+        :where(html[data-page="manager"]) .badge-green { background: #dcfce7; color: var(--success); }
+        :where(html[data-page="manager"]) .badge-blue { background: #e0f2fe; color: var(--info); }
+        :where(html[data-page="manager"]) .badge-orange { background: #fef3c7; color: var(--warning); }
+        :where(html[data-page="manager"]) .badge-purple { background: #f3e8ff; color: var(--purple); }
+
+        /* Revenue Section */
+        :where(html[data-page="manager"]) .revenue-kpi-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        :where(html[data-page="manager"]) .kpi-mini {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+        :where(html[data-page="manager"]) .kpi-mini-label { font-size: 0.65rem; color: var(--gray); margin-bottom: 0.25rem; }
+        :where(html[data-page="manager"]) .kpi-mini-value { font-size: 1rem; font-weight: 700; color: var(--primary); }
+
+        :where(html[data-page="manager"]) .receipt-modal-content { max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+        :where(html[data-page="manager"]) .receipt-modal-content .modal-header,:where(html[data-page="manager"]) 
+        .receipt-modal-content .modal-footer { flex: 0 0 auto; }
+        :where(html[data-page="manager"]) .receipt-modal-content .modal-body { min-height: 0; overflow-y: auto; }
+        :where(html[data-page="manager"]) .receipt-sheet { max-width: 720px; margin: 0 auto; color: var(--dark); }
+        :where(html[data-page="manager"]) .receipt-brand { display: flex; align-items: center; gap: .75rem; padding-bottom: 1rem; border-bottom: 2px solid var(--primary); }
+        :where(html[data-page="manager"]) .receipt-brand img { width: 48px; height: 48px; object-fit: contain; border-radius: 10px; }
+        :where(html[data-page="manager"]) .receipt-brand strong { display: block; color: var(--secondary); font-size: 1.1rem; }
+        :where(html[data-page="manager"]) .receipt-brand small { color: var(--gray); }
+        :where(html[data-page="manager"]) .receipt-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin: 1.25rem 0; }
+        :where(html[data-page="manager"]) .receipt-heading h2 { color: var(--secondary); font-size: 1.4rem; }
+        :where(html[data-page="manager"]) .receipt-number { color: var(--gray); font-size: .85rem; text-align: right; }
+        :where(html[data-page="manager"]) .receipt-total { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.25rem; margin-bottom: 1.25rem; border-radius: 14px; background: #fff4ec; }
+        :where(html[data-page="manager"]) .receipt-total span { color: var(--secondary); font-weight: 600; }
+        :where(html[data-page="manager"]) .receipt-total strong { color: var(--primary-dark); font-size: 1.5rem; }
+        :where(html[data-page="manager"]) .receipt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+        :where(html[data-page="manager"]) .receipt-field { padding: .8rem .9rem; border: 1px solid var(--light-gray); border-radius: 10px; overflow-wrap: anywhere; }
+        :where(html[data-page="manager"]) .receipt-field small { display: block; margin-bottom: .2rem; color: var(--gray); font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+        :where(html[data-page="manager"]) .receipt-field strong { font-size: .86rem; font-weight: 600; }
+        :where(html[data-page="manager"]) .receipt-note { margin: 1rem 0 .5rem; color: var(--gray); font-size: .78rem; }
+        :where(html[data-page="manager"]) .receipt-link { color: var(--primary-dark); font-weight: 600; font-size: .85rem; }
+        :where(html[data-page="manager"]) .payment-modal-content { max-width: 480px; }
+        :where(html[data-page="manager"]) .payment-intro { margin-bottom: 1rem; color: var(--gray); font-size: .88rem; }
+        :where(html[data-page="manager"]) .payment-quote { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.25rem; padding: 1rem; border: 1px solid var(--light-gray); border-radius: 12px; background: var(--light); }
+        :where(html[data-page="manager"]) .payment-quote span { color: var(--gray); font-size: .8rem; font-weight: 600; }
+        :where(html[data-page="manager"]) .payment-quote strong { color: var(--secondary); font-size: 1rem; }
+        :where(html[data-page="manager"]) .payment-amount-group { margin-bottom: .5rem; }
+        :where(html[data-page="manager"]) .payment-amount-group label { display: block; margin-bottom: .4rem; color: var(--dark); font-size: .85rem; font-weight: 600; }
+        :where(html[data-page="manager"]) .payment-amount-wrap { display: flex; align-items: center; border: 1px solid #ced4da; border-radius: 10px; overflow: hidden; }
+        :where(html[data-page="manager"]) .payment-amount-wrap span { padding: .7rem .9rem; background: var(--light); border-right: 1px solid var(--light-gray); color: var(--gray); font-weight: 600; }
+        :where(html[data-page="manager"]) .payment-amount-wrap input { width: 100%; min-width: 0; padding: .7rem .9rem; border: 0; outline: none; font: inherit; color: var(--dark); }
+        :where(html[data-page="manager"]) .payment-amount-wrap:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(224,123,57,.15); }
+        :where(html[data-page="manager"]) .payment-help { color: var(--gray); font-size: .75rem; }
+        @media print {
+            :where(html[data-page="manager"]) body.printing-receipt * { visibility: hidden !important; }
+            :where(html[data-page="manager"]) body.printing-receipt #receiptModal,:where(html[data-page="manager"]) 
+            body.printing-receipt #receiptModal * { visibility: visible !important; }
+            :where(html[data-page="manager"]) body.printing-receipt #receiptModal { position: absolute !important; inset: 0 !important; display: block !important; padding: 0 !important; background: white !important; }
+            :where(html[data-page="manager"]) body.printing-receipt #receiptModal .modal-content { width: 100% !important; max-width: none !important; max-height: none !important; overflow: visible !important; box-shadow: none !important; border-radius: 0 !important; }
+            :where(html[data-page="manager"]) body.printing-receipt #receiptModal .modal-header,:where(html[data-page="manager"]) 
+            body.printing-receipt #receiptModal .modal-footer { display: none !important; }
+            :where(html[data-page="manager"]) body.printing-receipt #receiptModal .modal-body { padding: 0 !important; }
+            :where(html[data-page="manager"]) body.printing-receipt .receipt-sheet { max-width: none; }
+            :where(html[data-page="manager"]) body.printing-receipt .receipt-field { break-inside: avoid; }
+            @page { size: auto; margin: 16mm; }
+        }
+
+        /* Mobile menu button (hidden on desktop) */
+        :where(html[data-page="manager"]) .nav-left { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+        :where(html[data-page="manager"]) .menu-toggle { display: none; width: 42px; height: 42px; border: 0; border-radius: 10px; background: var(--light); color: var(--secondary); font-size: 1.5rem; line-height: 1; cursor: pointer; align-items: center; justify-content: center; flex: 0 0 auto; }
+        :where(html[data-page="manager"]) .menu-toggle:hover { background: rgba(224,123,57,0.12); color: var(--primary); }
+        :where(html[data-page="manager"]) .sidebar-mobile-head { display: none; }
+        :where(html[data-page="manager"]) .sidebar-backdrop { display: none; }
+
+        @media (max-width: 768px) {
+            :where(html[data-page="manager"]) .navbar { padding: .7rem 1rem; gap: .5rem; }
+            :where(html[data-page="manager"]) .logo { font-size: 1.05rem; }
+            :where(html[data-page="manager"]) .nav-right { gap: .5rem; }
+            :where(html[data-page="manager"]) .menu-toggle { display: inline-flex; }
+            :where(html[data-page="manager"]) .user-info .name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+            :where(html[data-page="manager"]) .main-content { margin-left: 0; padding: 1rem; }
+
+            /* Sidebar becomes a slide-in menu */
+            :where(html[data-page="manager"]) .sidebar { top: 0; width: 280px; max-width: 85vw; z-index: 1300; transform: translateX(-105%); transition: transform .25s ease; box-shadow: none; padding-bottom: 1.5rem; }
+            :where(html[data-page="manager"]) body.sidebar-open .sidebar { transform: translateX(0); box-shadow: 8px 0 30px rgba(0,0,0,0.25); }
+            :where(html[data-page="manager"]) .sidebar-mobile-head { display: flex; align-items: center; justify-content: space-between; padding: .9rem 1rem; border-bottom: 1px solid var(--light-gray); font-weight: 700; color: var(--secondary); }
+            :where(html[data-page="manager"]) .sidebar-close { width: 36px; height: 36px; border: 0; border-radius: 10px; background: var(--light); color: var(--gray); font-size: 1.1rem; cursor: pointer; }
+            :where(html[data-page="manager"]) .sidebar-close:hover { background: #fee2e2; color: var(--danger); }
+            :where(html[data-page="manager"]) .sidebar-backdrop { position: fixed; inset: 0; z-index: 1250; background: rgba(0,0,0,0.45); }
+            :where(html[data-page="manager"]) body.sidebar-open .sidebar-backdrop { display: block; }
+            :where(html[data-page="manager"]) body.sidebar-open { overflow: hidden; }
+
+            :where(html[data-page="manager"]) .revenue-kpi-row { grid-template-columns: repeat(2, 1fr); }
+            :where(html[data-page="manager"]) .stats-grid { grid-template-columns: 1fr; }
+            :where(html[data-page="manager"]) .modal-overlay { padding: .75rem; }
+            :where(html[data-page="manager"]) .receipt-grid { grid-template-columns: 1fr; }
+            :where(html[data-page="manager"]) .receipt-modal-content { max-height: calc(100vh - 1.5rem); border-radius: 18px; }
+            :where(html[data-page="manager"]) .receipt-modal-content .modal-header { padding: 1rem; }
+            :where(html[data-page="manager"]) .receipt-modal-content .modal-body { padding: 1rem; }
+            :where(html[data-page="manager"]) .receipt-heading { flex-direction: column; }
+            :where(html[data-page="manager"]) .receipt-number { text-align: left; }
+            :where(html[data-page="manager"]) .receipt-total { align-items: flex-start; flex-direction: column; }
+            :where(html[data-page="manager"]) .receipt-modal-content .modal-footer { padding: .75rem 1rem; gap: .5rem; }
+
+            /* Tables scroll sideways so the action buttons are never cut off */
+            :where(html[data-page="manager"]) .card-body { padding: 1rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            :where(html[data-page="manager"]) .data-table { min-width: 620px; }
+            :where(html[data-page="manager"]) .data-table td .btn-outline-sm { margin: 2px 0; white-space: nowrap; }
+            :where(html[data-page="manager"]) .page-header { align-items: flex-start; }
+            :where(html[data-page="manager"]) .page-header h1 { font-size: 1.4rem; }
+            :where(html[data-page="manager"]) .card-header { padding: 1rem; }
+            :where(html[data-page="manager"]) .filter-bar { width: 100%; }
+            :where(html[data-page="manager"]) .search-box { flex: 1 1 160px; }
+            :where(html[data-page="manager"]) .search-box input { width: 100%; min-width: 0; }
+            :where(html[data-page="manager"]) .tab-pills { flex-wrap: wrap; }
+            :where(html[data-page="manager"]) .form-grid { grid-template-columns: 1fr; }
+        }
+
+/* ==========================================================================
+   07. supervisor page
+   ========================================================================== */
+
+:where(html[data-page="supervisor"], html[data-page="supervisor"] *) { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root:where([data-page="supervisor"]) {
+            --primary: #e07b39;
+            --primary-dark: #c4652c;
+            --secondary: #4a5d3a;
+            --dark: #2d3a24;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --success: #28a745;
+            --warning: #f59e0b;
+            --danger: #dc2626;
+            --info: #0369a1;
+        }
+
+        :where(html[data-page="supervisor"]) body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+            color: var(--dark);
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        :where(html[data-page="supervisor"]) .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        :where(html[data-page="supervisor"]) .logo { display: flex; align-items: center; text-decoration: none; gap: .6rem; font-weight: 800; font-size: 1.25rem; color: var(--secondary); }
+        :where(html[data-page="supervisor"]) .logo img { height: 40px; width: auto; border-radius: 6px; }
+        :where(html[data-page="supervisor"]) .logo span { color: var(--primary); }
+
+        :where(html[data-page="supervisor"]) .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+        :where(html[data-page="supervisor"]) .user-profile { display: flex; align-items: center; gap: 1rem; }
+        :where(html[data-page="supervisor"]) .user-info { text-align: right; line-height: 1.2; }
+        :where(html[data-page="supervisor"]) .user-info .name { display: block; font-weight: 600; font-size: 0.9rem; }
+        :where(html[data-page="supervisor"]) .user-info .role { font-size: 0.75rem; color: var(--primary); background: rgba(224,123,57,0.1); padding: 2px 8px; border-radius: 20px; }
+        :where(html[data-page="supervisor"]) .logout-btn { color: var(--gray); font-size: 1.2rem; text-decoration: none; padding: 8px; border-radius: 8px; }
+        :where(html[data-page="supervisor"]) .logout-btn:hover { background: #fee2e2; color: var(--danger); }
+
+        /* Main Container */
+        :where(html[data-page="supervisor"]) .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        :where(html[data-page="supervisor"]) .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        :where(html[data-page="supervisor"]) .page-header h1 { font-size: 1.8rem; color: var(--secondary); }
+        :where(html[data-page="supervisor"]) .page-header p { color: var(--gray); font-size: 0.9rem; }
+
+        /* Stats Grid */
+        :where(html[data-page="supervisor"]) .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        :where(html[data-page="supervisor"]) .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            transition: transform 0.3s;
+        }
+        :where(html[data-page="supervisor"]) .stat-card:hover { transform: translateY(-3px); }
+        :where(html[data-page="supervisor"]) .stat-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+        }
+        :where(html[data-page="supervisor"]) .stat-icon.blue { background: #e0f2fe; color: var(--info); }
+        :where(html[data-page="supervisor"]) .stat-icon.green { background: #dcfce7; color: var(--success); }
+        :where(html[data-page="supervisor"]) .stat-icon.orange { background: #fef3c7; color: var(--warning); }
+        :where(html[data-page="supervisor"]) .stat-icon.red { background: #fee2e2; color: var(--danger); }
+        :where(html[data-page="supervisor"]) .stat-details h3 { font-size: 1.8rem; font-weight: 700; }
+        :where(html[data-page="supervisor"]) .stat-details p { font-size: 0.85rem; color: var(--gray); }
+
+        /* Dashboard Grid */
+        :where(html[data-page="supervisor"]) .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.8rem;
+        }
+
+        @media (max-width: 1024px) {
+            :where(html[data-page="supervisor"]) .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Cards */
+        :where(html[data-page="supervisor"]) .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        :where(html[data-page="supervisor"]) .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        :where(html[data-page="supervisor"]) .card-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+        :where(html[data-page="supervisor"]) .card-title i { color: var(--primary); font-size: 1.2rem; }
+        :where(html[data-page="supervisor"]) .btn-add {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.3s;
+        }
+        :where(html[data-page="supervisor"]) .btn-add:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+        :where(html[data-page="supervisor"]) .card-body {
+            padding: 1.5rem;
+            max-height: 550px;
+            overflow-y: auto;
+        }
+
+        /* Resource Tables */
+        :where(html[data-page="supervisor"]) .resource-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        :where(html[data-page="supervisor"]) .resource-table th {
+            text-align: left;
+            padding: 0.75rem 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+        :where(html[data-page="supervisor"]) .resource-table td {
+            padding: 0.9rem 0.5rem;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--light-gray);
+            vertical-align: middle;
+        }
+        :where(html[data-page="supervisor"]) .resource-table tr:hover { background: var(--light); }
+        :where(html[data-page="supervisor"]) .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        :where(html[data-page="supervisor"]) .status-available { background: #dcfce7; color: var(--success); }
+        :where(html[data-page="supervisor"]) .status-busy { background: #fff1e7; color: #b45309; }
+        :where(html[data-page="supervisor"]) .status-maintenance { background: #fef3c7; color: var(--warning); }
+        :where(html[data-page="supervisor"]) .resource-filters {
+            display: flex;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        :where(html[data-page="supervisor"]) .resource-filters input,:where(html[data-page="supervisor"]) 
+        .resource-filters select {
+            min-height: 46px;
+            padding: 0.7rem 0.9rem;
+            border: 1px solid #d9e0e6;
+            border-radius: 10px;
+            background: #fff;
+            color: var(--dark);
+            font: inherit;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 6px rgba(45, 58, 36, 0.04);
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        :where(html[data-page="supervisor"]) .resource-filters input {
+            flex: 1 1 220px;
+            max-width: 320px;
+        }
+        :where(html[data-page="supervisor"]) .resource-filters select {
+            min-width: 180px;
+            cursor: pointer;
+        }
+        :where(html[data-page="supervisor"]) .resource-filters input:focus,:where(html[data-page="supervisor"]) 
+        .resource-filters select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(224, 123, 57, 0.16);
+        }
+
+        :where(html[data-page="supervisor"]) .action-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            min-width: 96px;
+            height: 100%;
+        }
+        :where(html[data-page="supervisor"]) .resource-table th:last-child,:where(html[data-page="supervisor"]) 
+        .resource-table td:last-child {
+            width: 120px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        :where(html[data-page="supervisor"]) .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        :where(html[data-page="supervisor"]) .btn-icon.edit { color: var(--primary); }
+        :where(html[data-page="supervisor"]) .btn-icon.edit:hover { background: #fef3c7; }
+        :where(html[data-page="supervisor"]) .btn-icon.delete { color: var(--danger); }
+        :where(html[data-page="supervisor"]) .btn-icon.delete:hover { background: #fee2e2; }
+        :where(html[data-page="supervisor"]) .btn-icon.view { color: var(--info); }
+        :where(html[data-page="supervisor"]) .btn-icon.view:hover { background: #e0f2fe; }
+
+        /* Modal Styles */
+        :where(html[data-page="supervisor"]) .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            backdrop-filter: blur(4px);
+        }
+        :where(html[data-page="supervisor"]) .modal-overlay.active { display: flex; }
+        :where(html[data-page="supervisor"]) .modal-content {
+            background: white;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 550px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: ue-supervisor-modalSlide 0.3s ease;
+        }
+        @keyframes ue-supervisor-modalSlide {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        :where(html[data-page="supervisor"]) .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--light);
+        }
+        :where(html[data-page="supervisor"]) .modal-title { font-size: 1.2rem; font-weight: 700; color: var(--secondary); display: flex; align-items: center; gap: 0.5rem; }
+        :where(html[data-page="supervisor"]) .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+        :where(html[data-page="supervisor"]) .modal-close:hover { background: #fee2e2; color: var(--danger); }
+        :where(html[data-page="supervisor"]) .modal-body { padding: 1.5rem; }
+        :where(html[data-page="supervisor"]) .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            background: var(--light);
+        }
+
+        /* Form Styles */
+        :where(html[data-page="supervisor"]) .form-group {
+            margin-bottom: 1rem;
+        }
+        :where(html[data-page="supervisor"]) .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 0.4rem;
+        }
+        :where(html[data-page="supervisor"]) .form-group input,:where(html[data-page="supervisor"])  .form-group select,:where(html[data-page="supervisor"])  .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1.5px solid var(--light-gray);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+        :where(html[data-page="supervisor"]) .form-group input:focus,:where(html[data-page="supervisor"])  .form-group select:focus,:where(html[data-page="supervisor"])  .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(224,123,57,0.1);
+        }
+        :where(html[data-page="supervisor"]) .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        :where(html[data-page="supervisor"]) .btn {
+            padding: 0.7rem 1.2rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+        :where(html[data-page="supervisor"]) .btn-primary { background: var(--primary); color: white; }
+        :where(html[data-page="supervisor"]) .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        :where(html[data-page="supervisor"]) .btn-secondary { background: var(--secondary); color: white; }
+        :where(html[data-page="supervisor"]) .btn-secondary:hover { background: var(--dark); transform: translateY(-2px); }
+        :where(html[data-page="supervisor"]) .btn-outline { background: transparent; color: var(--secondary); border: 2px solid var(--secondary); }
+        :where(html[data-page="supervisor"]) .btn-outline:hover { background: var(--secondary); color: white; }
+
+        :where(html[data-page="supervisor"]) .empty-state {
+            text-align: center;
+            padding: 2.5rem;
+            color: var(--gray);
+        }
+        :where(html[data-page="supervisor"]) .empty-state i { font-size: 3rem; color: var(--light-gray); margin-bottom: 0.5rem; }
+
+        :where(html[data-page="supervisor"]) .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--secondary);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 3000;
+        }
+        :where(html[data-page="supervisor"]) .toast.show { transform: translateX(0); }
+        :where(html[data-page="supervisor"]) .toast.success { background: var(--success); }
+        :where(html[data-page="supervisor"]) .toast.error { background: var(--danger); }
+
+        @media (max-width: 768px) {
+            :where(html[data-page="supervisor"]) .main-container { padding: 1rem; }
+            :where(html[data-page="supervisor"]) .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            :where(html[data-page="supervisor"]) .form-row { grid-template-columns: 1fr; }
+        }
+
+/* ==========================================================================
+   08. login page
+   ========================================================================== */
+
+:where(html[data-page="login"]) .password-help {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 13px;
+            color: #ff9f43;
+        }
+        :where(html[data-page="login"]) .password-help a {
+            color: #ff9f43;
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        :where(html[data-page="login"]) .password-help a:hover,:where(html[data-page="login"]) 
+        .password-help a:focus-visible {
+            color: #ffc078;
+        }
+
+/* ==========================================================================
+   09. forgot-password page
+   ========================================================================== */
+
+:where(html[data-page="forgot-password"]) .message { margin: 14px 0; font-size: 14px; color: #fff; }
+        :where(html[data-page="forgot-password"]) .back-link { display: block; margin-top: 18px; text-align: center; color: #fff; }
+
+/* ==========================================================================
+   10. reset-password page
+   ========================================================================== */
+
+:where(html[data-page="reset-password"]) .message { margin: 14px 0; font-size: 14px; color: #fff; }
+        :where(html[data-page="reset-password"]) .back-link { display: block; margin-top: 18px; text-align: center; color: #fff; }
+
+/* ==========================================================================
+   11. terms page
+   ========================================================================== */
+
+:where(html[data-page="terms"]) body { max-width: 850px; margin: 40px auto; padding: 0 22px; font: 16px/1.7 Arial, sans-serif; color: #283329; }
+        :where(html[data-page="terms"]) h1 { color: #4a5d3a; }
+        :where(html[data-page="terms"]) h2 { margin-top: 1.5em; font-size: 1.1em; }
+
+/* ==========================================================================
+   12. Shared presentation helpers — runtime visibility can override these classes
+   ========================================================================== */
+
+html[data-page] .ue-text-primary { color: var(--primary); }
+html[data-page] .ue-text-muted { color: var(--gray); }
+html[data-page] .ue-text-xs { font-size: .75rem; }
+html[data-page] .ue-initially-hidden { display: none; }
+html[data-page] .ue-scroll-x { overflow-x: auto; }
+html[data-page] .ue-width-auto { width: auto; }
+html[data-page] .ue-mt-card { margin-top: 1.5rem; }
+html[data-page] .ue-mb-card { margin-bottom: 1.5rem; }
+html[data-page] .ue-chart-tall { height: 360px; }
+html[data-page] .ue-chart-medium { height: 320px; }
+html[data-page] .ue-account-note { color: var(--gray); font-size: .8rem; }
+html[data-page] .ue-delete-button { background: var(--danger); color: white; border: none; }
+html[data-page] .ue-profile-help { color: var(--gray); font-size: .85rem; margin: -.8rem 0 1rem; }
+html[data-page] .ue-quote-submit { margin-top: 2rem; }
+html[data-page] .ue-auth-error { display: none; margin-bottom: 15px; color: #e74c3c; }
+html[data-page] .ue-auth-message { margin-bottom: 16px; color: #555; }
+html[data-page] .ue-auth-back { margin-top: 10px; background: #6c757d; }
+html[data-page] .ue-auth-password-title { font-size: 1.1rem; color: #e07b39; margin-bottom: 8px; }
+html[data-page] .ue-fleet-section { padding: 20px 0 80px; background: linear-gradient(135deg, #fff8f2 0%, #f3f7ee 100%); }
+html[data-page] .ue-contact-submit { width: 100%; display: flex; justify-content: center; align-items: center; gap: .5rem; }
+html[data-page] .ue-checkbox-row { display: flex; align-items: center; gap: .6rem; }
+html[data-page] .ue-checkbox-label { margin: 0; }
+html[data-page] .ue-fleet-light { background-image: url('../images/lightduty.jpg'); }
+html[data-page] .ue-fleet-medium { background-image: url('../images/medium.jpg'); }
+html[data-page] .ue-fleet-ten-wheeler { background-image: url('../images/10wheller.webp'); }
+html[data-page] .ue-fleet-reefer { background-image: url('../images/refeer.webp'); }
+html[data-page] .ue-fleet-wing-van { background-image: url('../images/wingvan.webp'); }
+html[data-page] .ue-ownership-badge { display: inline-block; margin-top: .3rem; padding: .2rem .5rem; border-radius: 999px; font-size: .72rem; font-weight: 600; }
+html[data-page] .ue-ownership-partner { background: #fff4d6; color: #8a5a00; }
+html[data-page] .ue-ownership-owned { background: #eaf7ee; color: #1d6f42; }
+
+/* ==========================================================================
+   13. Shared UE alerts and confirmation dialogs — after page styles to preserve priority
+   ========================================================================== */
+
+.ue-dlg-backdrop{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(20,28,16,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;transition:opacity .18s ease}
+.ue-dlg-backdrop.ue-show{opacity:1}
+.ue-dlg{box-sizing:border-box;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;padding:1.75rem 1.5rem 1.25rem;border-radius:22px;background:#fff;color:#2d3a24;text-align:center;font-family:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;box-shadow:0 24px 60px rgba(0,0,0,.35);transform:translateY(14px) scale(.96);transition:transform .22s cubic-bezier(.2,.9,.3,1.2)}
+.ue-dlg-backdrop.ue-show .ue-dlg{transform:none}
+.ue-dlg-icon{width:68px;height:68px;margin:0 auto 1rem;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.ue-dlg-icon.success{background:#dcfce7;color:#28a745}
+.ue-dlg-icon.error,.ue-dlg-icon.danger{background:#fee2e2;color:#dc2626}
+.ue-dlg-icon.warning{background:#fef3c7;color:#f59e0b}
+.ue-dlg-icon.info{background:#e0f2fe;color:#0369a1}
+.ue-dlg-icon.question{background:#fff1e7;color:#e07b39}
+.ue-dlg-title{margin:0 0 .45rem;font-size:1.15rem;font-weight:700;line-height:1.3;color:#2d3a24}
+.ue-dlg-message{margin:0;font-size:.92rem;line-height:1.6;color:#6c757d;white-space:pre-line;overflow-wrap:anywhere}
+.ue-dlg-actions{display:flex;gap:.75rem;margin-top:1.5rem}
+.ue-dlg-btn{flex:1;padding:.8rem 1rem;border:2px solid transparent;border-radius:12px;font:600 .9rem 'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s}
+.ue-dlg-btn:hover{transform:translateY(-1px)}
+.ue-dlg-btn:focus-visible{outline:3px solid rgba(224,123,57,.45);outline-offset:2px}
+.ue-dlg-btn.primary{background:#e07b39;color:#fff;box-shadow:0 6px 16px rgba(224,123,57,.3)}
+.ue-dlg-btn.primary:hover{background:#c4652c}
+.ue-dlg-btn.danger{background:#dc2626;color:#fff;box-shadow:0 6px 16px rgba(220,38,38,.28)}
+.ue-dlg-btn.danger:hover{background:#b91c1c}
+.ue-dlg-btn.secondary{background:#fff;color:#4a5d3a;border-color:#4a5d3a}
+.ue-dlg-btn.secondary:hover{background:#4a5d3a;color:#fff}
+@media (max-width:420px){.ue-dlg-actions{flex-direction:column-reverse}}
+@media (prefers-reduced-motion:reduce){.ue-dlg-backdrop,.ue-dlg,.ue-dlg-btn{transition:none}}
