@@ -123,7 +123,7 @@
             </div>
         </form>
     </div>
-    <div class="modal-overlay" id="partnerModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add Business Partner</div><span class="modal-close" onclick="closeModal('partnerModal')">&times;</span></div><div class="modal-body"><div class="form-group"><label>Company Name *</label><input type="text" id="pName"></div><div class="form-grid"><div class="form-group"><label>Contact Person</label><input type="text" id="pContact"></div><div class="form-group"><label>Partnership Type</label><select id="pType"><option value="Regular">Regular</option><option value="Premium">Premium</option><option value="Corporate">Corporate</option></select></div><div class="form-group"><label>Email</label><input type="email" id="pEmail"></div><div class="form-group"><label>Phone</label><input type="tel" id="pPhone"></div></div></div><div class="modal-footer"><button class="btn-outline" onclick="closeModal('partnerModal')">Cancel</button><button class="btn-primary" onclick="addPartner()">Add Partner</button></div></div></div>
+    <div class="modal-overlay" id="partnerModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add Business Partner</div><span class="modal-close" onclick="closeModal('partnerModal')">&times;</span></div><div class="modal-body"><div class="form-group"><label>Company Name *</label><input type="text" id="pName" maxlength="255"></div><div class="form-grid"><div class="form-group"><label>Contact Person</label><input type="text" id="pContact" maxlength="255"></div><div class="form-group"><label>Partnership Type</label><select id="pType"><option value="Regular">Regular</option><option value="Premium">Premium</option><option value="Corporate">Corporate</option></select></div><div class="form-group"><label>Email</label><input type="email" id="pEmail" maxlength="255"></div><div class="form-group"><label>Phone</label><input type="tel" id="pPhone" maxlength="64"></div></div></div><div class="modal-footer"><button class="btn-outline" onclick="closeModal('partnerModal')">Cancel</button><button id="addPartnerBtn" type="button" class="btn-primary" onclick="addPartner()">Add Partner</button></div></div></div>
 
     <div class="toast" id="toast"><i class="bi bi-check-circle-fill"></i><span id="toastMsg"></span></div>
 
@@ -375,7 +375,23 @@
                 saveButton.disabled = false;
             }
         }
-        function renderPartners() { let f=partners.filter(p=>(p.company||p.name||'').toLowerCase().includes(document.getElementById('partnerSearch').value.toLowerCase())&&(!document.getElementById('partnerTypeFilter').value||(p.partnership_type||p.type)===document.getElementById('partnerTypeFilter').value)); document.getElementById('partnersBody').innerHTML=f.map(p=>`<tr><td><strong>${p.company||p.name}</strong></td><td>${p.contact_person||p.contact||'—'}</td><td>${p.email||'—'}</td><td>${p.phone||'—'}</td><td><span class="badge ${(p.partnership_type||p.type)==='Premium'?'badge-orange':(p.partnership_type||p.type)==='Corporate'?'badge-purple':'badge-green'}">${p.partnership_type||p.type||'Regular'}</span></td><td><span class="badge badge-green">Active</span></td><td><button class="btn-outline-sm ue-delete-button" onclick="deletePartner(${p.id})">Delete</button></td></tr>`).join('')||'<tr><td colspan="7"><div class="empty-state"><i class="bi bi-building"></i><p>No partners found</p></div></td></tr>'; }
+        function renderPartners() {
+            const search = document.getElementById('partnerSearch').value.toLowerCase();
+            const type = document.getElementById('partnerTypeFilter').value;
+            const filtered = partners.filter(partner =>
+                String(partner.company || partner.name || '').toLowerCase().includes(search) &&
+                (!type || (partner.partnership_type || partner.type) === type));
+            document.getElementById('partnersBody').innerHTML = filtered.map(partner => {
+                const partnershipType = partner.partnership_type || partner.type || 'Regular';
+                const badge = partnershipType === 'Premium' ? 'badge-orange' : partnershipType === 'Corporate' ? 'badge-purple' : 'badge-green';
+                return `<tr><td><strong>${escapeHtml(partner.company || partner.name || '')}</strong></td>
+                    <td>${escapeHtml(partner.contact_person || partner.contact || '—')}</td>
+                    <td>${escapeHtml(partner.email || '—')}</td><td>${escapeHtml(partner.phone || '—')}</td>
+                    <td><span class="badge ${badge}">${escapeHtml(partnershipType)}</span></td>
+                    <td><span class="badge badge-green">Active</span></td>
+                    <td><button class="btn-outline-sm ue-delete-button" onclick="deletePartner(${Number(partner.id)})">Delete</button></td></tr>`;
+            }).join('') || '<tr><td colspan="7"><div class="empty-state"><i class="bi bi-building"></i><p>No partners found</p></div></td></tr>';
+        }
         async function deleteUser(id){
             if(!(await UE.confirm('Are you sure you want to delete this user?', { type: 'danger', title: 'Delete account', confirmText: 'Delete account' }))) return;
             try {
@@ -612,24 +628,34 @@
             }
         }
         async function addPartner(){
-            let name=document.getElementById('pName').value.trim();
+            const button = document.getElementById('addPartnerBtn');
+            if (button.disabled) return;
+            const name = document.getElementById('pName').value.trim();
             if(!name) return toast('Company name required','error');
+            const emailInput = document.getElementById('pEmail');
+            if (!emailInput.checkValidity()) return emailInput.reportValidity();
             const partnerData = {
                 company: name,
                 contact_person: document.getElementById('pContact').value.trim() || null,
+                email: emailInput.value.trim() || null,
+                phone: document.getElementById('pPhone').value.trim() || null,
                 partnership_type: document.getElementById('pType').value,
                 contract_duration: null,
                 agreement_details: null
             };
+            const originalLabel = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Saving…';
             try {
                 const res = await fetch(`${API_URL}/partners`, {
                     method:'POST',
                     headers: managerAuthHeaders({'Content-Type':'application/json'}),
                     body: JSON.stringify(partnerData)
                 });
-                if(!res.ok) throw new Error('Create partner failed');
-                const saved = await res.json();
-                partners.push({ id: saved.id ? saved.id.toString() : Date.now(), name, contact: partnerData.contact_person || '—', email: document.getElementById('pEmail').value.trim() || '—', phone: document.getElementById('pPhone').value.trim() || '—', type: partnerData.partnership_type, status:'active' });
+                const saved = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(saved.error || `Unable to add partner (HTTP ${res.status}).`);
+                if (!saved.id) throw new Error('The server did not confirm a partner ID. Refresh the partner list before retrying.');
+                partners.unshift({ ...partnerData, ...saved });
                 closeModal('partnerModal');
                 document.getElementById('pName').value='';
                 document.getElementById('pContact').value='';
@@ -640,7 +666,10 @@
                 toast(`Partner ${name} added`,'success');
             } catch(err) {
                 console.error('Add partner error:', err);
-                toast('Unable to add partner. Check backend server.', 'error');
+                toast(err.message || 'Unable to add partner. Please try again.', 'error');
+            } finally {
+                button.disabled = false;
+                button.textContent = originalLabel;
             }
         }
         function filterTx(f,el){txFilter=f;document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');txPage=1;renderTransactions();}
