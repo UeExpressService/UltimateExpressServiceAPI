@@ -110,6 +110,8 @@ CREATE TABLE partners (
     id INT NOT NULL AUTO_INCREMENT,
     company VARCHAR(255) NOT NULL,
     contact_person VARCHAR(255) NULL,
+    email VARCHAR(255) NULL,
+    phone VARCHAR(64) NULL,
     partnership_type VARCHAR(100) NULL,
     contract_duration VARCHAR(100) NULL,
     agreement_details TEXT NULL,

@@ -1440,43 +1440,7 @@ app.post('/api/users/create-customer', requireManager, auditManagerAction('custo
 });
 
 // ---------- Partners ----------
-app.get('/api/partners', requireManager, (req, res) => {
-    db.query('SELECT * FROM partners ORDER BY created_at DESC', (err, results) => {
-        if (err) return sendError(res, err, 'Unable to load partners.');
-        res.json(results);
-    });
-});
-
-app.post('/api/partners', requireManager, auditManagerAction('partner.created', 'partner', 'Manager added a business partner.'), (req, res) => {
-    const company = cleanText(req.body.company, 255);
-    if (!company) return res.status(400).json({ error: 'Company name is required.' });
-    const sql = `INSERT INTO partners (company, contact_person, email, phone, partnership_type, contract_duration, agreement_details)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    db.query(sql, [
-        company,
-        cleanText(req.body.contact_person, 255) || null,
-        cleanText(req.body.email, 255) || null,
-        cleanText(req.body.phone, 64) || null,
-        cleanText(req.body.partnership_type, 100) || null,
-        cleanText(req.body.contract_duration, 100) || null,
-        cleanText(req.body.agreement_details, 2000) || null
-    ], (err, result) => {
-        if (err) return sendError(res, err, 'Unable to save partner.');
-        res.json({ id: result.insertId, message: 'Partner saved' });
-    });
-});
-
-app.delete('/api/partners/:id', requireManager, auditManagerAction('partner.deleted', 'partner', 'Manager removed a business partner.'), (req, res) => {
-    const partnerId = Number(req.params.id);
-    if (!Number.isInteger(partnerId) || partnerId <= 0) {
-        return res.status(400).json({ error: 'Invalid partner ID.' });
-    }
-    db.query('DELETE FROM partners WHERE id = ?', [partnerId], (error, result) => {
-        if (error) return sendError(res, error, 'Unable to remove partner.');
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Partner not found.' });
-        res.json({ message: 'Partner removed.' });
-    });
-});
+require('./partners')(app, { dbp, requireManager, auditManagerAction, cleanText, isValidEmail, HttpError, sendError });
 
 // ---------- Manager analytics (calculated from the live database) ----------
 app.get('/api/manager/report', requireManager, async (req, res) => {
