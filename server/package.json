@@ -17,7 +17,8 @@
     "clean:test-data": "node clean-test-data.js",
     "test:login-codes": "node test-login-codes.js",
     "test:waybills": "node test-waybills.js",
-    "test:partners": "node test-partners.js"
+    "test:partners": "node test-partners.js",
+    "test:password-resets": "node test-password-resets.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.4",
