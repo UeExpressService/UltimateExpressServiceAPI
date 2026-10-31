@@ -343,6 +343,11 @@ db.on('connection', connection => {
     connection.query('SET time_zone = ?', [dbTimezone]);
 });
 const dbp = db.promise();
+const ensurePasswordResetTable = require('./password-reset-store')(dbp);
+
+ensurePasswordResetTable()
+    .then(() => console.log('Customer password-reset storage is ready.'))
+    .catch(error => console.error('Customer password-reset storage setup failed:', error.message));
 
 dbp.query('SELECT 1')
     .then(() => console.log('Connected to MySQL database.'))
@@ -643,7 +648,7 @@ app.post('/api/login/verify-code', codeLimiter, async (req, res) => {
 
 app.post('/api/customer/password-reset/request', resetLimiter, async (req, res) => {
     const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-    if (!email || email.length > 254) {
+    if (!isValidEmail(email)) {
         return res.status(400).json({ error: 'Enter a valid email address.' });
     }
     if (!hasSessionSecret()) {
@@ -654,6 +659,7 @@ app.post('/api/customer/password-reset/request', resetLimiter, async (req, res) 
     }
 
     try {
+        await ensurePasswordResetTable();
         const [users] = await dbp.query(
             'SELECT id, name, email FROM users WHERE email = ? AND role = ? LIMIT 1',
             [email, 'customer']
@@ -715,6 +721,7 @@ app.post('/api/customer/password-reset/confirm', resetLimiter, async (req, res) 
     }
 
     try {
+        await ensurePasswordResetTable();
         const hashedPassword = await hashPassword(newPassword);
         const outcome = await withTransaction(async connection => {
             const [resets] = await connection.query(
