@@ -2450,9 +2450,11 @@
    11. terms page
    ========================================================================== */
 
-:where(html[data-page="terms"]) body { max-width: 850px; margin: 40px auto; padding: 0 22px; font: 16px/1.7 Arial, sans-serif; color: #283329; }
-        :where(html[data-page="terms"]) h1 { color: #4a5d3a; }
-        :where(html[data-page="terms"]) h2 { margin-top: 1.5em; font-size: 1.1em; }
+:where(html[data-page="terms"], html[data-page="privacy"]) body { max-width: 850px; margin: 40px auto; padding: 0 22px; font: 16px/1.7 Arial, sans-serif; color: #283329; }
+        :where(html[data-page="terms"], html[data-page="privacy"]) h1 { color: #4a5d3a; }
+        :where(html[data-page="terms"], html[data-page="privacy"]) h2 { margin-top: 1.5em; font-size: 1.1em; }
+
+:where(html[data-page="privacy"]) a { color: #385329; overflow-wrap: anywhere; }
 
 /* ==========================================================================
    12. Shared presentation helpers — runtime visibility can override these classes
