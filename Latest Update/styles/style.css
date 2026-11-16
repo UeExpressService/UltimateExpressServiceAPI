@@ -20,6 +20,7 @@
  * 12. Shared presentation helpers — runtime visibility can override these classes
  * 13. Shared UE alerts and confirmation dialogs — after page styles to preserve priority
  * 14. Company email recovery
+ * 15. User activity log
  */
 
 /* ==========================================================================
@@ -2540,3 +2541,13 @@ html[data-page] .ue-ownership-owned { background: #eaf7ee; color: #1d6f42; }
 .ue-email-status.is-success{border-color:#75996c;background:#eff8eb;color:#2b5320}
 .ue-email-nav{text-decoration:none}
 @media(max-width:480px){:where(html[data-page="email-recovery"]) body{padding:14px 12px}.ue-email-recovery-card{padding:23px 19px;margin:10px auto}}
+
+/* 15. User activity log */
+.ue-audit-filters{display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr;gap:14px;margin-bottom:14px}
+.ue-audit-filters label{display:flex;flex-direction:column;gap:6px;color:#36432e;font-size:.82rem;font-weight:600}
+.ue-audit-filters input,.ue-audit-filters select{width:100%;min-width:0;min-height:42px;padding:9px 11px;border:1px solid #d6dfd0;border-radius:8px;background:#fff;color:#253320;font:inherit}
+.ue-audit-note{font-size:.8rem;line-height:1.6;color:#64705d;margin:0 0 16px}
+.ue-audit-pagination{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;font-size:.85rem;color:#5f6e57}
+.ue-audit-pagination>div{display:flex;gap:8px}.ue-audit-pagination button:disabled{opacity:.45;cursor:default}
+@media(max-width:900px){.ue-audit-filters{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.ue-audit-filters{grid-template-columns:1fr}.ue-audit-pagination{align-items:flex-start;flex-direction:column}}

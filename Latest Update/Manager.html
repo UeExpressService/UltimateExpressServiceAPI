@@ -45,15 +45,25 @@
     <div class="main-content">
         <div id="panel-audit" class="panel ue-initially-hidden">
             <div class="page-header">
-                <div><h1>Manager <span class="ue-text-primary">Activity Log</span></h1><p>Recent account, transaction, payment, and partner changes</p></div>
+                <div><h1>User <span class="ue-text-primary">Activity Log</span></h1><p>Activity by customers, dispatchers, supervisors, and managers</p></div>
                 <button class="btn-outline-sm" type="button" onclick="fetchAuditLogs()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
             </div>
-            <div class="card"><div class="card-body ue-scroll-x">
-                <table class="data-table">
-                    <thead><tr><th>Date and Time</th><th>Manager</th><th>Activity</th><th>Record</th><th>Details</th></tr></thead>
-                    <tbody id="auditLogsBody"><tr><td colspan="5">Loading activity...</td></tr></tbody>
-                </table>
-            </div></div>
+            <div class="card">
+                <div class="card-body">
+                    <div class="ue-audit-filters">
+                        <label>Search activity<input id="auditSearch" type="search" maxlength="120" placeholder="User, action or record" oninput="scheduleAuditSearch()"></label>
+                        <label>User role<select id="auditRoleFilter" onchange="resetAuditPage()"><option value="">All roles</option><option value="customer">Customer</option><option value="dispatcher">Dispatcher</option><option value="supervisor">Supervisor</option><option value="manager">Manager</option><option value="company_owner">Company Gmail owner</option></select></label>
+                        <label>Result<select id="auditOutcomeFilter" onchange="resetAuditPage()"><option value="">All results</option><option value="success">Successful</option><option value="denied">Denied</option><option value="failed">Failed</option><option value="aborted">Interrupted</option></select></label>
+                        <label>Activity type<select id="auditSourceFilter" onchange="resetAuditPage()"><option value="">All activity</option><option value="server">Server-recorded actions</option><option value="interface">Page interactions</option></select></label>
+                    </div>
+                    <p class="ue-audit-note">Changes, sign-ins and file access are recorded by the server. Page navigation, search and export requests are browser-reported. Repeated automatic list refreshes are grouped for five minutes.</p>
+                    <div class="ue-scroll-x"><table class="data-table">
+                        <thead><tr><th>Date and Time</th><th>User and Role</th><th>Activity</th><th>Record</th><th>Result</th><th>Details</th></tr></thead>
+                        <tbody id="auditLogsBody"><tr><td colspan="6">Loading activity...</td></tr></tbody>
+                    </table></div>
+                    <div class="ue-audit-pagination"><span id="auditPageInfo" aria-live="polite"></span><div><button class="btn-outline-sm" id="auditPrevious" type="button" onclick="changeAuditPage(-1)" disabled>Previous</button><button class="btn-outline-sm" id="auditNext" type="button" onclick="changeAuditPage(1)" disabled>Next</button></div></div>
+                </div>
+            </div>
         </div>
 
         <!-- Dashboard Panel -->
@@ -227,29 +237,49 @@
             }
         }
 
-        async function fetchAuditLogs() {
+        let auditPage = 1, auditTotal = 0, auditRequest = 0, auditSearchTimer;
+        const AUDIT_PAGE_SIZE = 50;
+        function resetAuditPage(){auditPage=1;fetchAuditLogs();}
+        function scheduleAuditSearch(){clearTimeout(auditSearchTimer);auditSearchTimer=setTimeout(resetAuditPage,350);}
+        function changeAuditPage(delta){auditPage=Math.max(1,auditPage+delta);fetchAuditLogs();}
+        async function fetchAuditLogs(silent = false) {
+            const request = ++auditRequest;
             const body = document.getElementById('auditLogsBody');
-            body.innerHTML = '<tr><td colspan="5">Loading activity...</td></tr>';
+            if (!silent) body.innerHTML = '<tr><td colspan="6">Loading activity...</td></tr>';
+            const params = new URLSearchParams({limit:String(AUDIT_PAGE_SIZE),page:String(auditPage)});
+            for(const [name,id] of [['search','auditSearch'],['role','auditRoleFilter'],['outcome','auditOutcomeFilter'],['source','auditSourceFilter']]){
+                const value=document.getElementById(id).value.trim();if(value)params.set(name,value);
+            }
             try {
-                const response = await fetch(`${API_URL}/manager/audit-logs?limit=100`, {
-                    headers: managerAuthHeaders()
-                });
+                const response = await fetch(`${API_URL}/manager/audit-logs?${params}`, {headers:managerAuthHeaders()});
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Unable to load manager activity.');
-                body.innerHTML = data.map(log => `
-                    <tr>
+                if(request!==auditRequest)return;
+                if(!response.ok)throw new Error(data.error || 'Unable to load user activity.');
+                auditTotal=Number(response.headers.get('X-Total-Count')) || 0;
+                if(auditPage>1 && !data.length){auditPage=Math.max(1,Math.ceil(auditTotal/AUDIT_PAGE_SIZE));return fetchAuditLogs();}
+                body.innerHTML=data.map(log=>{
+                    const result=log.outcome || 'success';
+                    const badge=result==='success'?'badge-green':result==='denied'?'badge-orange':'badge-red';
+                    return `<tr>
                         <td>${escapeHtml(new Date(log.created_at).toLocaleString('en-PH'))}</td>
-                        <td>${escapeHtml(log.actor_name || log.actor_email || `Account ${log.actor_user_id || ''}`)}</td>
-                        <td><span class="badge badge-blue">${escapeHtml(log.action)}</span></td>
-                        <td>${escapeHtml(log.entity_type)}${log.entity_id ? ` #${escapeHtml(log.entity_id)}` : ''}</td>
+                        <td>${escapeHtml(log.actor_name || log.actor_email || `Former account ${log.actor_user_id || ''}`)}<br><span class="badge badge-blue">${escapeHtml(log.actor_role || 'Unknown role')}</span></td>
+                        <td>${escapeHtml(log.action.replace(/[._]/g,' '))}${log.source==='interface'?'<br><small>Page interaction</small>':''}</td>
+                        <td>${escapeHtml(log.entity_type)}${log.entity_id?` #${escapeHtml(log.entity_id)}`:''}</td>
+                        <td><span class="badge ${badge}">${escapeHtml(result)}</span>${log.http_status?`<br><small>HTTP ${escapeHtml(log.http_status)}</small>`:''}</td>
                         <td>${escapeHtml(log.summary)}</td>
-                    </tr>
-                `).join('') || '<tr><td colspan="5"><div class="empty-state"><i class="bi bi-journal-text"></i><p>No manager activity recorded yet.</p></div></td></tr>';
-            } catch (error) {
-                console.error('Manager activity load failed:', error);
-                body.innerHTML = `<tr><td colspan="5">${escapeHtml(error.message || 'Unable to load manager activity.')}</td></tr>`;
+                    </tr>`;
+                }).join('') || '<tr><td colspan="6">No user activity matches these filters.</td></tr>';
+                document.getElementById('auditPageInfo').textContent=`${auditTotal?((auditPage-1)*AUDIT_PAGE_SIZE+1):0}-${Math.min(auditPage*AUDIT_PAGE_SIZE,auditTotal)} of ${auditTotal} activities`;
+                document.getElementById('auditPrevious').disabled=auditPage<=1;
+                document.getElementById('auditNext').disabled=auditPage*AUDIT_PAGE_SIZE>=auditTotal;
+            }catch(error){
+                if(request!==auditRequest)return;
+                body.innerHTML=`<tr><td colspan="6">${escapeHtml(error.message || 'Unable to load user activity.')}</td></tr>`;
             }
         }
+        setInterval(()=>{
+            if(!document.hidden && auditPage===1 && document.getElementById('panel-audit').offsetParent!==null)fetchAuditLogs(true);
+        },30000);
 
         function updateKPIs() {
             const paidRevenue = transactions.reduce((sum, transaction) => sum + (transaction.amount || 0), 0);

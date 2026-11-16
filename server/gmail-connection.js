@@ -112,6 +112,8 @@ function createGmailConnection({ dbp, google, env = process.env }) {
                 oauth.setCredentials({ refresh_token: tokens.refresh_token });
                 await oauth.getAccessToken();
                 await dbp.execute('INSERT INTO gmail_authorization (id, encrypted_refresh_token, sender_email) VALUES (1, ?, ?) ON DUPLICATE KEY UPDATE encrypted_refresh_token = VALUES(encrypted_refresh_token), sender_email = VALUES(sender_email), updated_at = CURRENT_TIMESTAMP', [encrypt(tokens.refresh_token), sender]);
+                res.locals.auditExternalActor = { name: 'Company Gmail owner', email: sender, role: 'company_owner' };
+                res.locals.auditDescriptor = { action: 'gmail.reconnected', type: 'email_service', summary: 'Reconnected the company Gmail sender after Google verification.' };
                 console.log('Company Gmail authorization reconnected.');
                 return finish('connected');
             } catch (error) {

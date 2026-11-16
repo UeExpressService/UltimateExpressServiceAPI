@@ -19,7 +19,8 @@
     "test:waybills": "node test-waybills.js",
     "test:partners": "node test-partners.js",
     "test:password-resets": "node test-password-resets.js",
-    "test:gmail-recovery": "node --test test-gmail-connection.js"
+    "test:gmail-recovery": "node --test test-gmail-connection.js",
+    "test:audit": "node --test test-audit-log.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.4",

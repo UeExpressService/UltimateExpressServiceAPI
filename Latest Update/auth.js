@@ -106,6 +106,10 @@ function requireRole(requiredRole) {
 }
 
 function handleLogout() {
+    const headers = authenticatedApiHeaders();
+    if (headers.Authorization && window.UE_API_URL) {
+        fetch(`${window.UE_API_URL}/logout`, { method: 'POST', headers, keepalive: true }).catch(() => {});
+    }
     sessionStorage.removeItem('currentUser');
 }
 
@@ -336,4 +340,42 @@ document.addEventListener('DOMContentLoaded', function() {
     if (path.includes('login.html')) {
         checkExistingSession();
     }
+});
+
+// Only fixed activity names are sent. Search text and form values stay out of the log.
+function recordUserActivity(action, section) {
+    const user = getCurrentUser();
+    const page = document.documentElement.dataset.page;
+    if (!hasAuthenticatedSession(user) || user.mustChangePassword || page !== user.role || !window.UE_API_URL) return;
+    fetch(`${window.UE_API_URL}/activity`, {
+        method: 'POST', keepalive: true,
+        headers: authenticatedApiHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ action, page, ...(section ? { section } : {}) })
+    }).catch(() => {});
+}
+
+document.addEventListener('DOMContentLoaded', () => recordUserActivity('page.opened'));
+document.addEventListener('click', event => {
+    if (!event.isTrusted) return;
+    const element = event.target.closest('[onclick],.nav-item,.tab,.pill,.tab-btn,a[href]');
+    if (!element) return;
+    const handler = element.getAttribute('onclick') || '';
+    const section = handler.match(/(?:showPanel|filterTx|filterInquiries|showTab|switchTab|filterTransactions|renderTransactions)\(['"]([a-z]+)['"]/i)?.[1];
+    const knownSections = ['dashboard','accounts','transactions','partners','audit','revenue','inquiries','drivers','trucks','history','profile','services','fleet','all','new','pending','approved','ongoing','completed','cancelled'];
+    if (section && knownSections.includes(section)) recordUserActivity(/filter|renderTransactions/i.test(handler) ? 'filter.changed' : 'section.opened', section);
+    else if (/\b(downloadManagerReport|downloadFleetReport)\(/.test(handler)) recordUserActivity('report.export_requested');
+    else if (/\b(printManagerReceipt|window\.print)\(/.test(handler)) recordUserActivity('receipt.print_requested');
+    else if (/\bopenInquiryReceipt\(/.test(handler)) recordUserActivity('receipt.opened');
+    else if (element.matches('a[href]')) {
+        try { const url = new URL(element.href); if (url.hostname === 'maps.google.com' || (url.hostname === 'www.google.com' && url.pathname.startsWith('/maps'))) recordUserActivity('route.open_requested'); } catch {}
+    }
+});
+let activitySearchTimer;
+document.addEventListener('input', event => {
+    if (!event.isTrusted || !/search/i.test(event.target.id || '')) return;
+    clearTimeout(activitySearchTimer);
+    activitySearchTimer = setTimeout(() => recordUserActivity('search.used'), 900);
+});
+document.addEventListener('change', event => {
+    if (event.isTrusted && event.target.matches('select') && /filter/i.test(event.target.id || '')) recordUserActivity('filter.changed');
 });

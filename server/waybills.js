@@ -110,6 +110,7 @@ module.exports = function registerWaybills(app, { dbp, withTransaction, requireR
                 );
                 return { id: result.insertId, filename, content_type: detected.type, byte_size: req.body.length };
             });
+            res.locals.auditEntityId = file.id;
             res.status(201).json(file);
         } catch (error) {
             sendError(res, error, 'Unable to save the waybill.');

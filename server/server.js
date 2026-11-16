@@ -10,6 +10,7 @@ const sgMail = require('@sendgrid/mail');
 const { google } = require('googleapis');
 const bcrypt = require('bcryptjs');
 const { createGmailConnection, mailErrorSummary } = require('./gmail-connection');
+const { createAuditTrail } = require('./audit-log');
 
 const app = express();
 app.set('trust proxy', 1); // Railway / Codespaces sit behind a proxy
@@ -217,10 +218,11 @@ function requireRoles(...allowedRoles) {
         if (!claims) {
             return res.status(401).json({ error: 'A valid authenticated session is required.' });
         }
+        req.auth = claims;
         if (!allowedRoles.includes(claims.role)) {
             return res.status(403).json({ error: 'Your account role cannot access this resource.' });
         }
-        if (claims.mustChangePassword === true && req.path !== '/api/account/first-login-password') {
+        if (claims.mustChangePassword === true && !['/api/account/first-login-password', '/api/logout'].includes(req.path)) {
             return res.status(403).json({ error: 'Set a new password before using the application.' });
         }
         req.auth = claims;
@@ -344,6 +346,8 @@ db.on('connection', connection => {
     connection.query('SET time_zone = ?', [dbTimezone]);
 });
 const dbp = db.promise();
+const auditTrail = createAuditTrail({ dbp });
+auditTrail.ready().catch(() => console.error('User activity storage could not be prepared.'));
 const gmailConnection = createGmailConnection({ dbp, google });
 const ensurePasswordResetTable = require('./password-reset-store')(dbp);
 
@@ -376,23 +380,7 @@ function sendError(res, error, fallbackMessage) {
     return res.status(500).json({ error: fallbackMessage });
 }
 
-function auditManagerAction(action, entityType, summary) {
-    return (req, res, next) => {
-        res.once('finish', () => {
-            if (req.auth?.role !== 'manager' || res.statusCode < 200 || res.statusCode >= 300) return;
-            const entityId = req.params.id || req.body?.requestId || res.locals.auditEntityId || null;
-            db.query(
-                `INSERT INTO manager_audit_logs (actor_user_id, action, entity_type, entity_id, summary)
-                 VALUES (?, ?, ?, ?, ?)`,
-                [Number(req.auth.sub), action, entityType, entityId == null ? null : String(entityId), summary],
-                error => {
-                    if (error) console.error('Manager activity audit write failed:', error);
-                }
-            );
-        });
-        next();
-    };
-}
+const auditUserAction = auditTrail.describe;
 
 // ------------------------------------------------------------------
 // Middleware
@@ -420,6 +408,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: '200kb' }));
+app.use('/api', auditTrail.middleware);
 
 // ------------------------------------------------------------------
 // Front-end files
@@ -455,6 +444,10 @@ app.use((req, res, next) => {
 app.use(express.static(frontendPath));
 
 // ---------- API Routes ----------
+
+app.post('/api/logout', requireRoles('customer', 'dispatcher', 'supervisor', 'manager'), (req, res) => {
+    res.status(204).end();
+});
 
 require('./waybills')(app, { dbp, withTransaction, requireRoles, rateLimit, HttpError, sendError });
 gmailConnection.register(app, rateLimit);
@@ -524,6 +517,7 @@ app.post('/api/login', loginLimiter, async (req, res) => {
         }
 
         const user = users[0];
+        res.locals.auditActorUserId = user.id;
         if (!isBcryptHash(user.password)) {
             const hashedPassword = await hashPassword(password);
             await dbp.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, user.id]);
@@ -643,6 +637,7 @@ app.post('/api/login/verify-code', codeLimiter, async (req, res) => {
                 }
             };
         });
+        if (outcome.status === 200) res.locals.auditActorUserId = outcome.body.id;
         res.status(outcome.status).json(outcome.body);
     } catch (error) {
         sendError(res, error, 'Unable to verify the login code.');
@@ -750,37 +745,17 @@ app.post('/api/customer/password-reset/confirm', resetLimiter, async (req, res) 
                 'UPDATE login_code_challenges SET consumed_at = NOW() WHERE user_id = ? AND consumed_at IS NULL',
                 [resets[0].user_id]
             );
-            return { status: 200, body: { message: 'Password changed. You can now sign in with your new password.' } };
+            return { status: 200, userId: resets[0].user_id, body: { message: 'Password changed. You can now sign in with your new password.' } };
         });
+        if (outcome.status === 200) res.locals.auditActorUserId = outcome.userId;
         res.status(outcome.status).json(outcome.body);
     } catch (error) {
         sendError(res, error, 'Unable to change the password.');
     }
 });
 
-app.get('/api/manager/audit-logs', requireManager, (req, res) => {
-    const requestedLimit = Number(req.query.limit) || 100;
-    const limit = Math.min(Math.max(Math.trunc(requestedLimit), 1), 200);
-    db.query(
-        `SELECT log.id, log.actor_user_id, account.name AS actor_name, account.email AS actor_email,
-                log.action, log.entity_type, log.entity_id, log.summary, log.created_at
-         FROM manager_audit_logs log
-         LEFT JOIN users account ON account.id = log.actor_user_id
-         ORDER BY log.created_at DESC
-         LIMIT ?`,
-        [limit],
-        (error, rows) => {
-            if (error) {
-                console.error('Manager audit log load failed:', error);
-                return res.status(500).json({ error: 'Unable to load manager activity.' });
-            }
-            res.json(rows);
-        }
-    );
-});
+auditTrail.register(app, { requireRoles, requireManager, rateLimit });
 
-// ---------- Trucks ----------
-// Everyone in operations can READ the fleet; only manager/supervisor can change it.
 const FLEET_STATUSES = ['available', 'busy', 'maintenance'];
 
 app.get('/api/trucks', requireRoles('manager', 'supervisor', 'dispatcher'), (req, res) => {
@@ -812,6 +787,7 @@ app.post('/api/trucks', requireRoles('manager', 'supervisor'), (req, res) => {
             if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'A truck with that plate number already exists.' });
             return sendError(res, err, 'Unable to save truck.');
         }
+        res.locals.auditEntityId = result.insertId;
         res.json({ id: result.insertId, type, license_plate: licensePlate, status, third_party: thirdParty });
     });
 });
@@ -890,6 +866,7 @@ app.post('/api/drivers', requireRoles('manager', 'supervisor'), (req, res) => {
             if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'A driver with that license number already exists.' });
             return sendError(res, err, 'Unable to save driver.');
         }
+        res.locals.auditEntityId = result.insertId;
         res.json({ id: result.insertId, name, license_number: licenseNumber, status });
     });
 });
@@ -953,7 +930,7 @@ app.get('/api/service-requests', requireRoles('manager', 'supervisor', 'dispatch
     });
 });
 
-app.put('/api/service-requests/:id/payment', requireManager, auditManagerAction('payment.recorded', 'service_request', 'Manager recorded or changed a final payment amount.'), async (req, res) => {
+app.put('/api/service-requests/:id/payment', requireManager, auditUserAction('payment.recorded', 'service_request', 'Manager recorded or changed a final payment amount.'), async (req, res) => {
     const requestId = Number(req.params.id);
     const paidAmount = Number(req.body.paid_amount);
     if (!Number.isInteger(requestId) || requestId < 1) {
@@ -1030,6 +1007,7 @@ app.post('/api/service-requests', requireRoles('customer', 'dispatcher'), (req, 
     ], (err, result) => {
         if (err) return sendError(res, err, 'Unable to submit the request.');
 
+        res.locals.auditEntityId = result.insertId;
         // Answer the user right away; emails are sent in the background.
         res.status(201).json({ id: result.insertId, message: 'Request submitted' });
 
@@ -1084,7 +1062,7 @@ app.post('/api/service-requests', requireRoles('customer', 'dispatcher'), (req, 
     });
 });
 
-app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), auditManagerAction('service_request.updated', 'service_request', 'Manager updated service request details, pricing, or assignments.'), async (req, res) => {
+app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), auditUserAction('service_request.updated', 'service_request', 'Updated booking details, pricing, or assignments.'), async (req, res) => {
     const body = req.body || {};
     const allowedStatuses = ['new', 'pending', 'approved', 'ongoing', 'completed'];
     if (!allowedStatuses.includes(body.status)) {
@@ -1096,7 +1074,7 @@ app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), audi
     }
 
     try {
-        await withTransaction(async connection => {
+        const savedChange = await withTransaction(async connection => {
             const [requests] = await connection.query(
                 'SELECT * FROM service_requests WHERE id = ? FOR UPDATE',
                 [req.params.id]
@@ -1157,7 +1135,14 @@ app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), audi
             if (assignedTruckId) {
                 await connection.query('UPDATE trucks SET status = ? WHERE id = ?', [resourceStatus, assignedTruckId]);
             }
+            const changes = [];
+            if (previous.status !== body.status) changes.push(`Status: ${previous.status} to ${body.status}`);
+            if (String(previous.assigned_driver_id) !== String(assignedDriverId)) changes.push(`Driver: ${previous.assigned_driver_id || 'unassigned'} to ${assignedDriverId || 'unassigned'}`);
+            if (String(previous.assigned_truck_id) !== String(assignedTruckId)) changes.push(`Truck: ${previous.assigned_truck_id || 'unassigned'} to ${assignedTruckId || 'unassigned'}`);
+            if (String(previous.quoted_amount) !== String(quotedAmount)) changes.push('Updated the quotation');
+            return changes.join('; ') || 'Updated booking details.';
         });
+        res.locals.auditSummary = savedChange;
         res.json({ message: 'Request updated' });
     } catch (error) {
         sendError(res, error, 'Unable to update service request');
@@ -1172,7 +1157,7 @@ app.get('/api/users', requireManager, (req, res) => {
     });
 });
 
-app.put('/api/users/:id', requireManager, auditManagerAction('account.updated', 'user', 'Manager updated an account profile.'), async (req, res) => {
+app.put('/api/users/:id', requireManager, auditUserAction('account.updated', 'user', 'Manager updated an account profile.'), async (req, res) => {
     const userId = Number(req.params.id);
     const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
     const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
@@ -1202,7 +1187,7 @@ app.put('/api/users/:id', requireManager, auditManagerAction('account.updated', 
     }
 });
 
-app.delete('/api/users/:id', requireManager, auditManagerAction('account.deleted', 'user', 'Manager deleted an account.'), async (req, res) => {
+app.delete('/api/users/:id', requireManager, auditUserAction('account.deleted', 'user', 'Manager deleted an account.'), async (req, res) => {
     const userId = Number(req.params.id);
     if (!Number.isInteger(userId) || userId <= 0) {
         return res.status(400).json({ error: 'Invalid user ID' });
@@ -1235,7 +1220,7 @@ app.post('/api/register', (req, res) => {
     return res.status(410).json({ error: 'Customer self-registration is disabled. Please contact Ultimate Express to request an account.' });
 });
 
-app.post('/api/users', requireManager, auditManagerAction('account.created', 'user', 'Manager created a staff account.'), async (req, res) => {
+app.post('/api/users', requireManager, auditUserAction('account.created', 'user', 'Manager created a staff account.'), async (req, res) => {
     const { role, company, phone, address, employee_id, department } = req.body;
     if (role === 'customer') {
         return res.status(403).json({ error: 'Customer accounts must be created by a manager.' });
@@ -1347,7 +1332,7 @@ app.post('/api/customer-account-requests', accountRequestLimiter, (req, res) => 
     });
 });
 
-app.put('/api/customer-account-requests/:id', requireManager, auditManagerAction('customer_request.updated', 'customer_account_request', 'Manager processed or declined a customer account request.'), (req, res) => {
+app.put('/api/customer-account-requests/:id', requireManager, auditUserAction('customer_request.updated', 'customer_account_request', 'Manager processed or declined a customer account request.'), (req, res) => {
     const { status } = req.body;
     if (!['pending', 'processed', 'declined'].includes(status)) {
         return res.status(400).json({ error: 'Invalid customer account request status' });
@@ -1360,7 +1345,7 @@ app.put('/api/customer-account-requests/:id', requireManager, auditManagerAction
 });
 
 // Customer accounts get their own random first-time password (no shared default password).
-app.post('/api/users/create-customer', requireManager, auditManagerAction('customer_account.created', 'user', 'Manager created a customer account.'), async (req, res) => {
+app.post('/api/users/create-customer', requireManager, auditUserAction('customer_account.created', 'user', 'Manager created a customer account.'), async (req, res) => {
     const { name, email, phone, company, requestId } = req.body;
     if (requestId === undefined && (!name || !email)) {
         return res.status(400).json({ error: 'Name and email are required' });
@@ -1450,7 +1435,7 @@ app.post('/api/users/create-customer', requireManager, auditManagerAction('custo
 });
 
 // ---------- Partners ----------
-require('./partners')(app, { dbp, requireManager, auditManagerAction, cleanText, isValidEmail, HttpError, sendError });
+require('./partners')(app, { dbp, requireManager, auditManagerAction: auditUserAction, cleanText, isValidEmail, HttpError, sendError });
 
 // ---------- Manager analytics (calculated from the live database) ----------
 app.get('/api/manager/report', requireManager, async (req, res) => {

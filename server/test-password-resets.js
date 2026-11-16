@@ -152,6 +152,41 @@ async function main() {
     const [[unchanged]] = await connection.execute('SELECT password FROM users WHERE id=2');
     assert.equal(unchanged.password, originalHash, 'Staff password remains unchanged');
 
+    // Exercise real password/code authentication and audit SQL for every role.
+    for (const [id, role] of [[4, 'dispatcher'], [5, 'supervisor']]) {
+        await connection.execute('INSERT INTO users (id,name,email,password,role,verified,must_change_password) VALUES (?,?,?,?,?,1,0)',
+            [id, `Audit test ${role}`, `${role}${id}@example.invalid`, originalHash, role]);
+    }
+    await connection.query('UPDATE users SET must_change_password=0 WHERE id=2');
+    let managerToken;
+    for (const [id, role, password] of [[3,'customer',newPassword],[2,'manager',originalPassword],[4,'dispatcher',originalPassword],[5,'supervisor',originalPassword]]) {
+        const email=`${role}${id}@example.invalid`;
+        const challenge=await (await post('/login',{email,password})).json();
+        assert.ok(challenge.challengeId);
+        for(let attempt=0;attempt<30 && !emails.some(e=>e.to===email && e.subject.includes('login code'));attempt++)await delay(20);
+        const mail=emails.findLast(e=>e.to===email && e.subject.includes('login code'));
+        const code=mail.html.match(/>(\d{6})<\/p>/)[1];
+        const verified=await post('/login/verify-code',{challengeId:challenge.challengeId,code});
+        assert.equal(verified.status,200);
+        const session=await verified.json();
+        if(role==='manager')managerToken=session.authToken;
+        const headers={'Content-Type':'application/json',Authorization:`Bearer ${session.authToken}`};
+        const activity=await fetch(base+'/activity',{method:'POST',headers,body:JSON.stringify({action:'page.opened',page:role,actor_user_id:999})});
+        assert.equal(activity.status,204);
+        const logout=await fetch(base+'/logout',{method:'POST',headers});assert.equal(logout.status,204);
+    }
+    for(let attempt=0;attempt<40;attempt++){
+        const [[count]]=await connection.query("SELECT COUNT(DISTINCT actor_role) AS roles FROM manager_audit_logs WHERE action='session.signed_out'");
+        if(count.roles===4)break;await delay(25);
+    }
+    const [auditRows]=await connection.query('SELECT actor_user_id,actor_name,actor_role,action,source,summary FROM manager_audit_logs');
+    for(const role of ['customer','manager','dispatcher','supervisor'])assert.ok(auditRows.some(row=>row.actor_role===role && row.action==='session.signed_out'));
+    assert.ok(auditRows.every(row=>row.actor_user_id!==999),'Client-supplied actor IDs are ignored');
+    assert.ok(!JSON.stringify(auditRows).includes(originalPassword) && !JSON.stringify(auditRows).includes(newPassword));
+    const auditResponse=await fetch(base+'/manager/audit-logs?role=customer&page=1&limit=2',{headers:{Authorization:`Bearer ${managerToken}`}});
+    assert.equal(auditResponse.status,200);assert.ok(Number(auditResponse.headers.get('X-Total-Count'))>0);
+    const filtered=await auditResponse.json();assert.ok(filtered.length<=2 && filtered.every(row=>row.actor_role==='customer'));
+
     // Check legacy signed INT IDs as well as the fresh BIGINT UNSIGNED schema.
     await connection.query('CREATE DATABASE ue_password_reset_legacy');
     await connection.query('USE ue_password_reset_legacy');
@@ -168,7 +203,8 @@ async function main() {
         checks: ['missing-table recovery', 'legacy INT and BIGINT UNSIGNED IDs', 'email validation and account privacy',
             'captured email with custom-domain link', 'hashed token and expiry', 'password update and new-password login',
             'pending login-code invalidation', 'used, replaced and expired links rejected', 'per-account request limit',
-            'concurrent one-use token', 'existing accounts preserved'] };
+            'concurrent one-use token', 'existing accounts preserved', 'real password/code sign-in and sign-out audit for all four roles',
+            'actor snapshots and spoof rejection', 'manager-only paginated role filtering'] };
     fs.writeFileSync(path.join(work, 'result.json'), JSON.stringify(evidence, null, 2));
     console.log('Password-reset MySQL/HTTP tests passed: ' + evidence.checks.join('; ') + '.');
     console.log('Local evidence: ' + path.join(work, 'result.json'));
