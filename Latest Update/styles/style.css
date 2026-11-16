@@ -2539,7 +2539,6 @@ html[data-page] .ue-ownership-owned { background: #eaf7ee; color: #1d6f42; }
 .ue-email-note{font-size:.9rem;color:#58634f;margin:18px 0}
 .ue-email-status{padding:14px;border:1px solid #c08a4e;border-radius:9px;background:#fff5e8;color:#68401c;overflow-wrap:anywhere}
 .ue-email-status.is-success{border-color:#75996c;background:#eff8eb;color:#2b5320}
-.ue-email-nav{text-decoration:none}
 @media(max-width:480px){:where(html[data-page="email-recovery"]) body{padding:14px 12px}.ue-email-recovery-card{padding:23px 19px;margin:10px auto}}
 
 /* 15. User activity log */

@@ -1,6 +1,6 @@
 # Reconnecting the company Gmail sender
 
-The login page and manager sidebar link to `/email-recovery.html`. It works even when website login codes cannot be delivered. Only the configured company Google account can save a new Gmail authorization; website customers never need to grant Gmail access.
+The company owner opens `/email-recovery.html` directly. Recovery is not listed in the login page or Manager sidebar. It works even when website login codes cannot be delivered. Only the configured company Google account can save a new Gmail authorization; website customers never need to grant Gmail access.
 
 ## Company owner's steps
 
