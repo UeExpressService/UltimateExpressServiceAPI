@@ -19,6 +19,7 @@
  * 11. terms page
  * 12. Shared presentation helpers — runtime visibility can override these classes
  * 13. Shared UE alerts and confirmation dialogs — after page styles to preserve priority
+ * 14. Company email recovery
  */
 
 /* ==========================================================================
@@ -2519,3 +2520,23 @@ html[data-page] .ue-ownership-owned { background: #eaf7ee; color: #1d6f42; }
 .ue-dlg-btn.secondary:hover{background:#4a5d3a;color:#fff}
 @media (max-width:420px){.ue-dlg-actions{flex-direction:column-reverse}}
 @media (prefers-reduced-motion:reduce){.ue-dlg-backdrop,.ue-dlg,.ue-dlg-btn{transition:none}}
+
+/* 14. Company email recovery */
+:where(html[data-page="email-recovery"], html[data-page="email-recovery"] *){box-sizing:border-box}
+:where(html[data-page="email-recovery"]) body{margin:0;min-height:100vh;padding:32px 18px;background:#f3f5f1;color:#253320;font:16px/1.65 system-ui,-apple-system,'Segoe UI',sans-serif}
+.ue-email-recovery-card{width:100%;max-width:650px;margin:20px auto;padding:32px;background:#fff;border:1px solid #dbe2d6;border-top:6px solid #cf6016;border-radius:16px;box-shadow:0 12px 32px #263b1d0c}
+.ue-email-back,.ue-email-policy{color:#83410d;text-underline-offset:3px}
+.ue-email-eyebrow{margin:28px 0 4px;font-weight:750;font-size:.8rem;letter-spacing:.13em;color:#64745b}
+.ue-email-recovery-card h1{margin:0 0 12px;font-size:clamp(1.7rem,5vw,2.1rem);line-height:1.2}
+.ue-email-owner{display:flex;flex-direction:column;gap:3px;padding:16px;margin:22px 0;border:1px solid #dbe2d6;border-radius:10px;background:#f7f9f5;overflow-wrap:anywhere}
+.ue-email-recovery-card ol{padding-left:24px;margin:20px 0 26px}
+.ue-email-recovery-card li{padding-left:3px;margin:10px 0}
+.ue-email-reconnect{display:block;width:100%;padding:14px 18px;border:0;border-radius:9px;background:#b84c07;color:#fff;font-family:inherit;font-weight:700;font-size:1rem;line-height:1.4;cursor:pointer}
+.ue-email-reconnect:hover{background:#973e05}
+.ue-email-reconnect:disabled{opacity:.65;cursor:wait}
+.ue-email-reconnect:focus-visible,.ue-email-recovery-card a:focus-visible{outline:3px solid #4a692e;outline-offset:4px}
+.ue-email-note{font-size:.9rem;color:#58634f;margin:18px 0}
+.ue-email-status{padding:14px;border:1px solid #c08a4e;border-radius:9px;background:#fff5e8;color:#68401c;overflow-wrap:anywhere}
+.ue-email-status.is-success{border-color:#75996c;background:#eff8eb;color:#2b5320}
+.ue-email-nav{text-decoration:none}
+@media(max-width:480px){:where(html[data-page="email-recovery"]) body{padding:14px 12px}.ue-email-recovery-card{padding:23px 19px;margin:10px auto}}

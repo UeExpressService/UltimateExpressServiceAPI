@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" data-page="email-recovery">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="referrer" content="no-referrer">
+    <title>Company Email Recovery - Ultimate Express</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+    <script src="email-recovery.js" defer></script>
+</head>
+<body>
+    <main class="ue-email-recovery-card">
+        <a class="ue-email-back" href="login.html">&larr; Back to sign in</a>
+        <p class="ue-email-eyebrow">ULTIMATE EXPRESS</p>
+        <h1>Company email recovery</h1>
+        <p>For the company Gmail owner only. Reconnect the mailbox used to send website login codes and account emails.</p>
+        <div class="ue-email-owner">
+            <strong>Company sender</strong>
+            <span>ultimateexpresswebservice@gmail.com</span>
+        </div>
+        <p id="gmailRecoveryStatus" class="ue-email-status" role="status" aria-live="polite" hidden></p>
+        <ol>
+            <li>Open Google using the button below.</li>
+            <li>Choose the company Gmail account and review the requested permissions.</li>
+            <li>Return here after approval, then retry website sign-in.</li>
+        </ol>
+        <button id="gmailReconnect" class="ue-email-reconnect" type="button">Reconnect company Gmail</button>
+        <p class="ue-email-note">Customer signing in? Return to the login page. You do not need to connect your own Google account.</p>
+        <p class="ue-email-note">Google may ask the company owner to approve access again. This button does not change website passwords.</p>
+        <a class="ue-email-policy" href="privacy-policy.html">Privacy Policy</a>
+    </main>
+</body>
+</html>

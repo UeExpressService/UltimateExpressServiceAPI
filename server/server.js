@@ -9,6 +9,7 @@ const cors = require('cors');
 const sgMail = require('@sendgrid/mail');
 const { google } = require('googleapis');
 const bcrypt = require('bcryptjs');
+const { createGmailConnection, mailErrorSummary } = require('./gmail-connection');
 
 const app = express();
 app.set('trust proxy', 1); // Railway / Codespaces sit behind a proxy
@@ -262,7 +263,7 @@ async function sendEmail(message) {
             process.env.GMAIL_CLIENT_ID,
             process.env.GMAIL_CLIENT_SECRET
         );
-        oauth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
+        oauth2Client.setCredentials({ refresh_token: await gmailConnection.getRefreshToken() });
         const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
         // Strip line breaks so user-supplied values can never inject extra mail headers.
         const to = String(message.to).replace(/[\r\n]+/g, ' ').trim();
@@ -343,6 +344,7 @@ db.on('connection', connection => {
     connection.query('SET time_zone = ?', [dbTimezone]);
 });
 const dbp = db.promise();
+const gmailConnection = createGmailConnection({ dbp, google });
 const ensurePasswordResetTable = require('./password-reset-store')(dbp);
 
 ensurePasswordResetTable()
@@ -435,7 +437,7 @@ function findFrontendDir() {
 const frontendPath = findFrontendDir();
 console.log(`Serving front-end files from: ${frontendPath}`);
 
-const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js', 'waybills.js']);
+const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js', 'waybills.js', 'email-recovery.js']);
 const publicExtensions = /\.(html|css|js|png|jpe?g|webp|gif|svg|ico|woff2?)$/i;
 
 app.get('/health', (req, res) => res.json({ ok: true }));
@@ -455,6 +457,7 @@ app.use(express.static(frontendPath));
 // ---------- API Routes ----------
 
 require('./waybills')(app, { dbp, withTransaction, requireRoles, rateLimit, HttpError, sendError });
+gmailConnection.register(app, rateLimit);
 
 app.post('/api/account/first-login-password', requireRoles('customer', 'dispatcher', 'supervisor', 'manager'), async (req, res) => {
     if (req.auth.mustChangePassword !== true) {
@@ -553,7 +556,7 @@ app.post('/api/login', loginLimiter, async (req, res) => {
                     <p>This code expires in 10 minutes and can only be used once. If you did not request it, you can ignore this message.</p>`
             });
         } catch (error) {
-            console.error('Login verification email failed:', error);
+            console.error('Login verification email failed:', mailErrorSummary(error));
             return res.status(503).json({ error: 'Could not send the login code. Check the email provider configuration and try again.' });
         }
 
@@ -697,7 +700,7 @@ app.post('/api/customer/password-reset/request', resetLimiter, async (req, res) 
                             <p>If you did not request this, ignore this email. Your password will not change.</p>`
                     });
                 } catch (emailError) {
-                    console.error('Customer password reset email failed:', emailError);
+                    console.error('Customer password reset email failed:', mailErrorSummary(emailError));
                 }
             }
         }
@@ -1077,7 +1080,7 @@ app.post('/api/service-requests', requireRoles('customer', 'dispatcher'), (req, 
         }
         Promise.all(emails)
             .then(() => console.log('Email notifications sent for service request', result.insertId))
-            .catch(emailError => console.error('Error sending email notifications:', emailError));
+            .catch(emailError => console.error('Error sending email notifications:', mailErrorSummary(emailError)));
     });
 });
 
@@ -1282,7 +1285,7 @@ app.post('/api/users', requireManager, auditManagerAction('account.created', 'us
             });
             res.status(201).json({ id: result.insertId, emailSent: true, message: 'Account created and login details emailed.' });
         } catch (emailError) {
-            console.error('Staff account welcome email failed:', emailError);
+            console.error('Staff account welcome email failed:', mailErrorSummary(emailError));
             res.status(201).json({
                 id: result.insertId,
                 emailSent: false,
@@ -1339,7 +1342,7 @@ app.post('/api/customer-account-requests', accountRequestLimiter, (req, res) => 
                     <p><strong>Message:</strong></p>
                     <p>${escapeHtml(message)}</p>
                     <p>You can review it in the Manager dashboard under Accounts, Customer Account Requests.</p>`
-            }).catch(emailError => console.error('Inquiry notification email failed:', emailError));
+            }).catch(emailError => console.error('Inquiry notification email failed:', mailErrorSummary(emailError)));
         }
     });
 });
@@ -1426,7 +1429,7 @@ app.post('/api/users/create-customer', requireManager, auditManagerAction('custo
                 emailSent = true;
                 message = 'Customer account created and login details emailed.';
             } catch (emailError) {
-                console.error('Customer account email delivery failed:', emailError);
+                console.error('Customer account email delivery failed:', mailErrorSummary(emailError));
                 message = 'Customer account created, but its login email could not be sent. Fix the email provider, then delete and recreate the account.';
             }
         } else {
