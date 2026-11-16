@@ -107,7 +107,7 @@ async function main() {
         assert.equal(reloaded.find(row => row.id === saved.id).email, data.email);
         assert.equal(reloaded.find(row => row.id === 1).company, 'Manually added partner');
         assert.equal(reloaded.find(row => row.id === 1).email, null);
-        assert.equal(f.audit.find(row => row.action === 'partner.created').id, saved.id);
+        assert.ok(f.audit.some(row => row.action === 'partner.created' && row.id === saved.id), 'Concurrent creates each record their confirmed partner ID');
         assert.equal((await f.request('DELETE', undefined, 'manager', '/invalid')).status, 400);
         assert.equal((await f.request('DELETE', undefined, 'manager', '/999')).status, 404);
         assert.equal((await f.request('DELETE', undefined, 'manager', '/' + saved.id)).status, 200);
