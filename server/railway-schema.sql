@@ -10,6 +10,7 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(32) NOT NULL,
+    session_version INT UNSIGNED NOT NULL DEFAULT 0,
     company VARCHAR(255) NULL,
     phone VARCHAR(64) NULL,
     address VARCHAR(500) NULL,
@@ -178,3 +179,12 @@ CREATE TABLE IF NOT EXISTS supervisor_booking_reviews (
         reviewed_by BIGINT UNSIGNED NULL, reviewed_at TIMESTAMP NULL, reviewed_version CHAR(64) NULL,
         notes VARCHAR(2000) NOT NULL DEFAULT ''
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS service_request_payment_schedules (
+    service_request_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+    due_date DATE NOT NULL, notes VARCHAR(1000) NOT NULL DEFAULT '',
+    scheduled_by BIGINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX payment_due_date (due_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

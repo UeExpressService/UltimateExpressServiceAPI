@@ -63,6 +63,29 @@ module.exports = function registerPartners(app, {
             }
         });
 
+    app.put('/api/partners/:id', requireManager,
+        auditManagerAction('partner.updated', 'partner', 'Updated a business partner.'),
+        async (req, res) => {
+            const partnerId = Number(req.params.id), body = req.body || {};
+            if (!Number.isSafeInteger(partnerId) || partnerId <= 0) return res.status(400).json({ error: 'Invalid partner ID.' });
+            const company = cleanText(body.company, 255), email = cleanText(body.email, 255);
+            if (!company) return res.status(400).json({ error: 'Company name is required.' });
+            if (email && !isValidEmail(email)) return res.status(400).json({ error: 'Enter a valid partner email address.' });
+            try {
+                await ensureContactColumns();
+                const [existing] = await dbp.query('SELECT * FROM partners WHERE id = ?', [partnerId]);
+                if (!existing.length) return res.status(404).json({ error: 'Partner not found.' });
+                const optional = (key, max) => body[key] === undefined ? existing[0][key] : cleanText(body[key], max) || null;
+                await dbp.query(`UPDATE partners SET company=?,contact_person=?,email=?,phone=?,partnership_type=?,contract_duration=?,agreement_details=? WHERE id=?`,
+                    [company, optional('contact_person', 255), body.email === undefined ? existing[0].email : email || null,
+                        optional('phone', 64), optional('partnership_type', 100), optional('contract_duration', 100), optional('agreement_details', 2000), partnerId]);
+                const [saved] = await dbp.query('SELECT * FROM partners WHERE id = ?', [partnerId]);
+                if (!saved.length) return res.status(404).json({ error: 'Partner was removed. Refresh the list.' });
+                res.locals.auditEntityId = partnerId;
+                res.json({ ...saved[0], message: 'Partner updated.' });
+            } catch (error) { sendError(res, error, 'Unable to update partner.'); }
+        });
+
     app.delete('/api/partners/:id', requireManager,
         auditManagerAction('partner.deleted', 'partner', 'Manager removed a business partner.'),
         async (req, res) => {

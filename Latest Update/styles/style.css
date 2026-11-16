@@ -22,6 +22,7 @@
  * 14. Company email recovery
  * 15. User activity log
  * 16. Fleet availability, daily attendance and booking reviews
+ * 17. Scheduled payments
  */
 
 /* ==========================================================================
@@ -2597,3 +2598,23 @@ html[data-page=dispatcher] #handoffMessage { flex:0 0 100%; margin:0; }
 
 html[data-page=dispatcher] #handoffMessage { order:-1; }
 @media(max-width:600px) { html[data-page=supervisor] .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } html[data-page=supervisor] .stat-card { min-width:0; padding:14px; } }
+
+/* 17. Scheduled payments. */
+html[data-page] .ue-schedules-modal { z-index:2100; }
+html[data-page] .ue-schedules-content { background:#fff; border-radius:18px; padding:28px; width:min(1100px,94vw); max-height:88vh; overflow:auto; box-shadow:0 20px 80px #0003; }
+html[data-page] .ue-schedules-content p { color:#637387; font-size:.85rem; }
+html[data-page] .ue-schedule-controls { display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; margin:20px 0; }
+html[data-page] .ue-schedule-controls label { display:grid; gap:7px; font-size:.8rem; color:#4b5d37; }
+html[data-page] .ue-schedule-controls select,html[data-page] .ue-schedule-controls input { padding:10px 12px; border:1px solid #dce2e7; border-radius:8px; background:#fff; color:#263326; font:inherit; }
+html[data-page] .ue-schedules-content td small { display:block; margin-top:5px; color:#637387; }
+html[data-page] .ue-schedules-content td { overflow-wrap:anywhere; max-width:300px; }
+html[data-page] .ue-schedule-state { display:inline-block; border-radius:20px; padding:5px 10px; background:#f0f3f7; white-space:nowrap; }
+html[data-page] .ue-schedule-overdue { color:#a52b22; background:#ffebe9; }
+html[data-page] .ue-schedule-due_today { color:#985900; background:#fff2da; }
+html[data-page] .ue-schedule-paid { color:#23733b; background:#e6f7eb; }
+html[data-page] .ue-schedule-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+html[data-page=dispatcher] .ue-booking-payment-schedule label { display:block; margin:12px 0 6px; font-size:.8rem; font-weight:600; color:#4b5d37; }
+html[data-page=dispatcher] .ue-booking-payment-schedule input,html[data-page=dispatcher] .ue-booking-payment-schedule textarea { width:100%; padding:12px; border:1px solid #dce2e7; border-radius:8px; font:inherit; }
+@media(max-width:600px) { html[data-page] .ue-schedules-content { padding:18px; width:94vw; } html[data-page] .ue-schedule-controls { align-items:stretch; } html[data-page] .ue-schedule-controls label { flex:1 1 100%; min-width:0; } html[data-page] .ue-schedule-controls input,html[data-page] .ue-schedule-controls select { min-width:0; width:100%; } }
+
+html[data-page=manager] #partnerModal textarea { width:100%; padding:.75rem; border:1.5px solid var(--light-gray); border-radius:10px; font:inherit; font-size:.85rem; resize:vertical; }

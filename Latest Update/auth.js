@@ -379,3 +379,21 @@ document.addEventListener('input', event => {
 document.addEventListener('change', event => {
     if (event.isTrusted && event.target.matches('select') && /filter/i.test(event.target.id || '')) recordUserActivity('filter.changed');
 });
+
+// A changed role needs a fresh sign-in, including after the role changes back.
+(() => {
+    const request = window.fetch;
+    window.fetch = async function(...args) {
+        const response = await request.apply(this,args);
+        if (response.status === 401 && window.UE_API_URL && String(args[0]).startsWith(window.UE_API_URL + '/')) {
+            try {
+                const data = await response.clone().json();
+                if (data.code === 'ACCOUNT_ACCESS_CHANGED' && getCurrentUser()) {
+                    sessionStorage.removeItem('currentUser');
+                    location.replace('login.html?access=changed');
+                }
+            } catch (_) { /* Keep the original response available to the page. */ }
+        }
+        return response;
+    };
+})();

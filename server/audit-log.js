@@ -18,6 +18,7 @@ function routeActivity(req) {
     const make = (action, type, summary, read = false) => ({ action, type, summary, read });
     if (path === '/api/login') return make('session.code_requested', 'user', 'Requested a sign-in code after password verification.');
     if (path === '/api/login/verify-code') return make('session.signed_in', 'user', 'Verified the sign-in code and signed in.');
+    if (path === '/api/payment-schedules' || path === '/api/service-requests/:id/payment-schedule') return make(method === 'GET' ? 'payment_schedule.viewed' : 'payment_schedule.updated', 'payment_schedule', method === 'GET' ? 'Viewed scheduled payments.' : 'Updated a payment due date.', method === 'GET');
     if (path === '/api/logout') return make('session.signed_out', 'user', 'Signed out.');
     if (path === '/api/account/first-login-password') return make('password.changed', 'user', 'Set their account password.');
     if (path === '/api/customer/password-reset/confirm') return make('password.reset', 'user', 'Reset their account password.');

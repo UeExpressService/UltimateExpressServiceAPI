@@ -32,6 +32,12 @@ async function fixture({ fields = [], failAlterOnce = false, concurrentWinner = 
         }
         if (sql.startsWith('SELECT * FROM partners WHERE id')) return [partners.filter(p => p.id === Number(args[0]))];
         if (sql.startsWith('SELECT * FROM partners ORDER')) return [[...partners].reverse()];
+        if (sql.startsWith('UPDATE partners SET')) {
+            const row=partners.find(partner=>partner.id===Number(args[7]));
+            if (!row) return [{affectedRows:0}];
+            for(const [index,key] of ['company','contact_person','email','phone','partnership_type','contract_duration','agreement_details'].entries())row[key]=args[index];
+            return [{affectedRows:1}];
+        }
         if (sql.startsWith('DELETE FROM partners')) {
             const index = partners.findIndex(p => p.id === Number(args[0]));
             if (index === -1) return [{ affectedRows: 0 }];
@@ -79,11 +85,11 @@ async function main() {
     const f = await fixture();
     const data = { company: '  Demo Partner & Logistics  ', contact_person: 'Demo Contact', email: 'partner@example.invalid', phone: '+63 912 000 0000', partnership_type: 'Corporate' };
     try {
-        for (const method of ['GET', 'POST', 'DELETE']) {
-            const body = method === 'POST' ? data : undefined;
-            assert.equal((await f.request(method, body, null, method === 'DELETE' ? '/1' : '')).status, 401);
+        for (const method of ['GET', 'POST', 'PUT', 'DELETE']) {
+            const body = ['POST','PUT'].includes(method) ? data : undefined;
+            assert.equal((await f.request(method, body, null, ['DELETE','PUT'].includes(method) ? '/1' : '')).status, 401);
             for (const role of ['customer', 'dispatcher', 'supervisor']) {
-                assert.equal((await f.request(method, body, role, method === 'DELETE' ? '/1' : '')).status, 403);
+                assert.equal((await f.request(method, body, role, ['DELETE','PUT'].includes(method) ? '/1' : '')).status, 403);
             }
         }
         assert.equal(f.counts().databaseCalls, 0, 'Unauthorized requests must not access or migrate storage');

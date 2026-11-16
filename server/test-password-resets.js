@@ -190,6 +190,18 @@ async function main() {
     const filtered=await auditResponse.json();assert.ok(filtered.length<=2 && filtered.every(row=>row.actor_role==='customer'));
 
     await require('./test-operations')(connection, base, operationsTokens);
+    await require('./test-manager-features')(connection, base, operationsTokens, { originalHash, login: async email => {
+        // Advance only the temporary fixture's code cooldown; production limits stay enabled.
+        await connection.query('UPDATE login_code_challenges c JOIN users u ON u.id=c.user_id SET c.created_at=DATE_SUB(NOW(), INTERVAL 2 MINUTE) WHERE u.email=?',[email]);
+        const before=emails.filter(mail=>mail.to===email&&mail.subject.includes('login code')).length;
+        const requested=await post('/login',{email,password:originalPassword});assert.equal(requested.status,200);
+        const challenge=await requested.json();
+        for(let attempt=0;attempt<30&&emails.filter(mail=>mail.to===email&&mail.subject.includes('login code')).length===before;attempt++)await delay(20);
+        const mail=emails.findLast(mail=>mail.to===email&&mail.subject.includes('login code'));
+        const code=mail.html.match(/>(\d{6})<\/p>/)[1];
+        const response=await post('/login/verify-code',{challengeId:challenge.challengeId,code});
+        assert.equal(response.status,200);return (await response.json()).authToken;
+    } });
 
     // Check legacy signed INT IDs as well as the fresh BIGINT UNSIGNED schema.
     await connection.query('CREATE DATABASE ue_password_reset_legacy');

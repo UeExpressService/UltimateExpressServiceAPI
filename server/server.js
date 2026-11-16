@@ -101,6 +101,7 @@ function createSessionToken(user) {
     const payload = Buffer.from(JSON.stringify({
         sub: String(user.id),
         role: user.role,
+        version: Number(user.session_version || 0),
         mustChangePassword: Boolean(user.must_change_password),
         iss: 'ultimate-express',
         aud: 'ultimate-express-api',
@@ -211,22 +212,19 @@ function hashResetToken(token) {
 }
 
 function requireRoles(...allowedRoles) {
-    return (req, res, next) => {
+    return async (req,res,next) => {
         const authorization = req.get('authorization') || '';
-        const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
-        const claims = verifySessionToken(token);
-        if (!claims) {
-            return res.status(401).json({ error: 'A valid authenticated session is required.' });
-        }
+        const claims = verifySessionToken(authorization.startsWith('Bearer ') ? authorization.slice(7) : '');
+        if (!claims) return res.status(401).json({ error: 'A valid authenticated session is required.' });
         req.auth = claims;
-        if (!allowedRoles.includes(claims.role)) {
-            return res.status(403).json({ error: 'Your account role cannot access this resource.' });
-        }
-        if (claims.mustChangePassword === true && !['/api/account/first-login-password', '/api/logout'].includes(req.path)) {
-            return res.status(403).json({ error: 'Set a new password before using the application.' });
-        }
-        req.auth = claims;
-        next();
+        try {
+            await ensureSessionVersion();
+            const [[account]] = await dbp.query('SELECT role,session_version FROM users WHERE id=? LIMIT 1', [claims.sub]);
+            if (!account || account.role !== claims.role || Number(account.session_version) !== Number(claims.version || 0)) return res.status(401).json({ error: 'Your account access changed. Sign in again.', code: 'ACCOUNT_ACCESS_CHANGED' });
+            if (!allowedRoles.includes(claims.role)) return res.status(403).json({ error: 'Your account role cannot access this resource.' });
+            if (claims.mustChangePassword === true && !['/api/account/first-login-password','/api/logout'].includes(req.path)) return res.status(403).json({ error: 'Set a new password before using the application.' });
+            next();
+        } catch (error) { sendError(res,error,'Unable to verify account access.'); }
     };
 }
 
@@ -346,6 +344,8 @@ db.on('connection', connection => {
     connection.query('SET time_zone = ?', [dbTimezone]);
 });
 const dbp = db.promise();
+const ensureSessionVersion = require('./session-version-store')(dbp);
+ensureSessionVersion().catch(() => console.error('Account session storage could not be prepared.'));
 const auditTrail = createAuditTrail({ dbp });
 auditTrail.ready().catch(() => console.error('User activity storage could not be prepared.'));
 const gmailConnection = createGmailConnection({ dbp, google });
@@ -426,7 +426,7 @@ function findFrontendDir() {
 const frontendPath = findFrontendDir();
 console.log(`Serving front-end files from: ${frontendPath}`);
 
-const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js', 'waybills.js', 'email-recovery.js', 'operations.js']);
+const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js', 'waybills.js', 'email-recovery.js', 'operations.js', 'payment-schedules.js']);
 const publicExtensions = /\.(html|css|js|png|jpe?g|webp|gif|svg|ico|woff2?)$/i;
 
 app.get('/health', (req, res) => res.json({ ok: true }));
@@ -449,6 +449,7 @@ app.post('/api/logout', requireRoles('customer', 'dispatcher', 'supervisor', 'ma
     res.status(204).end();
 });
 
+require('./payment-schedules')(app, { dbp, withTransaction, requireRoles, auditUserAction, HttpError, sendError });
 require('./operations')(app, { dbp, withTransaction, requireRoles, HttpError, sendError, auditUserAction });
 require('./waybills')(app, { dbp, withTransaction, requireRoles, rateLimit, HttpError, sendError });
 gmailConnection.register(app, rateLimit);
@@ -476,7 +477,7 @@ app.post('/api/account/first-login-password', requireRoles('customer', 'dispatch
             return res.status(409).json({ error: 'The password setup was already completed. Sign in again.' });
         }
         const [users] = await dbp.query(
-            'SELECT id, name, email, role, company, phone, must_change_password FROM users WHERE id = ? LIMIT 1',
+            'SELECT id, name, email, role, company, phone, must_change_password, session_version FROM users WHERE id = ? LIMIT 1',
             [Number(req.auth.sub)]
         );
         if (users.length === 0) {
@@ -589,6 +590,7 @@ app.post('/api/login/verify-code', codeLimiter, async (req, res) => {
     }
 
     try {
+        await ensureSessionVersion();
         const outcome = await withTransaction(async connection => {
             const [challenges] = await connection.query(
                 `SELECT challenge_id, user_id, code_hash, attempts
@@ -617,7 +619,7 @@ app.post('/api/login/verify-code', codeLimiter, async (req, res) => {
                 [challengeId]
             );
             const [users] = await connection.query(
-                'SELECT id, name, email, role, company, phone, must_change_password FROM users WHERE id = ? LIMIT 1',
+                'SELECT id, name, email, role, company, phone, must_change_password, session_version FROM users WHERE id = ? LIMIT 1',
                 [challenge.user_id]
             );
             if (users.length === 0) {
@@ -1161,63 +1163,7 @@ app.get('/api/users', requireManager, (req, res) => {
     });
 });
 
-app.put('/api/users/:id', requireManager, auditUserAction('account.updated', 'user', 'Manager updated an account profile.'), async (req, res) => {
-    const userId = Number(req.params.id);
-    const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
-    const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-    const company = typeof req.body.company === 'string' ? req.body.company.trim() : '';
-    const phone = typeof req.body.phone === 'string' ? req.body.phone.trim() : '';
-    if (!Number.isInteger(userId) || userId <= 0) {
-        return res.status(400).json({ error: 'Invalid user ID.' });
-    }
-    if (!name || !isValidEmail(email)) {
-        return res.status(400).json({ error: 'Enter a name and valid email address.' });
-    }
-    try {
-        const [result] = await dbp.query(
-            'UPDATE users SET name = ?, email = ?, company = ?, phone = ? WHERE id = ?',
-            [name.slice(0, 255), email, company.slice(0, 255) || null, phone.slice(0, 64) || null, userId]
-        );
-        if (result.affectedRows === 0) {
-            const [existing] = await dbp.query('SELECT id FROM users WHERE id = ? LIMIT 1', [userId]);
-            if (existing.length === 0) return res.status(404).json({ error: 'Account not found.' });
-        }
-        res.json({ message: 'Account updated.' });
-    } catch (error) {
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ error: 'An account with that email already exists.' });
-        }
-        sendError(res, error, 'Unable to update account.');
-    }
-});
-
-app.delete('/api/users/:id', requireManager, auditUserAction('account.deleted', 'user', 'Manager deleted an account.'), async (req, res) => {
-    const userId = Number(req.params.id);
-    if (!Number.isInteger(userId) || userId <= 0) {
-        return res.status(400).json({ error: 'Invalid user ID' });
-    }
-    if (userId === Number(req.auth.sub)) {
-        return res.status(400).json({ error: 'You cannot delete your own account.' });
-    }
-
-    try {
-        const [targets] = await dbp.query('SELECT role FROM users WHERE id = ? LIMIT 1', [userId]);
-        if (targets.length === 0) return res.status(404).json({ error: 'User not found' });
-        if (targets[0].role === 'manager') {
-            const [managers] = await dbp.query("SELECT COUNT(*) AS total FROM users WHERE role = 'manager'");
-            if (Number(managers[0].total) <= 1) {
-                return res.status(409).json({ error: 'The last manager account cannot be deleted.' });
-            }
-        }
-        await dbp.query('DELETE FROM users WHERE id = ?', [userId]);
-        res.json({ message: 'User deleted' });
-    } catch (err) {
-        if (err.code === 'ER_ROW_IS_REFERENCED_2' || err.errno === 1451) {
-            return res.status(409).json({ error: 'This user cannot be deleted because they have service requests.' });
-        }
-        sendError(res, err, 'Unable to delete user');
-    }
-});
+require('./account-management')(app, { dbp, withTransaction, requireManager, auditUserAction, isValidEmail, HttpError, sendError, ensureSessionVersion });
 
 // Customer registration
 app.post('/api/register', (req, res) => {

@@ -7,6 +7,7 @@
     <script src="api-config.js"></script>
     <script src="auth.js"></script>
     <script src="ue-dialog.js"></script>
+    <script src="payment-schedules.js" defer></script>
     <script>if (!requireRole('manager')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -78,21 +79,21 @@
 
         <!-- Accounts Panel -->
         <div id="panel-accounts" class="panel ue-initially-hidden">
-            <div class="page-header"><div><h1>Account <span class="ue-text-primary">Management</span></h1><p>Create and manage customer, dispatcher, and supervisor accounts</p></div><button class="btn-add" onclick="openModal('accountModal')"><i class="bi bi-plus-lg"></i> Create Account</button></div>
-            <div class="card"><div class="card-header"><div class="card-title"><i class="bi bi-people"></i> All Accounts</div><div class="filter-bar"><div class="search-box"><i class="bi bi-search"></i><input type="text" id="accountSearch" placeholder="Search..." oninput="renderAccounts()"></div><select id="accountRoleFilter" class="filter-select" onchange="renderAccounts()"><option value="">All Roles</option><option value="customer">Customer</option><option value="dispatcher">Dispatcher</option><option value="supervisor">Supervisor</option></select></div></div><div class="card-body"><table class="data-table"><thead><tr><th>Account</th><th>Role</th><th>Company</th><th>Phone</th><th>Created</th><th></th></tr></thead><tbody id="accountsBody"></tbody></table><div class="pagination"><span class="page-info" id="accPageInfo"></span><div class="page-btns" id="accPageBtns"></div></div></div></div>
+            <div class="page-header"><div><h1>Account <span class="ue-text-primary">Management</span></h1><p>Create and manage customer, dispatcher, supervisor, and manager accounts</p></div><button class="btn-add" onclick="openModal('accountModal')"><i class="bi bi-plus-lg"></i> Create Account</button></div>
+            <div class="card"><div class="card-header"><div class="card-title"><i class="bi bi-people"></i> All Accounts</div><div class="filter-bar"><div class="search-box"><i class="bi bi-search"></i><input type="text" id="accountSearch" placeholder="Search..." oninput="renderAccounts()"></div><select id="accountRoleFilter" class="filter-select" onchange="accPage=1;renderAccounts()"><option value="">All Roles</option><option value="customer">Customer</option><option value="dispatcher">Dispatcher</option><option value="supervisor">Supervisor</option><option value="manager">Manager</option></select></div></div><div class="card-body"><table class="data-table"><thead><tr><th>Account</th><th>Role</th><th>Company</th><th>Phone</th><th>Created</th><th></th></tr></thead><tbody id="accountsBody"></tbody></table><div class="pagination"><span class="page-info" id="accPageInfo"></span><div class="page-btns" id="accPageBtns"></div></div></div></div>
             <div class="card ue-mt-card"><div class="card-header"><div class="card-title"><i class="bi bi-person-plus"></i> Customer Account Requests</div></div><div class="card-body"><table class="data-table"><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Phone</th><th>Message</th><th>Status</th><th></th></tr></thead><tbody id="customerRequestsBody"></tbody></table></div></div>
         </div>
 
         <!-- Transactions Panel -->
         <div id="panel-transactions" class="panel ue-initially-hidden">
-            <div class="page-header"><div><h1>All <span class="ue-text-primary">Transactions</span></h1><p>Complete record of all freight and logistics bookings</p></div></div>
+            <div class="page-header"><div><h1>All <span class="ue-text-primary">Transactions</span></h1><p>Complete record of all freight and logistics bookings</p></div><button class="btn-outline-sm" type="button" onclick="UEPaymentSchedules.open()"><i class="bi bi-calendar-event"></i> View scheduled payments</button></div>
             <div class="stats-grid" id="txStatsGrid"></div>
             <div class="card"><div class="card-header"><div class="tab-pills"><div class="pill active" onclick="filterTx('all',this)">All</div><div class="pill" onclick="filterTx('completed',this)">Completed</div><div class="pill" onclick="filterTx('ongoing',this)">Ongoing</div><div class="pill" onclick="filterTx('pending',this)">Pending</div></div><div class="search-box"><i class="bi bi-search"></i><input type="text" id="txSearch" placeholder="Search..." oninput="renderTransactions()"></div></div><div class="card-body"><table class="data-table"><thead><tr><th>Booking ID</th><th>Customer</th><th>Route</th><th>Dispatcher Quote</th><th>Date</th><th>Paid Amount</th><th>Status</th><th>Payment</th></tr></thead><tbody id="txBody"></tbody></table><div class="pagination"><span class="page-info" id="txPageInfo"></span><div class="page-btns" id="txPageBtns"></div></div></div></div>
         </div>
 
         <!-- Partners Panel -->
         <div id="panel-partners" class="panel ue-initially-hidden">
-            <div class="page-header"><div><h1>Business <span class="ue-text-primary">Partners</span></h1><p>Manage corporate clients and logistics partnerships</p></div><button class="btn-add" onclick="openModal('partnerModal')"><i class="bi bi-plus-lg"></i> Add Partner</button></div>
+            <div class="page-header"><div><h1>Business <span class="ue-text-primary">Partners</span></h1><p>Manage corporate clients and logistics partnerships</p></div><button class="btn-add" onclick="openPartnerEditor()"><i class="bi bi-plus-lg"></i> Add Partner</button></div>
             <div class="card"><div class="card-header"><div class="card-title"><i class="bi bi-building"></i> All Partners</div><div class="filter-bar"><div class="search-box"><i class="bi bi-search"></i><input type="text" id="partnerSearch" placeholder="Search..." oninput="renderPartners()"></div><select id="partnerTypeFilter" class="filter-select" onchange="renderPartners()"><option value="">All Types</option><option value="Regular">Regular</option><option value="Premium">Premium</option><option value="Corporate">Corporate</option></select></div></div><div class="card-body"><table class="data-table"><thead><tr><th>Company</th><th>Contact</th><th>Email</th><th>Phone</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="partnersBody"></tbody></table></div></div>
         </div>
 
@@ -111,9 +112,9 @@
     </div>
 
     <!-- Modals -->
-    <div class="modal-overlay" id="accountModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Create New Account</div><span class="modal-close" onclick="closeModal('accountModal')">&times;</span></div><div class="modal-body"><div class="form-grid"><div class="form-group"><label>Full Name *</label><input type="text" id="accName"></div><div class="form-group"><label>Email *</label><input type="email" id="accEmail"></div><div class="form-group"><label>Phone *</label><input type="tel" id="accPhone"></div><div class="form-group"><label>Role *</label><select id="accRole"><option value="customer">Customer</option><option value="dispatcher">Dispatcher</option><option value="supervisor">Supervisor</option></select></div></div><div class="form-group"><label>Company</label><input type="text" id="accCompany"></div></div><div class="modal-footer"><button class="btn-outline" onclick="closeModal('accountModal')">Cancel</button><button class="btn-primary" onclick="createAccount()">Create Account</button></div></div></div>
-    <div class="modal-overlay" id="editAccountModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Account</div><span class="modal-close" onclick="closeModal('editAccountModal')">&times;</span></div><div class="modal-body"><input type="hidden" id="editAccountId"><div class="form-grid"><div class="form-group"><label for="editAccountName">Full Name *</label><input type="text" id="editAccountName" required></div><div class="form-group"><label for="editAccountEmail">Email *</label><input type="email" id="editAccountEmail" required></div><div class="form-group"><label for="editAccountPhone">Phone</label><input type="tel" id="editAccountPhone"></div><div class="form-group"><label for="editAccountCompany">Company</label><input type="text" id="editAccountCompany"></div></div><p class="ue-account-note">Account role and password are not changed here.</p></div><div class="modal-footer"><button class="btn-outline" onclick="closeModal('editAccountModal')">Cancel</button><button class="btn-primary" onclick="saveAccountEdits()">Save Changes</button></div></div></div>
-    <div class="modal-overlay" id="receiptModal"><div class="modal-content receipt-modal-content"><div class="modal-header"><div class="modal-title"><i class="bi bi-receipt"></i> Payment Receipt</div><span class="modal-close" onclick="closeModal('receiptModal')">&times;</span></div><div class="modal-body" id="receiptContent"></div><div class="modal-footer"><button class="btn-outline" onclick="closeModal('receiptModal')">Close</button><button class="btn-primary" onclick="printManagerReceipt()"><i class="bi bi-printer"></i> Print Receipt</button></div></div></div>
+    <div class="modal-overlay" id="accountModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Create New Account</div><span class="modal-close" onclick="closeModal('accountModal')">&times;</span></div><div class="modal-body"><div class="form-grid"><div class="form-group"><label>Full Name *</label><input type="text" id="accName"></div><div class="form-group"><label>Email *</label><input type="email" id="accEmail"></div><div class="form-group"><label>Phone *</label><input type="tel" id="accPhone"></div><div class="form-group"><label>Role *</label><select id="accRole"><option value="customer">Customer</option><option value="dispatcher">Dispatcher</option><option value="supervisor">Supervisor</option><option value="manager">Manager</option></select></div></div><div class="form-group"><label>Company</label><input type="text" id="accCompany"></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('accountModal')">Cancel</button><button class="btn btn-primary" onclick="createAccount()">Create Account</button></div></div></div>
+    <div class="modal-overlay" id="editAccountModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Account</div><span class="modal-close" onclick="closeModal('editAccountModal')">&times;</span></div><div class="modal-body"><input type="hidden" id="editAccountId"><div class="form-grid"><div class="form-group"><label for="editAccountName">Full Name *</label><input type="text" id="editAccountName" required></div><div class="form-group"><label for="editAccountEmail">Email *</label><input type="email" id="editAccountEmail" required></div><div class="form-group"><label for="editAccountPhone">Phone</label><input type="tel" id="editAccountPhone"></div><div class="form-group"><label for="editAccountCompany">Company</label><input type="text" id="editAccountCompany"></div></div><div class="form-group"><label for="editAccountRole">Account role</label><select id="editAccountRole"><option value="customer">Customer</option><option value="dispatcher">Dispatcher</option><option value="supervisor">Supervisor</option><option value="manager">Manager</option></select></div><p class="ue-account-note">Changing the role changes website access. The user must sign in again. Another manager must change your own role. Passwords stay the same.</p></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('editAccountModal')">Cancel</button><button class="btn btn-primary" onclick="saveAccountEdits()">Save Changes</button></div></div></div>
+    <div class="modal-overlay" id="receiptModal"><div class="modal-content receipt-modal-content"><div class="modal-header"><div class="modal-title"><i class="bi bi-receipt"></i> Payment Receipt</div><span class="modal-close" onclick="closeModal('receiptModal')">&times;</span></div><div class="modal-body" id="receiptContent"></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('receiptModal')">Close</button><button class="btn btn-primary" onclick="printManagerReceipt()"><i class="bi bi-printer"></i> Print Receipt</button></div></div></div>
     <div class="modal-overlay" id="paymentModal">
         <form class="modal-content payment-modal-content" onsubmit="savePayment(event)">
             <div class="modal-header">
@@ -130,12 +131,12 @@
                 <small class="payment-help">The dispatcher quote is prefilled when available. Review or adjust the amount before saving.</small>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-outline" onclick="closeModal('paymentModal')">Cancel</button>
-                <button type="submit" class="btn-primary" id="savePaymentBtn">Save Payment</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('paymentModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="savePaymentBtn">Save Payment</button>
             </div>
         </form>
     </div>
-    <div class="modal-overlay" id="partnerModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add Business Partner</div><span class="modal-close" onclick="closeModal('partnerModal')">&times;</span></div><div class="modal-body"><div class="form-group"><label>Company Name *</label><input type="text" id="pName" maxlength="255"></div><div class="form-grid"><div class="form-group"><label>Contact Person</label><input type="text" id="pContact" maxlength="255"></div><div class="form-group"><label>Partnership Type</label><select id="pType"><option value="Regular">Regular</option><option value="Premium">Premium</option><option value="Corporate">Corporate</option></select></div><div class="form-group"><label>Email</label><input type="email" id="pEmail" maxlength="255"></div><div class="form-group"><label>Phone</label><input type="tel" id="pPhone" maxlength="64"></div></div></div><div class="modal-footer"><button class="btn-outline" onclick="closeModal('partnerModal')">Cancel</button><button id="addPartnerBtn" type="button" class="btn-primary" onclick="addPartner()">Add Partner</button></div></div></div>
+    <div class="modal-overlay" id="partnerModal"><div class="modal-content"><div class="modal-header"><div class="modal-title" id="partnerModalTitle">Add Business Partner</div><span class="modal-close" onclick="closeModal('partnerModal')">&times;</span></div><div class="modal-body"><input type="hidden" id="partnerEditId"><div class="form-group"><label>Company Name *</label><input type="text" id="pName" maxlength="255"></div><div class="form-grid"><div class="form-group"><label>Contact Person</label><input type="text" id="pContact" maxlength="255"></div><div class="form-group"><label>Partnership Type</label><select id="pType"><option value="Regular">Regular</option><option value="Premium">Premium</option><option value="Corporate">Corporate</option></select></div><div class="form-group"><label>Email</label><input type="email" id="pEmail" maxlength="255"></div><div class="form-group"><label>Phone</label><input type="tel" id="pPhone" maxlength="64"></div></div><div class="form-group"><label for="pContract">Contract duration</label><input id="pContract" maxlength="100"></div><div class="form-group"><label for="pAgreement">Agreement details</label><textarea id="pAgreement" maxlength="2000" rows="3"></textarea></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('partnerModal')">Cancel</button><button id="addPartnerBtn" type="button" class="btn btn-primary" onclick="addPartner()">Add Partner</button></div></div></div>
 
     <div class="toast" id="toast"><i class="bi bi-check-circle-fill"></i><span id="toastMsg"></span></div>
 
@@ -421,7 +422,7 @@
                     <td>${escapeHtml(partner.email || '—')}</td><td>${escapeHtml(partner.phone || '—')}</td>
                     <td><span class="badge ${badge}">${escapeHtml(partnershipType)}</span></td>
                     <td><span class="badge badge-green">Active</span></td>
-                    <td><button class="btn-outline-sm ue-delete-button" onclick="deletePartner(${Number(partner.id)})">Delete</button></td></tr>`;
+                    <td><button class="btn-outline-sm" onclick="openPartnerEditor(${Number(partner.id)})">Edit</button> <button class="btn-outline-sm ue-delete-button" onclick="deletePartner(${Number(partner.id)})">Delete</button></td></tr>`;
             }).join('') || '<tr><td colspan="7"><div class="empty-state"><i class="bi bi-building"></i><p>No partners found</p></div></td></tr>';
         }
         async function deleteUser(id){
@@ -528,6 +529,8 @@
             document.getElementById('editAccountEmail').value = user.email || '';
             document.getElementById('editAccountPhone').value = user.phone || '';
             document.getElementById('editAccountCompany').value = user.company || '';
+            document.getElementById('editAccountRole').value = user.role;
+            document.getElementById('editAccountRole').disabled = String(user.id) === String(getCurrentUser()?.id);
             openModal('editAccountModal');
         }
         async function saveAccountEdits() {
@@ -536,9 +539,12 @@
                 name: document.getElementById('editAccountName').value.trim(),
                 email: document.getElementById('editAccountEmail').value.trim(),
                 phone: document.getElementById('editAccountPhone').value.trim(),
-                company: document.getElementById('editAccountCompany').value.trim()
+                company: document.getElementById('editAccountCompany').value.trim(),
+                role: document.getElementById('editAccountRole').value
             };
             if (!fields.name || !fields.email) return toast('Name and email are required.', 'error');
+            const previous = users.find(user => Number(user.id) === Number(editingAccountId));
+            if (previous && fields.role !== previous.role && !(await UE.confirm('Change this account from ' + previous.role + ' to ' + fields.role + '? The user must sign in again.', {title:'Change account role',confirmText:'Change role'}))) return;
             try {
                 const response = await fetch(`${API_URL}/users/${encodeURIComponent(editingAccountId)}`, {
                     method: 'PUT',
@@ -659,9 +665,22 @@
                 toast(err.message || 'Unable to create customer account.', 'error');
             }
         }
+        function openPartnerEditor(id = null) {
+            const partner = id == null ? {} : partners.find(item => Number(item.id) === Number(id));
+            if (!partner) return toast('Partner not found.', 'error');
+            document.getElementById('partnerEditId').value = id || '';
+            document.getElementById('partnerModalTitle').textContent = id ? 'Edit Business Partner' : 'Add Business Partner';
+            document.getElementById('addPartnerBtn').textContent = id ? 'Save Changes' : 'Add Partner';
+            for (const [input,key] of [['pName','company'],['pContact','contact_person'],['pEmail','email'],['pPhone','phone'],['pContract','contract_duration'],['pAgreement','agreement_details']]) document.getElementById(input).value = partner[key] || '';
+            const type = document.getElementById('pType'), value = partner.partnership_type || 'Regular';
+            if (![...type.options].some(option => option.value === value)) type.add(new Option(value,value));
+            type.value = value;
+            openModal('partnerModal');
+        }
         async function addPartner(){
             const button = document.getElementById('addPartnerBtn');
             if (button.disabled) return;
+            const partnerId = document.getElementById('partnerEditId').value;
             const name = document.getElementById('pName').value.trim();
             if(!name) return toast('Company name required','error');
             const emailInput = document.getElementById('pEmail');
@@ -672,22 +691,23 @@
                 email: emailInput.value.trim() || null,
                 phone: document.getElementById('pPhone').value.trim() || null,
                 partnership_type: document.getElementById('pType').value,
-                contract_duration: null,
-                agreement_details: null
+                contract_duration: document.getElementById('pContract').value.trim() || null,
+                agreement_details: document.getElementById('pAgreement').value.trim() || null
             };
             const originalLabel = button.textContent;
             button.disabled = true;
             button.textContent = 'Saving…';
             try {
-                const res = await fetch(`${API_URL}/partners`, {
-                    method:'POST',
+                const res = await fetch(`${API_URL}/partners${partnerId ? "/" + encodeURIComponent(partnerId) : ""}`, {
+                    method: partnerId ? 'PUT' : 'POST',
                     headers: managerAuthHeaders({'Content-Type':'application/json'}),
                     body: JSON.stringify(partnerData)
                 });
                 const saved = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(saved.error || `Unable to add partner (HTTP ${res.status}).`);
                 if (!saved.id) throw new Error('The server did not confirm a partner ID. Refresh the partner list before retrying.');
-                partners.unshift({ ...partnerData, ...saved });
+                if (partnerId) partners = partners.map(partner => String(partner.id) === partnerId ? { ...partner, ...saved } : partner);
+                else partners.unshift({ ...partnerData, ...saved });
                 closeModal('partnerModal');
                 document.getElementById('pName').value='';
                 document.getElementById('pContact').value='';
@@ -695,7 +715,7 @@
                 document.getElementById('pPhone').value='';
                 renderPartners();
                 updateKPIs();
-                toast(`Partner ${name} added`,'success');
+                toast(`Partner ${name} ${partnerId ? "updated" : "added"}`,'success');
             } catch(err) {
                 console.error('Add partner error:', err);
                 toast(err.message || 'Unable to add partner. Please try again.', 'error');
