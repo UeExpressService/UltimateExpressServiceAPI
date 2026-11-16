@@ -426,7 +426,7 @@ function findFrontendDir() {
 const frontendPath = findFrontendDir();
 console.log(`Serving front-end files from: ${frontendPath}`);
 
-const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js', 'waybills.js', 'email-recovery.js']);
+const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js', 'waybills.js', 'email-recovery.js', 'operations.js']);
 const publicExtensions = /\.(html|css|js|png|jpe?g|webp|gif|svg|ico|woff2?)$/i;
 
 app.get('/health', (req, res) => res.json({ ok: true }));
@@ -449,6 +449,7 @@ app.post('/api/logout', requireRoles('customer', 'dispatcher', 'supervisor', 'ma
     res.status(204).end();
 });
 
+require('./operations')(app, { dbp, withTransaction, requireRoles, HttpError, sendError, auditUserAction });
 require('./waybills')(app, { dbp, withTransaction, requireRoles, rateLimit, HttpError, sendError });
 gmailConnection.register(app, rateLimit);
 
@@ -799,9 +800,12 @@ app.put('/api/trucks/:id', requireRoles('manager', 'supervisor'), (req, res) => 
     if (!type || !licensePlate || !status) {
         return res.status(400).json({ error: 'Truck type, plate number, and a valid status are required.' });
     }
-    const dailyRate = Number(req.body.daily_rate) >= 0 ? Number(req.body.daily_rate) : 0;
+    const dailyRate = req.body.daily_rate === undefined ? null : Number(req.body.daily_rate);
+    if (dailyRate !== null && (!Number.isFinite(dailyRate) || dailyRate < 0)) {
+        return res.status(400).json({ error: 'Truck rate must be a valid nonnegative amount.' });
+    }
     const { third_party, capacity, location, notes } = req.body;
-    const sql = `UPDATE trucks SET type=?, license_plate=?, daily_rate=?, status=?,
+    const sql = `UPDATE trucks SET type=?, license_plate=?, daily_rate=COALESCE(?,daily_rate), status=?,
         third_party=COALESCE(?, third_party), capacity=COALESCE(?, capacity),
         location=COALESCE(?, location), notes=COALESCE(?, notes) WHERE id=?`;
     db.query(sql, [

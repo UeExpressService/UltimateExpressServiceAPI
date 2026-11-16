@@ -7,6 +7,7 @@
     <script src="api-config.js"></script>
     <script src="auth.js"></script>
     <script src="ue-dialog.js"></script>
+    <script src="operations.js" defer></script>
     <script src="waybills.js"></script>
     <script>if (!requireRole('customer')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -37,12 +38,13 @@
         </div>
     </nav>
 
-    <main class="container">
+    <main class="container ue-customer-shell">
         <div class="welcome-header">
             <h1>Customer Portal</h1>
             <p>Manage your logistics, track transactions, and request new service quotations.</p>
         </div>
 
+        <div class="ue-customer-layout"><div class="ue-customer-main">
         <div class="card" id="customerProfileCard">
             <div class="card-title"><i class="bi bi-person-vcard"></i> Customer Profile</div>
             <p class="ue-profile-help">Profile details are read-only. Contact a manager if they need to be updated.</p>
@@ -115,6 +117,12 @@
             </div>
 
         </div>
+        </div><aside class="card ue-fleet-panel" aria-labelledby="fleetHeading">
+<div class="ue-ops-heading"><h2 id="fleetHeading"><i class="bi bi-truck"></i> Availability &amp; rates</h2><button type="button" class="ue-ops-button" id="refreshFleet" aria-label="Refresh fleet availability"><i class="bi bi-arrow-clockwise"></i></button></div>
+<p>Published starting amounts. Your final quote depends on the route, cargo, and trip requirements.</p>
+<p class="ue-ops-message">Availability is current fleet status; it does not reserve a truck for a future date.</p>
+<div id="fleetCards"><p>Loading fleet…</p></div><p id="fleetUpdated" class="ue-ops-message" role="status"></p>
+</aside></div>
     </main>
 
     <!-- Read-only transaction details modal -->
@@ -175,6 +183,7 @@
                     <div class="form-group full"><label>Street Name</label><input type="text" id="quoteDeliveryStreet"></div>
                 </div>
 
+                <div class="form-group"><label for="quoteTruckType">Preferred truck</label><select id="quoteTruckType"><option value="">Let Dispatch recommend a truck</option></select></div>
                 <!-- Cargo Details -->
                 <div class="form-section-label"><i class="bi bi-box-seam"></i> Cargo Information</div>
                 <div class="form-group">
@@ -566,7 +575,7 @@
                 delivery_location: deliveryAddress,
                 pickup_date: new Date().toISOString().split('T')[0],
                 preferred_time: '',
-                truck_type: '',
+                truck_type: document.getElementById('quoteTruckType').value,
                 contact_person: document.getElementById('quoteFullName').value,
                 contact_phone: document.getElementById('quotePhone').value,
                 contact_email: document.getElementById('quoteEmail').value,

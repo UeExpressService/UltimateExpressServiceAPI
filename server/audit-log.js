@@ -97,7 +97,7 @@ function createAuditTrail({ dbp, now = Date.now, readWindowMs = 5 * 60_000 }) {
             const source = res.locals.auditSource === 'interface' ? 'interface' : 'server';
             // Collapse identical read refreshes, never writes, failures, downloads or interface actions.
             if (activity.read && res.statusCode < 400 && !aborted) {
-                const key = `${actor.id}:${activity.action}:${entityId || ''}:${req.query.year || ''}`;
+                const key = `${actor.id}:${activity.action}:${entityId || ''}:${req.query.year || req.query.date || ''}`;
                 const last = recentReads.get(key);
                 if (last !== undefined && now() - last < readWindowMs) return;
                 recentReads.set(key, now());
@@ -112,8 +112,8 @@ function createAuditTrail({ dbp, now = Date.now, readWindowMs = 5 * 60_000 }) {
         res.once('close', () => { if (!res.writableFinished) finish(true); });
         next();
     }
-    function describe(action, type, summary) {
-        return (req,res,next) => { res.locals.auditDescriptor = { action, type, summary }; next(); };
+    function describe(action, type, summary, read = false) {
+        return (req,res,next) => { res.locals.auditDescriptor = { action, type, summary, read }; next(); };
     }
     function register(app, { requireRoles, requireManager, rateLimit }) {
         app.post('/api/activity', requireRoles(...ROLES), rateLimit({ windowMs: 60_000, max: 120, message: 'Too many activity events.' }), (req,res) => {

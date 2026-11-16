@@ -7,6 +7,7 @@
     <script src="api-config.js"></script>
     <script src="auth.js"></script>
     <script src="ue-dialog.js"></script>
+    <script src="operations.js" defer></script>
     <script>if (!requireRole('supervisor')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -119,6 +120,11 @@
         </div>
     </div>
 
+    <section class="ue-operations-section" aria-labelledby="attendanceHeading">
+<div class="card"><div class="ue-ops-heading"><h2 id="attendanceHeading"><i class="bi bi-clock-history"></i> Driver time in / out</h2><div class="ue-ops-controls"><label for="shiftDate">Work date</label><input type="date" id="shiftDate"><button type="button" id="refreshAttendance" class="ue-ops-button">Refresh</button></div></div>
+<p id="shiftMessage" class="ue-ops-message" role="status"></p><div class="ue-ops-table"><table><thead><tr><th>Driver</th><th>Time in</th><th>Time out</th><th>Status</th><th>Action</th></tr></thead><tbody id="shiftRows"><tr><td colspan="5">Loading attendance…</td></tr></tbody></table></div></div>
+<div class="card"><div class="ue-ops-heading"><h2 id="reviewsHeading"><i class="bi bi-send-check"></i> Confirmed booking reviews</h2><button type="button" id="refreshReviews" class="ue-ops-button">Refresh</button></div><p id="reviewMessage" class="ue-ops-message" role="status"></p><div id="bookingReviews"><p>Loading reviews…</p></div></div>
+</section>
     <!-- Driver Modal -->
     <div class="modal-overlay" id="driverModal">
         <div class="modal-content">
@@ -572,7 +578,7 @@
                 const payload = {
                     type: truckData.type,
                     license_plate: truckData.plate,
-                    daily_rate: 0,
+                    daily_rate: id ? Number(trucks.find(truck => String(truck.id) === String(id))?.daily_rate || 0) : 0,
                     status: truckData.status,
                     third_party: truckData.third_party,
                     capacity: truckData.capacity,

@@ -21,6 +21,7 @@
  * 13. Shared UE alerts and confirmation dialogs — after page styles to preserve priority
  * 14. Company email recovery
  * 15. User activity log
+ * 16. Fleet availability, daily attendance and booking reviews
  */
 
 /* ==========================================================================
@@ -2550,3 +2551,49 @@ html[data-page] .ue-ownership-owned { background: #eaf7ee; color: #1d6f42; }
 .ue-audit-pagination>div{display:flex;gap:8px}.ue-audit-pagination button:disabled{opacity:.45;cursor:default}
 @media(max-width:900px){.ue-audit-filters{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.ue-audit-filters{grid-template-columns:1fr}.ue-audit-pagination{align-items:flex-start;flex-direction:column}}
+
+/* 16. Fleet availability, daily attendance and booking reviews. */
+html[data-page] .ue-ops-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+html[data-page] .ue-ops-heading h2 { font-size:1.15rem; color:#4b5d37; margin:0; }
+html[data-page] .ue-ops-heading h3 { font-size:1rem; margin:0; }
+html[data-page] .ue-ops-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:9px 12px; border:1px solid #d7dfd0; border-radius:9px; background:#fff; color:#4b5d37; font:inherit; font-size:.8rem; font-weight:600; cursor:pointer; }
+html[data-page] .ue-ops-button:hover { background:#f0f4eb; }
+html[data-page] .ue-ops-button:disabled { opacity:.55; cursor:default; }
+html[data-page] .ue-ops-button:focus-visible { outline:3px solid #e78339; outline-offset:3px; }
+html[data-page] .ue-ops-message { font-size:.8rem; color:#637387; margin:12px 0; line-height:1.6; flex-basis:100%; }
+html[data-page=customer] .ue-customer-shell { max-width:1510px; }
+html[data-page=customer] .ue-customer-layout { display:grid; grid-template-columns:minmax(0,1fr) 350px; gap:28px; align-items:start; }
+html[data-page=customer] .ue-customer-main { min-width:0; }
+html[data-page=customer] .ue-fleet-panel { min-width:0; padding:22px; }
+html[data-page=customer] .ue-fleet-panel>p { font-size:.8rem; line-height:1.65; color:#637387; }
+html[data-page=customer] .ue-fleet-option { display:grid; grid-template-columns:90px minmax(0,1fr); gap:14px; padding:18px 0; border-bottom:1px solid #e8ebef; }
+html[data-page=customer] .ue-fleet-option img { width:90px; height:86px; border-radius:10px; object-fit:cover; }
+html[data-page=customer] .ue-fleet-option h3 { margin:0 0 4px; font-size:.9rem; line-height:1.45; }
+html[data-page=customer] .ue-fleet-price { display:block; font-size:1rem; color:#d46e26; }
+html[data-page] .ue-availability { display:block; font-size:.73rem; color:#637387; margin:5px 0 10px; }
+html[data-page] .ue-available { color:#28723d; }
+html[data-page=supervisor] .ue-operations-section { max-width:1400px; margin:0 auto; padding:0 2rem 32px; display:grid; gap:24px; }
+html[data-page=supervisor] .ue-operations-section>.card { padding:24px; }
+html[data-page] .ue-ops-controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:.8rem; }
+html[data-page] .ue-ops-controls input { width:auto; padding:8px; border:1px solid #dce2e7; border-radius:8px; font:inherit; }
+html[data-page] .ue-ops-table { overflow-x:auto; }
+html[data-page] .ue-ops-table table { width:100%; border-collapse:collapse; min-width:620px; font-size:.85rem; }
+html[data-page] .ue-ops-table th,html[data-page] .ue-ops-table td { padding:14px 12px; text-align:left; border-bottom:1px solid #e8ebef; }
+html[data-page] .ue-ops-table th { background:#f7f9f6; color:#4b5d37; }
+html[data-page] .ue-review-item { border:1px solid #e4e9e0; border-radius:12px; padding:20px; margin:16px 0; overflow-wrap:anywhere; }
+html[data-page] .ue-review-item p { font-size:.85rem; }
+html[data-page] .ue-review-details { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0; font-size:.85rem; }
+html[data-page] .ue-review-details dt { font-size:.75rem; color:#637387; }
+html[data-page] .ue-review-details dd { margin:4px 0 0; }
+html[data-page] .ue-review-item textarea { display:block; width:100%; box-sizing:border-box; margin:8px 0 12px; padding:12px; border:1px solid #dce2e7; border-radius:8px; font:inherit; }
+html[data-page] .ue-checkbox-row input[type=checkbox] { width:18px; height:18px; flex:0 0 18px; margin:0; padding:0; }
+html[data-page] .ue-checkbox-row .ue-checkbox-label { flex:1; margin:0; }
+@media(max-width:1050px) { html[data-page=customer] .ue-customer-layout { grid-template-columns:minmax(0,1fr); } html[data-page=customer] #fleetCards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 24px; } }
+@media(max-width:600px) { html[data-page=customer] #fleetCards { grid-template-columns:1fr; } html[data-page=customer] .ue-fleet-panel { padding:18px; } html[data-page=supervisor] .ue-operations-section { padding:0 16px 24px; } html[data-page=supervisor] .ue-operations-section>.card { padding:16px; } html[data-page] .ue-review-details { grid-template-columns:1fr; } }
+
+html[data-page=dispatcher] #inquiryModal .modal-footer { flex-wrap:wrap; }
+html[data-page=dispatcher] #handoffMessage { flex:0 0 100%; margin:0; }
+@media(max-width:600px) { html[data-page=supervisor] .navbar { flex-wrap:wrap; gap:10px; } html[data-page=supervisor] .navbar .logo { font-size:1.15rem; } html[data-page=supervisor] .navbar .nav-right { width:100%; justify-content:flex-end; } }
+
+html[data-page=dispatcher] #handoffMessage { order:-1; }
+@media(max-width:600px) { html[data-page=supervisor] .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } html[data-page=supervisor] .stat-card { min-width:0; padding:14px; } }

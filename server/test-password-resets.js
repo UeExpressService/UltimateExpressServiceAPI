@@ -159,6 +159,7 @@ async function main() {
     }
     await connection.query('UPDATE users SET must_change_password=0 WHERE id=2');
     let managerToken;
+    const operationsTokens = {};
     for (const [id, role, password] of [[3,'customer',newPassword],[2,'manager',originalPassword],[4,'dispatcher',originalPassword],[5,'supervisor',originalPassword]]) {
         const email=`${role}${id}@example.invalid`;
         const challenge=await (await post('/login',{email,password})).json();
@@ -169,6 +170,7 @@ async function main() {
         const verified=await post('/login/verify-code',{challengeId:challenge.challengeId,code});
         assert.equal(verified.status,200);
         const session=await verified.json();
+        operationsTokens[role]=session.authToken;
         if(role==='manager')managerToken=session.authToken;
         const headers={'Content-Type':'application/json',Authorization:`Bearer ${session.authToken}`};
         const activity=await fetch(base+'/activity',{method:'POST',headers,body:JSON.stringify({action:'page.opened',page:role,actor_user_id:999})});
@@ -186,6 +188,8 @@ async function main() {
     const auditResponse=await fetch(base+'/manager/audit-logs?role=customer&page=1&limit=2',{headers:{Authorization:`Bearer ${managerToken}`}});
     assert.equal(auditResponse.status,200);assert.ok(Number(auditResponse.headers.get('X-Total-Count'))>0);
     const filtered=await auditResponse.json();assert.ok(filtered.length<=2 && filtered.every(row=>row.actor_role==='customer'));
+
+    await require('./test-operations')(connection, base, operationsTokens);
 
     // Check legacy signed INT IDs as well as the fresh BIGINT UNSIGNED schema.
     await connection.query('CREATE DATABASE ue_password_reset_legacy');

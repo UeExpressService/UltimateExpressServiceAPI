@@ -7,6 +7,7 @@
     <script src="api-config.js"></script>
     <script src="auth.js"></script>
     <script src="ue-dialog.js"></script>
+    <script src="operations.js" defer></script>
     <script src="waybills.js"></script>
     <script>if (!requireRole('dispatcher')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -74,6 +75,7 @@
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeInquiryModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="saveInquiryChanges()">Save Changes</button>
+                <p id="handoffMessage" class="ue-ops-message" role="status"></p><button type="button" class="btn btn-outline" id="sendSupervisorBtn">Send to Supervisor</button>
                 <button class="btn btn-success" onclick="approveWithAssignment()">Approve & Assign</button>
                 <button class="btn btn-success" id="completeDealBtn" onclick="completeInquiry()">Mark Completed</button>
             </div>
@@ -522,6 +524,7 @@
                 showToast('Completed inquiries are locked and cannot be edited.', 'error');
                 return;
             }
+            window.UEOperations.openHandoff(selectedInquiry.requestId);
             const i = selectedInquiry;
             selectedDriverId = i.driverId;
             selectedTruckId = i.truckId;
