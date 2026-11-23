@@ -147,6 +147,14 @@
                                 <div class="section-title"><i class="bi bi-box-seam"></i> Cargo Information</div>
                                 <div class="form-group full"><textarea id="manualCargo" rows="2" placeholder="Description & weight/volume" required></textarea></div>
                             </div>
+                            <div class="form-section">
+                                <div class="section-title"><i class="bi bi-person-badge"></i> Driver & Truck Assignment</div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label for="manualDriverSelect">Specific driver</label><select id="manualDriverSelect"><option value="">Assign later</option></select></div>
+                                    <div class="form-group"><label for="manualTruckSelect">Specific truck</label><select id="manualTruckSelect"><option value="">Assign later</option></select></div>
+                                </div>
+                                <small>Choose both resources or leave both unassigned. The assignment is saved with this Pending quote; resources are marked On Trip when approved.</small>
+                            </div>
                             <div id="manualPriceHelper"></div>
                             <div class="form-section">
                                 <div class="section-title"><i class="bi bi-currency-exchange"></i> Pricing & Payment</div>
@@ -160,7 +168,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <p>Save the pending quote first. Assign a driver and truck when you approve it.</p>
+                            <p>Save the pending quote first. Review the saved assignment before approving it.</p>
                         </form>
                     </div>
                     <div class="map-column">
@@ -783,9 +791,30 @@
             renderInquiries();
         }
 
+        function populateManualAssignments() {
+            for (const [id, items, type] of [['manualDriverSelect',drivers,'driver'],['manualTruckSelect',trucks,'truck']]) {
+                const select = document.getElementById(id);
+                const chosen = select.value;
+                select.replaceChildren(new Option('Assign later',''));
+                items.filter(item => item.status === 'available' && Number.isSafeInteger(Number(item.id)) && Number(item.id) > 0).forEach(item => {
+                    const label = type === 'driver' ? `${item.name} · ${item.license || item.phone || 'No license recorded'}` : `${item.plate} · ${item.type}${item.third_party ? ' · Partner truck' : ''}`;
+                    select.add(new Option(label,item.id));
+                });
+                select.value = chosen;
+            }
+        }
+
+        function syncManualTruckPricing() {
+            const assigned = trucks.find(truck => truck.id === document.getElementById('manualTruckSelect').value);
+            const helper = document.getElementById('manualPriceHelper');
+            helper.pendingAssignedTruckType = assigned?.type || '';
+            helper.setAssignedTruckType?.(assigned?.type || '');
+        }
+
         function openManualQuoteModal() {
             selectedDriverId = null;
             selectedTruckId = null;
+            populateManualAssignments();
             document.getElementById('manualQuoteModal').classList.add('active');
             setTimeout(() => {
                 getDispatcherMap('manual', 'manualMap');
@@ -813,6 +842,13 @@
             const deliveryFull = document.getElementById('deliveryFull').value.trim();
             const cargo = document.getElementById('manualCargo').value.trim();
             const quotedAmount = Number(document.getElementById('manualPrice').value);
+            const driverId = document.getElementById('manualDriverSelect').value;
+            const truckId = document.getElementById('manualTruckSelect').value;
+            const driver = drivers.find(item => item.id === driverId), truck = trucks.find(item => item.id === truckId);
+            if (Boolean(driverId) !== Boolean(truckId) || ((driverId || truckId) && (!driver || !truck || driver.status !== 'available' || truck.status !== 'available'))) {
+                showToast('Choose both an available driver and truck, or leave both unassigned.', 'error');
+                return;
+            }
             if (!validQuote(quotedAmount)) {
                 showToast('Enter a quote greater than zero with no more than two decimal places.', 'error');
                 return;
@@ -835,6 +871,7 @@
                 quoted_amount: quotedAmount
             };
             requestDetails.truck_type = document.getElementById('manualPriceHelper').pricingTruckType?.() || '';
+            if (driver && truck) { requestDetails.driver_id = Number(driver.id); requestDetails.truck_id = Number(truck.id); requestDetails.truck_type = truck.type; }
             const mappedDistance=UE.RouteMap.oneWayFor(dispatcherMaps.manual,pickupFull,deliveryFull);
             if (mappedDistance != null) requestDetails.one_way_distance_km=mappedDistance;
             const submitButton = document.getElementById('submitManualQuoteBtn');
@@ -846,7 +883,10 @@
                     body: JSON.stringify(requestDetails)
                 });
                 const created = await createResponse.json();
-                if (!createResponse.ok) throw new Error(created.error || 'Unable to create the call-in request.');
+                if (!createResponse.ok) {
+                    if (createResponse.status === 409) { await loadDispatcherData(); populateManualAssignments(); syncManualTruckPricing(); }
+                    throw new Error(created.error || 'Unable to create the call-in request.');
+                }
 
                 closeManualQuoteModal();
                 filterInquiries('pending');
@@ -878,6 +918,7 @@
         window.selectItem = selectItem;
 
         document.getElementById('openManualQuoteModal').onclick = openManualQuoteModal;
+        document.getElementById('manualTruckSelect').addEventListener('change', syncManualTruckPricing);
         document.getElementById('pickupFull').addEventListener('input', scheduleManualMapUpdate);
         document.getElementById('deliveryFull').addEventListener('input', scheduleManualMapUpdate);
         loadDispatcherData();

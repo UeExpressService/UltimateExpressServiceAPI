@@ -926,9 +926,12 @@ app.get('/api/service-requests', requireRoles('manager', 'supervisor', 'dispatch
     try { await tripMaintenance.ready(); } catch(error) { return sendError(res,error,'Unable to prepare trip distance storage.'); }
     const customerOnly = req.auth.role === 'customer';
     const sql = `
-        SELECT sr.*, u.name AS customer_name, u.company AS customer_company
+        SELECT sr.*, u.name AS customer_name, u.company AS customer_company,
+               d.name AS assigned_driver_name, t.license_plate AS assigned_truck_plate, t.type AS assigned_truck_type
         FROM service_requests sr
         LEFT JOIN users u ON sr.customer_id = u.id
+        LEFT JOIN drivers d ON sr.assigned_driver_id = d.id
+        LEFT JOIN trucks t ON sr.assigned_truck_id = t.id
         ${customerOnly ? 'WHERE sr.customer_id = ?' : ''}
         ORDER BY sr.created_at DESC
     `;
@@ -1001,7 +1004,16 @@ app.post('/api/service-requests', requireRoles('customer', 'dispatcher'), auditU
     const specialRequirements = cleanText(body.special_requirements, 2000);
     const pickupDate = /^\d{4}-\d{2}-\d{2}$/.test(String(body.pickup_date || '')) ? body.pickup_date : null;
     const preferredTime = cleanText(body.preferred_time, 100);
-    const truckType = cleanText(body.truck_type, 255);
+    let truckType = cleanText(body.truck_type, 255);
+    const resourceId = value => value == null || value === '' ? null : Number(value);
+    const assignedDriverId = resourceId(body.driver_id), assignedTruckId = resourceId(body.truck_id);
+    if (req.auth.role !== 'dispatcher' && (assignedDriverId !== null || assignedTruckId !== null)) {
+        return res.status(403).json({ error: 'Only dispatchers can assign drivers and trucks.' });
+    }
+    if ((assignedDriverId === null) !== (assignedTruckId === null) ||
+        [assignedDriverId,assignedTruckId].some(id => id !== null && (!Number.isSafeInteger(id) || id <= 0))) {
+        return res.status(400).json({ error: 'Choose both a valid driver and truck, or leave both unassigned.' });
+    }
 
     if (!contactPerson || !isValidEmail(contactEmail) || !pickupLocation || !deliveryLocation) {
         return res.status(400).json({ error: 'Enter a contact name, a valid email address, and pickup and delivery addresses.' });
@@ -1016,16 +1028,29 @@ app.post('/api/service-requests', requireRoles('customer', 'dispatcher'), auditU
         INSERT INTO service_requests
         (customer_id, cargo_type, cargo_weight, special_requirements,
          pickup_location, delivery_location, pickup_date, preferred_time,
-         truck_type, contact_person, contact_phone, contact_email, quoted_amount, status,
+         truck_type, contact_person, contact_phone, contact_email, quoted_amount, assigned_driver_id, assigned_truck_id, status,
          one_way_distance_km,distance_source,distance_pickup_location,distance_delivery_location)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending',?,?,?,?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending',?,?,?,?)
     `;
-    db.query(sql, [
-        customerId, cargoType, cargoWeight, specialRequirements,
-        pickupLocation, deliveryLocation, pickupDate, preferredTime,
-        truckType, contactPerson, contactPhone, contactEmail, quotedAmount,...Object.values(distance)
-    ], (err, result) => {
-        if (err) return sendError(res, err, 'Unable to submit the request.');
+    let result;
+    try {
+        result = await withTransaction(async connection => {
+            if (assignedDriverId !== null) {
+                const [[driver]] = await connection.query('SELECT status FROM drivers WHERE id = ? FOR UPDATE',[assignedDriverId]);
+                const [[truck]] = await connection.query('SELECT status,type FROM trucks WHERE id = ? FOR UPDATE',[assignedTruckId]);
+                if (!driver || !truck) throw new HttpError(400,'The selected driver or truck no longer exists.');
+                if (driver.status !== 'available' || truck.status !== 'available') throw new HttpError(409,'The selected driver or truck is no longer available. Choose another assignment.');
+                truckType = truck.type;
+            }
+            // Pending quotes keep planned assignments without marking the fleet on trip.
+            const [inserted] = await connection.query(sql,[
+                customerId, cargoType, cargoWeight, specialRequirements,
+                pickupLocation, deliveryLocation, pickupDate, preferredTime,
+                truckType, contactPerson, contactPhone, contactEmail, quotedAmount,assignedDriverId,assignedTruckId,...Object.values(distance)
+            ]);
+            return inserted;
+        });
+    } catch(error) { return sendError(res,error,'Unable to submit the request.'); }
 
         // Save the request first, then send the emails.
         res.locals.auditEntityId = result.insertId;
@@ -1079,7 +1104,6 @@ app.post('/api/service-requests', requireRoles('customer', 'dispatcher'), auditU
         Promise.all(emails)
             .then(() => console.log('Email notifications sent for service request', result.insertId))
             .catch(emailError => console.error('Error sending email notifications:', mailErrorSummary(emailError)));
-    });
 });
 
 const ACTIVE_BOOKING_STATUSES = ['approved', 'ongoing'];

@@ -67,6 +67,7 @@
                 <label>Round-trip distance (km)<input data-distance type="number" min="0.01" max="10000" step="0.01" placeholder="One-way km × 2"></label>
                 <label>Additional charges (₱)<input data-auto-extras type="number" min="0" max="10000000" step="0.01" value="0"></label>
                 <label>Rate basis<select data-auto-reference><option value="">Provisional rate for selected truck</option>${references.map(row => `<option value="${escape(row.id)}">${row.market_reference?'External reference':'Company tariff'} · ${escape(row.label)}</option>`).join('')}</select></label></div>
+                <p data-auto-assignment>Select a specific truck above to use its truck type for pricing.</p>
                 <p>Distance includes pickup to destination and the return trip. The road map fills it when available; otherwise enter the full round-trip distance. Add agreed tolls, ferry, handling, and other charges above.</p>
                 <div class="ue-auto-breakdown" data-auto-breakdown aria-live="polite">Choose a truck and enter the distance to see the calculation.</div>
                 <p data-auto-status class="ue-revision-message" role="status"></p><button type="button" class="ue-ops-button" data-auto-use disabled>Use automatic amount</button>
@@ -76,7 +77,7 @@
             const extras = root.querySelector('[data-auto-extras]'), reference = root.querySelector('[data-auto-reference]');
             const breakdown = root.querySelector('[data-auto-breakdown]'), status = root.querySelector('[data-auto-status]');
             const use = root.querySelector('[data-auto-use]'), quote = document.getElementById(targetId);
-            let automatic = !quote.value, copying = false, estimate = null, revision = 0, timer, distanceSource = '';
+            let automatic = !quote.value, copying = false, estimate = null, revision = 0, timer, distanceSource = '', assignedType = '';
             const payload = () => ({rate_id:reference.value || truck.value,distance_km:Number(distance.value),extras:Number(extras.value)});
             const copy = () => {
                 if (!estimate || quote.readOnly) return;
@@ -88,6 +89,11 @@
                 if (!truck.value || !distance.value || !distance.checkValidity() || !extras.value || !extras.checkValidity()) {
                     breakdown.textContent = 'Choose a truck, enter a distance above zero, and enter valid extra charges (zero if none).';
                     status.textContent = automatic ? 'Waiting for pricing details.' : 'Final quote manually adjusted. Complete the details to compare with an estimate.';
+                    return;
+                }
+                if (truck.value === 'assigned-custom' && !reference.value) {
+                    breakdown.textContent = 'No provisional rate is listed for this truck type. Choose a matching company tariff or enter the final quote manually.';
+                    status.textContent = automatic ? 'Manual pricing is needed for this truck type.' : 'Manually adjusted quote kept.';
                     return;
                 }
                 breakdown.textContent = 'Calculating estimate…';
@@ -120,9 +126,28 @@
                 recalculate();
             };
             root.invalidatePricingRoute = () => { distance.value = ''; distanceSource = ''; recalculate(); };
-            root.resetPricing = () => { automatic = true; distanceSource = ''; recalculate(); };
-            root.pricingTruckType = () => samples.find(row => row.id === truck.value)?.truck_type || '';
+            root.setAssignedTruckType = type => {
+                assignedType = type;
+                truck.querySelector('option[value="assigned-custom"]')?.remove();
+                truck.disabled = Boolean(type);
+                if (type) {
+                    const rate = samples.find(row => row.truck_type.trim().toLowerCase() === type.trim().toLowerCase());
+                    if (!rate) truck.add(new Option(type,'assigned-custom'));
+                    truck.value = rate?.id || 'assigned-custom';
+                    reference.value = '';
+                }
+                root.querySelector('[data-auto-assignment]').textContent = type ? 'Pricing truck type follows the specific truck selected above.' : 'Select a specific truck above to use its truck type for pricing.';
+                recalculate();
+            };
+            root.resetPricing = () => {
+                automatic = true; distanceSource = ''; assignedType = ''; truck.disabled = false;
+                root.pendingAssignedTruckType = ''; truck.querySelector('option[value="assigned-custom"]')?.remove();
+                root.querySelector('[data-auto-assignment]').textContent = 'Select a specific truck above to use its truck type for pricing.';
+                recalculate();
+            };
+            root.pricingTruckType = () => assignedType || samples.find(row => row.id === truck.value)?.truck_type || '';
             if (root.pendingPricingDistance != null) root.setPricingDistance(root.pendingPricingDistance);
+            if (root.pendingAssignedTruckType) root.setAssignedTruckType(root.pendingAssignedTruckType);
         } catch(error) { root.textContent = error.message; }
     }
     function setDistance(root, distance) {

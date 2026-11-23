@@ -2790,3 +2790,11 @@ html[data-page=supervisor] .ue-supervisor-report-actions { display:flex; flex-wr
  html[data-page=dispatcher] #manualQuoteModal .two-column-layout,html[data-page=dispatcher] #manualQuoteModal .form-grid { grid-template-columns:minmax(0,1fr); }
  html[data-page=dispatcher] #manualQuoteModal .modal-footer .btn { padding:10px 12px; font-size:.8rem; }
 }
+
+/* Keep long driver names and plate/type labels inside the quote form. */
+html[data-page=dispatcher] #manualQuoteModal .two-column-layout { grid-template-columns:repeat(2,minmax(0,1fr)); }
+html[data-page=dispatcher] #manualQuoteModal .form-column,html[data-page=dispatcher] #manualQuoteModal .form-group { min-width:0; }
+html[data-page=dispatcher] #manualQuoteModal .form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+html[data-page=dispatcher] #manualQuoteModal select { width:100%; min-width:0; max-width:100%; }
+@media(max-width:900px) { html[data-page=dispatcher] #manualQuoteModal .two-column-layout { grid-template-columns:minmax(0,1fr); } }
+@media(max-width:600px) { html[data-page=dispatcher] #manualQuoteModal .form-grid { grid-template-columns:minmax(0,1fr); } }

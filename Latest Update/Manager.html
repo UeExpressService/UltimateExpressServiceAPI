@@ -352,7 +352,7 @@
             );
             document.getElementById('txBody').innerHTML = filtered.map(transaction => `
                 <tr><td><code class="ue-text-primary">${escapeHtml(transaction.id)}</code></td>
-                <td>${escapeHtml(transaction.customer)}</td><td>${escapeHtml(transaction.route)}</td>
+                <td>${escapeHtml(transaction.customer)}</td><td>${escapeHtml(transaction.route)}<br><small class="ue-text-muted">Driver: ${escapeHtml(transaction.assigned_driver_name || 'Unassigned')} · Truck: ${escapeHtml(transaction.assigned_truck_plate || 'Unassigned')}</small></td>
                 <td><strong>${transaction.quoteAmount == null ? 'Not quoted' : `₱${transaction.quoteAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</strong></td>
                 <td class="ue-text-xs">${escapeHtml(transaction.date)}</td>
                 <td><strong>${transaction.amount == null ? 'Not recorded' : `₱${transaction.amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</strong></td>
@@ -591,8 +591,8 @@
                 ['Pickup date', transaction.pickup_date],
                 ['Preferred time', transaction.preferred_time],
                 ['Requested truck type', transaction.truck_type],
-                ['Assigned driver ID', transaction.assigned_driver_id],
-                ['Assigned truck ID', transaction.assigned_truck_id],
+                ['Assigned driver', transaction.assigned_driver_name || (transaction.assigned_driver_id ? `Driver #${transaction.assigned_driver_id}` : 'Unassigned')],
+                ['Assigned truck', transaction.assigned_truck_plate || (transaction.assigned_truck_id ? `Truck #${transaction.assigned_truck_id}` : 'Unassigned')],
                 ['Payment recorded', transaction.paid_at ? new Date(transaction.paid_at).toLocaleString('en-PH') : 'Not recorded']
             ];
             const routeUrl = new URL('https://www.google.com/maps/dir/');
