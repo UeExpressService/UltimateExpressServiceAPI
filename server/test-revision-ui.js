@@ -74,9 +74,9 @@ module.exports = async function revisionUI({ base,sessions,receiptId,uiTripTruck
         await dispatcher.screenshot({path:path.join(output,'dispatcher-inbox.png'),fullPage:true});
 
         const manager=await pageFor('manager'); await manager.goto(origin+'/Manager.html');
-        await manager.locator('[onclick="showPanel(\'website-inquiries\')"]').click();
-        const managerGuest=manager.locator('.ue-inquiry-item').filter({hasText:'UI Guest'}); await managerGuest.locator('summary').click();
-        assert.equal(await managerGuest.locator('[data-notes]').inputValue(),'Dispatcher phoned guest; awaiting cargo details.');
+        assert.equal(await manager.locator('[onclick="showPanel(\'website-inquiries\')"]').count(),0,'Manager no longer has Website Inquiries navigation');
+        assert.equal(await manager.locator('#websiteInquiries').count(),0,'Manager inquiry panel is removed');
+        assert.equal(await manager.locator('script[src="website-inquiries.js"]').count(),0,'Manager does not load inquiry polling');
         await manager.locator('[onclick="showPanel(\'pricing\')"]').click();
         const tariff=manager.locator('#routePricingManager form');
         for(const [name,value] of Object.entries({label:'UI Manila to Laguna · test van',base_fare:'1000',included_km:'10',per_km:'30',max_km:'1000',notes:'Local QA only'})) await tariff.locator(`[name=${name}]`).fill(value);

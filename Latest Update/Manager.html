@@ -8,7 +8,6 @@
     <script src="auth.js"></script>
     <script src="ue-dialog.js"></script>
     <script src="payment-schedules.js" defer></script>
-    <script src="website-inquiries.js" defer></script>
     <script src="print-documents.js" defer></script>
     <script src="route-pricing.js" defer></script>
     <script src="maintenance.js" defer></script>
@@ -40,7 +39,6 @@
         <div class="nav-item active" onclick="showPanel('dashboard')"><i class="bi bi-speedometer2"></i> Dashboard</div>
         <div class="sidebar-label">Management</div>
         <div class="nav-item" onclick="showPanel('accounts')"><i class="bi bi-person-plus"></i> Accounts</div>
-        <div class="nav-item" onclick="showPanel('website-inquiries')"><i class="bi bi-envelope"></i> Website Inquiries <span class="nbadge" id="websiteInquiryBadge">0</span></div>
         <div class="nav-item" onclick="showPanel('pricing')"><i class="bi bi-cash-stack"></i> Route Tariffs</div>
         <div class="nav-item" onclick="showPanel('maintenance')"><i class="bi bi-tools"></i> Maintenance</div>
         <div class="nav-item" onclick="showPanel('transactions')"><i class="bi bi-receipt"></i> Transactions <span class="nbadge" id="txBadge">0</span></div>
@@ -51,7 +49,6 @@
     </div>
 
     <div class="main-content">
-        <div id="panel-website-inquiries" class="panel ue-initially-hidden"><section id="websiteInquiries" class="ue-revision-card" aria-label="Website guest inquiries"></section></div>
         <div id="panel-pricing" class="panel ue-initially-hidden"><section id="routePricingManager" class="ue-revision-card" aria-label="Company route tariffs"></section></div>
         <div id="panel-maintenance" class="panel ue-initially-hidden"><section id="maintenanceRequests" class="ue-revision-card" aria-label="Maintenance check requests"></section><section id="truckMaintenance" class="ue-revision-card" aria-label="Truck maintenance"></section></div>
         <div id="panel-audit" class="panel ue-initially-hidden">
