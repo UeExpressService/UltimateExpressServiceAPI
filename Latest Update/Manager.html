@@ -8,6 +8,11 @@
     <script src="auth.js"></script>
     <script src="ue-dialog.js"></script>
     <script src="payment-schedules.js" defer></script>
+    <script src="website-inquiries.js" defer></script>
+    <script src="print-documents.js" defer></script>
+    <script src="route-pricing.js" defer></script>
+    <script src="maintenance.js" defer></script>
+    <script src="inspection-requests.js" defer></script>
     <script>if (!requireRole('manager')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -35,14 +40,20 @@
         <div class="nav-item active" onclick="showPanel('dashboard')"><i class="bi bi-speedometer2"></i> Dashboard</div>
         <div class="sidebar-label">Management</div>
         <div class="nav-item" onclick="showPanel('accounts')"><i class="bi bi-person-plus"></i> Accounts</div>
+        <div class="nav-item" onclick="showPanel('website-inquiries')"><i class="bi bi-envelope"></i> Website Inquiries <span class="nbadge" id="websiteInquiryBadge">0</span></div>
+        <div class="nav-item" onclick="showPanel('pricing')"><i class="bi bi-cash-stack"></i> Route Tariffs</div>
+        <div class="nav-item" onclick="showPanel('maintenance')"><i class="bi bi-tools"></i> Maintenance</div>
         <div class="nav-item" onclick="showPanel('transactions')"><i class="bi bi-receipt"></i> Transactions <span class="nbadge" id="txBadge">0</span></div>
         <div class="nav-item" onclick="showPanel('partners')"><i class="bi bi-building"></i> Partners</div>
         <div class="nav-item" onclick="showPanel('audit')"><i class="bi bi-journal-text"></i> Activity Log</div>
         <div class="sidebar-label">Analytics</div>
-        <div class="nav-item" onclick="showPanel('revenue')"><i class="bi bi-graph-up"></i> Revenue</div>
+        <div class="nav-item" onclick="showPanel('revenue')"><i class="bi bi-graph-up"></i> Records</div>
     </div>
 
     <div class="main-content">
+        <div id="panel-website-inquiries" class="panel ue-initially-hidden"><section id="websiteInquiries" class="ue-revision-card" aria-label="Website guest inquiries"></section></div>
+        <div id="panel-pricing" class="panel ue-initially-hidden"><section id="routePricingManager" class="ue-revision-card" aria-label="Company route tariffs"></section></div>
+        <div id="panel-maintenance" class="panel ue-initially-hidden"><section id="maintenanceRequests" class="ue-revision-card" aria-label="Maintenance check requests"></section><section id="truckMaintenance" class="ue-revision-card" aria-label="Truck maintenance"></section></div>
         <div id="panel-audit" class="panel ue-initially-hidden">
             <div class="page-header">
                 <div><h1>User <span class="ue-text-primary">Activity Log</span></h1><p>Activity by customers, dispatchers, supervisors, and managers</p></div>
@@ -97,16 +108,16 @@
             <div class="card"><div class="card-header"><div class="card-title"><i class="bi bi-building"></i> All Partners</div><div class="filter-bar"><div class="search-box"><i class="bi bi-search"></i><input type="text" id="partnerSearch" placeholder="Search..." oninput="renderPartners()"></div><select id="partnerTypeFilter" class="filter-select" onchange="renderPartners()"><option value="">All Types</option><option value="Regular">Regular</option><option value="Premium">Premium</option><option value="Corporate">Corporate</option></select></div></div><div class="card-body"><table class="data-table"><thead><tr><th>Company</th><th>Contact</th><th>Email</th><th>Phone</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="partnersBody"></tbody></table></div></div>
         </div>
 
-        <!-- Revenue Panel (Enhanced) -->
+        <!-- Records reports -->
         <div id="panel-revenue" class="panel ue-initially-hidden">
-            <div class="page-header"><div><h1>Revenue <span class="ue-text-primary">Analytics</span></h1><p>Customer activity and service volume from the database</p></div><div class="filter-bar"><select id="revYearSelect" class="filter-select" onchange="loadManagerReport()"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select><button class="btn-outline-sm" onclick="downloadManagerReport()"><i class="bi bi-download"></i> Download Report</button></div></div>
+            <div class="page-header"><div><h1>Records <span class="ue-text-primary">Overview</span></h1><p>Customer activity and service volume from the database</p></div><div class="filter-bar"><select id="revYearSelect" class="filter-select" onchange="loadManagerReport()"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select><button class="btn-outline-sm" onclick="printManagerReport()"><i class="bi bi-printer"></i> Print Report</button><button class="btn-outline-sm" onclick="downloadManagerReport()"><i class="bi bi-download"></i> Download Report</button></div></div>
             <div class="stats-grid" id="revenueStatsGrid"></div>
-            <div class="card full-width ue-mb-card"><div class="card-body">Dispatcher quotes appear in <strong>Transactions</strong> as proposed prices and prefill the payment amount for review. Confirm or adjust the amount before recording it as the final paid amount. Only manager-recorded payments are included in revenue reports.</div></div>
+            <div class="card full-width ue-mb-card"><div class="card-body">Open <strong>Transactions</strong> to confirm the amount saved by the dispatcher. Confirmed payments appear in Records. Total Services in the contribution summary counts approved and completed bookings.</div></div>
             <div class="dashboard-grid">
                 <div class="card full-width"><div class="card-header"><div class="card-title"><i class="bi bi-people"></i> Top Customers: Total Services &amp; Average Payment</div></div><div class="card-body"><div class="chart-container ue-chart-tall"><canvas id="revenueChart"></canvas></div></div></div>
-                <div class="card full-width"><div class="card-header"><div class="card-title"><i class="bi bi-bar-chart-steps"></i> Quarterly Transactions &amp; Average Daily Revenue</div></div><div class="card-body"><div class="chart-container ue-chart-medium"><canvas id="quarterChart"></canvas></div></div></div>
+                <div class="card full-width"><div class="card-header"><div class="card-title"><i class="bi bi-bar-chart-steps"></i> Quarterly Records &amp; Average Daily Payment</div></div><div class="card-body"><div class="chart-container ue-chart-medium"><canvas id="quarterChart"></canvas></div></div></div>
                 <div class="card full-width"><div class="card-header"><div class="card-title"><i class="bi bi-person-lines-fill"></i> Customer Contribution Summary</div></div><div class="card-body"><table class="data-table"><thead><tr><th>Customer</th><th>Company</th><th>Total Services</th><th>Total Payments</th><th>Average Paid per Booking</th><th>Services per Month</th></tr></thead><tbody id="customerActivityBody"></tbody></table></div></div>
-                <div class="card full-width"><div class="card-header"><div class="card-title"><i class="bi bi-table"></i> Monthly Revenue Details</div></div><div class="card-body"><table class="data-table"><thead><tr><th>Month</th><th>Paid Revenue</th><th>Paid Bookings</th><th>Service Requests</th><th>Average Paid per Booking</th></tr></thead><tbody id="revenueTableBody"></tbody></table></div></div>
+                <div class="card full-width"><div class="card-header"><div class="card-title"><i class="bi bi-table"></i> Monthly Records</div></div><div class="card-body"><table class="data-table"><thead><tr><th>Month</th><th>Recorded Payments</th><th>Paid Bookings</th><th>Service Requests</th><th>Average Paid per Booking</th></tr></thead><tbody id="revenueTableBody"></tbody></table></div></div>
             </div>
         </div>
     </div>
@@ -118,21 +129,20 @@
     <div class="modal-overlay" id="paymentModal">
         <form class="modal-content payment-modal-content" onsubmit="savePayment(event)">
             <div class="modal-header">
-                <div class="modal-title"><i class="bi bi-cash-coin"></i> Record Payment</div>
+                <div class="modal-title"><i class="bi bi-cash-coin"></i> Confirm Payment</div>
                 <span class="modal-close" onclick="closeModal('paymentModal')">&times;</span>
             </div>
             <div class="modal-body">
                 <p class="payment-intro" id="paymentIntro"></p>
-                <div class="payment-quote"><span>Dispatcher quote</span><strong id="paymentQuote"></strong></div>
                 <div class="payment-amount-group">
-                    <label for="paymentAmount">Final payment amount</label>
-                    <div class="payment-amount-wrap"><span>₱</span><input type="number" id="paymentAmount" name="paid_amount" min="0.01" max="9999999999.99" step="0.01" required></div>
+                    <label for="paymentAmount">Amount set by the dispatcher</label>
+                    <div class="payment-amount-wrap"><span>₱</span><input type="text" id="paymentAmount" readonly></div>
                 </div>
-                <small class="payment-help">The dispatcher quote is prefilled when available. Review or adjust the amount before saving.</small>
+                <small class="payment-help">Confirm once this amount has been received.</small>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('paymentModal')">Cancel</button>
-                <button type="submit" class="btn btn-primary" id="savePaymentBtn">Save Payment</button>
+                <button type="submit" class="btn btn-primary" id="savePaymentBtn">Confirm Payment</button>
             </div>
         </form>
     </div>
@@ -286,14 +296,14 @@
             const formattedRevenue = `₱${paidRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             document.getElementById('dashboardStats').innerHTML = `
                 <div class="stat-card"><div class="stat-icon primary"><i class="bi bi-people"></i></div><div class="stat-details"><h3>${users.length}</h3><p>Total Users</p></div></div>
-                <div class="stat-card"><div class="stat-icon green"><i class="bi bi-cash-stack"></i></div><div class="stat-details"><h3>${formattedRevenue}</h3><p>Recorded Paid Revenue</p></div></div>
+                <div class="stat-card"><div class="stat-icon green"><i class="bi bi-cash-stack"></i></div><div class="stat-details"><h3>${formattedRevenue}</h3><p>Recorded Payments</p></div></div>
                 <div class="stat-card"><div class="stat-icon blue"><i class="bi bi-truck"></i></div><div class="stat-details"><h3>${transactions.length}</h3><p>Transactions</p></div></div>
                 <div class="stat-card"><div class="stat-icon purple"><i class="bi bi-building"></i></div><div class="stat-details"><h3>${partners.length}</h3><p>Active Partners</p></div></div>`;
             document.getElementById('txStatsGrid').innerHTML = `
                 <div class="stat-card"><div class="stat-icon green"><i class="bi bi-check-circle"></i></div><div class="stat-details"><h3>${transactions.filter(t=>t.status==='completed').length}</h3><p>Completed</p></div></div>
                 <div class="stat-card"><div class="stat-icon blue"><i class="bi bi-truck"></i></div><div class="stat-details"><h3>${transactions.filter(t=>t.status==='ongoing').length}</h3><p>Ongoing</p></div></div>
                 <div class="stat-card"><div class="stat-icon orange"><i class="bi bi-hourglass"></i></div><div class="stat-details"><h3>${transactions.filter(t=>t.status==='pending').length}</h3><p>Pending</p></div></div>
-                <div class="stat-card"><div class="stat-icon primary"><i class="bi bi-cash"></i></div><div class="stat-details"><h3>${formattedRevenue}</h3><p>Recorded Paid Revenue</p></div></div>`;
+                <div class="stat-card"><div class="stat-icon primary"><i class="bi bi-cash"></i></div><div class="stat-details"><h3>${formattedRevenue}</h3><p>Recorded Payments</p></div></div>`;
             document.getElementById('txBadge').innerText = transactions.length;
             document.getElementById('todayDate').innerHTML = `<i class="bi bi-calendar3"></i> ${new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})}`;
         }
@@ -330,7 +340,9 @@
             const search = document.getElementById('txSearch').value.toLowerCase();
             const filtered = transactions.filter(transaction =>
                 `${transaction.id} ${transaction.customer} ${transaction.route}`.toLowerCase().includes(search) &&
-                (txFilter === 'all' || transaction.status === txFilter)
+                (txFilter === 'all' || transaction.status === txFilter ||
+                    (txFilter === 'ongoing' && transaction.status === 'approved') ||
+                    (txFilter === 'pending' && transaction.status === 'new'))
             );
             const pages = Math.ceil(filtered.length / PER) || 1;
             txPage = Math.min(txPage, pages);
@@ -342,7 +354,8 @@
                 <td><strong>${transaction.amount == null ? 'Not recorded' : `₱${transaction.amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</strong></td>
                 <td><span class="badge ${transaction.status === 'completed' ? 'badge-green' : transaction.status === 'ongoing' ? 'badge-blue' : 'badge-orange'}">${escapeHtml(transaction.status)}</span></td>
                 <td><button class="btn-outline-sm" onclick="openTransactionReceipt(${transaction.requestId})">Details</button>
-                    <button class="btn-outline-sm" onclick="recordPayment(${transaction.requestId})">${transaction.amount == null ? 'Record payment' : 'Edit payment'}</button></td></tr>
+                    ${transaction.amount != null ? '<span class="badge badge-green">Confirmed</span>' :
+                        (transaction.status !== 'cancelled' && transaction.quoteAmount > 0 ? `<button class="btn-outline-sm" onclick="recordPayment(${transaction.requestId})">Confirm payment</button>` : '')}</td></tr>
             `).join('') || '<tr><td colspan="8"><div class="empty-state"><i class="bi bi-inbox"></i><p>No transactions found</p></div></td></tr>';
             document.getElementById('txPageInfo').textContent = `${Math.min((txPage - 1) * PER + 1, filtered.length)}–${Math.min(txPage * PER, filtered.length)} of ${filtered.length}`;
             document.getElementById('txPageBtns').innerHTML = Array.from({ length: pages }, (_, index) =>
@@ -353,18 +366,13 @@
         async function recordPayment(requestId) {
             const transaction = transactions.find(item => item.requestId === requestId);
             if (!transaction) return toast('Service request not found.', 'error');
+            if (transaction.status === 'cancelled' || transaction.amount != null || !(transaction.quoteAmount > 0)) return;
             paymentRequestId = transaction.requestId;
-            document.getElementById('paymentIntro').textContent = `Enter the final payment amount in PHP for ${transaction.id}.`;
-            document.getElementById('paymentQuote').textContent = transaction.quoteAmount == null
-                ? 'Not provided'
-                : `₱${transaction.quoteAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            document.getElementById('paymentAmount').value = transaction.amount == null
-                ? (transaction.quoteAmount == null ? '' : String(transaction.quoteAmount))
-                : String(transaction.amount);
+            document.getElementById('paymentIntro').textContent = `Review the dispatcher’s amount for ${transaction.id}.`;
+            document.getElementById('paymentAmount').value = transaction.quoteAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             document.getElementById('savePaymentBtn').disabled = false;
-            document.getElementById('savePaymentBtn').textContent = transaction.amount == null ? 'Save Payment' : 'Update Payment';
             openModal('paymentModal');
-            document.getElementById('paymentAmount').focus();
+            document.getElementById('savePaymentBtn').focus();
         }
 
         async function savePayment(event) {
@@ -374,11 +382,7 @@
                 closeModal('paymentModal');
                 return toast('Service request not found.', 'error');
             }
-            const paidAmount = Number(document.getElementById('paymentAmount').value);
-            if (!Number.isFinite(paidAmount) || paidAmount <= 0 || paidAmount >= 10000000000 ||
-                Math.abs(paidAmount * 100 - Math.round(paidAmount * 100)) > 1e-7) {
-                return toast('Enter an amount greater than zero with no more than two decimal places.', 'error');
-            }
+            const paidAmount = transaction.quoteAmount;
             const saveButton = document.getElementById('savePaymentBtn');
             saveButton.disabled = true;
             try {
@@ -389,6 +393,11 @@
                 });
                 if (!response.ok) {
                     const error = await response.json().catch(() => ({}));
+                    if (response.status === 409) {
+                        closeModal('paymentModal');
+                        await fetchTransactions();
+                        renderTransactions();
+                    }
                     throw new Error(error.error || `Payment save failed (${response.status})`);
                 }
                 const [transactionsLoaded, reportLoaded] = await Promise.all([fetchTransactions(), loadManagerReport()]);
@@ -602,7 +611,7 @@
                         <div><strong>Ultimate Express</strong><small>Freight and logistics service receipt</small></div>
                     </div>
                     <div class="receipt-heading">
-                        <div><h2>Payment Receipt</h2><span>Transaction summary</span></div>
+                        <div><h2>${transaction.amount == null ? 'Service Summary' : 'Payment Receipt'}</h2><span>Transaction summary</span></div>
                         <div class="receipt-number"><strong>${escapeHtml(transaction.id)}</strong><br>${escapeHtml(transaction.date)}</div>
                     </div>
                     <div class="receipt-total"><span>Final payment recorded</span><strong>${escapeHtml(paid)}</strong></div>
@@ -620,17 +629,11 @@
         }
 
         function printManagerReceipt() {
-            const receiptModal = document.getElementById('receiptModal');
-            if (!receiptModal.classList.contains('active')) return;
-            const cleanup = () => document.body.classList.remove('printing-receipt');
-            document.body.classList.add('printing-receipt');
-            window.addEventListener('afterprint', cleanup, { once: true });
-            window.print();
-            setTimeout(cleanup, 30000);
+            UEDocuments.receiptElement(document.getElementById('receiptContent'), 'Service Receipt');
         }
         function renderCustomerRequests() {
             const body = document.getElementById('customerRequestsBody');
-            const pending = customerRequests.filter(request => request.status === 'pending');
+            const pending = customerRequests.filter(request => ['pending', 'contacted'].includes(request.status));
             body.innerHTML = pending.map(request => `
                 <tr>
                     <td>${escapeHtml(request.name)}</td>
@@ -638,7 +641,7 @@
                     <td>${escapeHtml(request.email)}</td>
                     <td>${escapeHtml(request.phone || '—')}</td>
                     <td>${escapeHtml(request.message)}</td>
-                    <td><span class="badge badge-orange">Pending</span></td>
+                    <td><span class="badge badge-orange">${request.status === 'contacted' ? 'Contacted' : 'New'}</span></td>
                     <td><button class="btn-outline-sm" onclick="createAccountFromRequest(${Number(request.id)})">Create Account</button></td>
                 </tr>`).join('') || '<tr><td colspan="7"><div class="empty-state"><i class="bi bi-inbox"></i><p>No pending customer requests</p></div></td></tr>';
         }
@@ -769,7 +772,7 @@
             })}`;
 
             document.getElementById('revenueStatsGrid').innerHTML = `
-                <div class="stat-card"><div class="stat-icon primary"><i class="bi bi-cash-stack"></i></div><div class="stat-details"><h3>${formatPeso(summary.paid_revenue)}</h3><p>Paid Revenue in ${reportData.year}</p></div></div>
+                <div class="stat-card"><div class="stat-icon primary"><i class="bi bi-cash-stack"></i></div><div class="stat-details"><h3>${formatPeso(summary.paid_revenue)}</h3><p>Recorded Payments in ${reportData.year}</p></div></div>
                 <div class="stat-card"><div class="stat-icon green"><i class="bi bi-trophy"></i></div><div class="stat-details"><h3>${highestPayer ? escapeHtml(highestPayer.customer_name) : '—'}</h3><p>${highestPayer ? `Highest payer · ${formatPeso(highestPayer.total_paid)}` : 'No payments recorded'}</p></div></div>
                 <div class="stat-card"><div class="stat-icon blue"><i class="bi bi-receipt"></i></div><div class="stat-details"><h3>${Number(summary.paid_orders).toLocaleString()}</h3><p>Paid Bookings</p></div></div>
                 <div class="stat-card"><div class="stat-icon purple"><i class="bi bi-truck"></i></div><div class="stat-details"><h3>${Number(summary.total_transactions).toLocaleString()}</h3><p>Service Requests</p></div></div>
@@ -840,7 +843,7 @@
                     },
                     {
                         type: 'line',
-                        label: 'Average daily revenue (₱)',
+                        label: 'Average daily payment (₱)',
                         data: quarterLabels.map((_, index) => quarterData[index]?.average_daily_revenue || 0),
                         borderColor: '#e07b39',
                         backgroundColor: '#e07b39',
@@ -858,7 +861,7 @@
                         position: 'right',
                         grid: { drawOnChartArea: false },
                         ticks: { callback: value => formatPeso(value) },
-                        title: { display: true, text: 'Average daily paid revenue' }
+                        title: { display: true, text: 'Average daily payment' }
                     }
                 }
             };
@@ -897,6 +900,23 @@
             }).join('');
         }
 
+        function printManagerReport() {
+            if (!reportData) return toast('Analytics are still loading.', 'error');
+            const cash = UEDocuments.money, summary = reportData.summary;
+            UEDocuments.preview({ title: 'Management Report', reference: `Reporting year ${reportData.year}`,
+                facts: [['Recorded payments', cash(summary.paid_revenue)], ['Paid bookings', summary.paid_orders],
+                    ['Service requests', summary.total_transactions], ['Completed', summary.completed],
+                    ['Ongoing', summary.ongoing], ['Pending', summary.pending]],
+                sections: [
+                    { title: 'Monthly Operations', columns: ['Month', 'Recorded payments', 'Paid bookings', 'Requests', 'Completed'],
+                        rows: MONTHS.map((month,i) => [month,cash(reportData.monthlyPaidRevenue[i]),reportData.monthlyPaidOrders[i],reportData.monthlyTransactions[i],reportData.monthlyCompleted[i]]) },
+                    { title: 'Quarterly Operations', columns: ['Quarter', 'Transactions', 'Recorded payments', 'Average daily payment'],
+                        rows: (reportData.quarterlySummary || []).map(row => [`Q${row.quarter}`,row.total_transactions,cash(row.paid_revenue),cash(row.average_daily_revenue)]) },
+                    { title: 'Customer Payments', columns: ['Customer', 'Paid bookings', 'Total paid'],
+                        rows: reportData.customerPayments.map(row => [row.customer_name,row.paid_orders,cash(row.total_paid)]) }
+                ], note: 'Payment records include payments recorded by the Manager. Unpaid quotes are excluded. This report covers the selected reporting year.' });
+        }
+
         function downloadManagerReport(){
             if (!reportData) return toast('Analytics are still loading.', 'error');
             const paymentsByCustomer = new Map(reportData.customerPayments.map(customer => [
@@ -905,7 +925,7 @@
             const rows = [
                 ['Ultimate Express Manager Report', reportData.year],
                 ['Metric', 'Value'],
-                ['Paid revenue', reportData.summary.paid_revenue],
+                ['Recorded payments', reportData.summary.paid_revenue],
                 ['Paid bookings', reportData.summary.paid_orders],
                 ['Total service requests', reportData.summary.total_transactions],
                 ['Completed', reportData.summary.completed],
@@ -914,14 +934,14 @@
                 ['Total users', reportData.summary.total_users],
                 ['Total partners', reportData.summary.total_partners],
                 [],
-                ['Month', 'Paid revenue', 'Paid bookings']
+                ['Month', 'Recorded payments', 'Paid bookings']
             ];
             reportData.monthlyPaidRevenue.forEach((amount, index) => rows.push([MONTHS[index], amount, reportData.monthlyPaidOrders[index]]));
             rows.push([], ['Month', 'Service requests', 'Completed requests']);
             reportData.monthlyTransactions.forEach((count, index) => rows.push([MONTHS[index], count, reportData.monthlyCompleted[index]]));
             rows.push([], ['Service type', 'Requests']);
             reportData.serviceTypes.forEach(item => rows.push([item.service_type, item.total]));
-            rows.push([], ['Quarter', 'Service transactions', 'Paid revenue', 'Average daily paid revenue']);
+            rows.push([], ['Quarter', 'Service transactions', 'Recorded payments', 'Average daily payment']);
             (reportData.quarterlySummary || []).forEach(item => rows.push([
                 `Q${item.quarter}`, item.total_transactions, item.paid_revenue, item.average_daily_revenue
             ]));

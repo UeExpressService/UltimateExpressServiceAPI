@@ -1,6 +1,6 @@
-// auth.js - Updated for backend API
+// Login and sessions
 
-// Role definitions (kept for reference)
+// Account roles
 const ROLES = {
     CUSTOMER: 'customer',
     DISPATCHER: 'dispatcher',
@@ -8,9 +8,7 @@ const ROLES = {
     MANAGER: 'manager'
 };
 
-// ------------------------------------------------------------------
-// Helper functions
-// ------------------------------------------------------------------
+// Form helpers
 
 function validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -129,7 +127,7 @@ function updateDashboardIdentity() {
     if (roleElement) roleElement.textContent = roleLabels[currentUser.role] || currentUser.role;
 }
 
-// Check if user is already logged in
+// Keep the current session if it's still valid.
 function checkExistingSession() {
     const currentUser = getCurrentUser();
     if (hasAuthenticatedSession(currentUser) && currentUser.role) {
@@ -143,9 +141,7 @@ function checkExistingSession() {
     }
 }
 
-// ------------------------------------------------------------------
-// Login handler (uses backend API)
-// ------------------------------------------------------------------
+// Password and code steps
 let loginChallengeId = '';
 
 function setLoginRequestPending(pending) {
@@ -325,13 +321,10 @@ async function handleCodeVerification(event) {
     }
 }
 
-// ------------------------------------------------------------------
-// Initialization: check session on page load
-// ------------------------------------------------------------------
+// Check the session when the page loads.
 document.addEventListener('DOMContentLoaded', function() {
     updateDashboardIdentity();
-    // Only check session if we are on the login page
-    // (so it doesn't interfere with dashboards)
+    // Only the login page redirects a signed-in user.
     const path = window.location.pathname;
     if (path.includes('login.html') && new URLSearchParams(window.location.search).get('logout') === '1') {
         handleLogout();
@@ -360,8 +353,8 @@ document.addEventListener('click', event => {
     const element = event.target.closest('[onclick],.nav-item,.tab,.pill,.tab-btn,a[href]');
     if (!element) return;
     const handler = element.getAttribute('onclick') || '';
-    const section = handler.match(/(?:showPanel|filterTx|filterInquiries|showTab|switchTab|filterTransactions|renderTransactions)\(['"]([a-z]+)['"]/i)?.[1];
-    const knownSections = ['dashboard','accounts','transactions','partners','audit','revenue','inquiries','drivers','trucks','history','profile','services','fleet','all','new','pending','approved','ongoing','completed','cancelled'];
+    const section = handler.match(/(?:showPanel|filterTx|filterInquiries|showTab|switchTab|filterTransactions|renderTransactions)\(['"]([a-z-]+)['"]/i)?.[1];
+    const knownSections = ['dashboard','accounts','transactions','partners','audit','revenue','inquiries','website-inquiries','pricing','maintenance','drivers','trucks','history','profile','services','fleet','all','new','pending','approved','ongoing','completed','cancelled'];
     if (section && knownSections.includes(section)) recordUserActivity(/filter|renderTransactions/i.test(handler) ? 'filter.changed' : 'section.opened', section);
     else if (/\b(downloadManagerReport|downloadFleetReport)\(/.test(handler)) recordUserActivity('report.export_requested');
     else if (/\b(printManagerReceipt|window\.print)\(/.test(handler)) recordUserActivity('receipt.print_requested');

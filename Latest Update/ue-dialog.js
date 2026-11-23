@@ -1,11 +1,4 @@
-/* ue-dialog.js - Ultimate Express styled alert / confirm boxes.
- *
- *   await UE.alert('Saved!', { type: 'success', title: 'Done' });
- *   if (await UE.confirm('Delete this driver?', { type: 'danger', confirmText: 'Delete' })) { ... }
- *
- * It also replaces the plain browser window.alert(), so any leftover alert() looks the same.
- * confirm() cannot be replaced automatically (it must be "awaited"), so use UE.confirm().
- */
+/* Shared popups. Use await UE.confirm() when the user needs to choose. */
 (function () {
     window.UE = window.UE || {};
     if (window.UE.dialog) return;
@@ -133,7 +126,7 @@
             if (event.target === backdrop) close(false);
         });
 
-        // For destructive questions the safe button is focused first, so a stray Enter does not delete.
+        // Focus the safe choice first for delete and cancel prompts.
         (config.confirm && type === 'danger' ? cancelButton : okButton).focus();
     }
 
@@ -155,7 +148,7 @@
     window.UE.alert = window.UE.dialog.alert;
     window.UE.confirm = window.UE.dialog.confirm;
 
-    // Any plain alert() left in the pages now uses the styled box too.
+    // Give old alert calls the same popup style.
     window.alert = function (message) {
         const text = String(message ?? '');
         const type = /unable|failed|error|could not|cannot|invalid|wrong/i.test(text) ? 'error'

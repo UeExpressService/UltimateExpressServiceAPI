@@ -32,7 +32,7 @@
                 <span class="name">Loading...</span>
                 <span class="role">Customer</span>
             </div>
-            <a href="login.html?logout=1" class="logout-btn" title="Logout" aria-label="Log out">
+            <a href="login.html?logout=1" class="logout-btn" target="_self" title="Logout" aria-label="Log out">
                 <i class="bi bi-box-arrow-right"></i>
             </a>
         </div>
@@ -58,14 +58,14 @@
 
         <div class="dashboard-grid">
 
-            <!-- ── Left Column: Transactions ── -->
+            <!-- Customer bookings -->
             <div class="main-column" id="transactionColumn">
                 <div class="card">
                     <div class="card-title">
                         <i class="bi bi-clock-history"></i> Transaction History
                     </div>
 
-                    <!-- Action Buttons Row -->
+                    <!-- Quote and dispatch buttons -->
                     <div class="action-buttons-row">
                         <button id="openQuoteModal" class="btn btn-primary">
                             <i class="bi bi-file-earmark-plus"></i> Request a Quote
@@ -75,43 +75,16 @@
                         </a>
                     </div>
 
-                    <div class="tabs" role="group" aria-label="Filter transactions">
-                        <button type="button" class="tab active" aria-pressed="true" onclick="renderTransactions('all')">All</button>
-                        <button type="button" class="tab" aria-pressed="false" onclick="renderTransactions('ongoing')">Ongoing</button>
-                        <button type="button" class="tab" aria-pressed="false" onclick="renderTransactions('pending')">Pending</button>
-                        <button type="button" class="tab" aria-pressed="false" onclick="renderTransactions('completed')">Completed</button>
+                    <div class="tabs" id="transactionFilters" role="group" aria-label="Filter transactions">
+                        <button type="button" class="tab active" data-filter="all" aria-pressed="true" onclick="renderTransactions(this.dataset.filter)">All</button>
+                        <button type="button" class="tab" data-filter="ongoing" aria-pressed="false" onclick="renderTransactions(this.dataset.filter)">Ongoing</button>
+                        <button type="button" class="tab" data-filter="pending" aria-pressed="false" onclick="renderTransactions(this.dataset.filter)">Pending</button>
+                        <button type="button" class="tab" data-filter="completed" aria-pressed="false" onclick="renderTransactions(this.dataset.filter)">Completed</button>
+                        <button type="button" class="tab" data-filter="cancelled" aria-pressed="false" onclick="renderTransactions(this.dataset.filter)">Cancelled</button>
                     </div>
 
                     <div class="transaction-list" id="transactionContainer">
-                        <div class="transaction-item ongoing">
-                            <div class="icon-box"><i class="bi bi-truck"></i></div>
-                            <div class="details">
-                                <span class="id">#UE-99281</span>
-                                <span class="route">Manila → Cebu City</span>
-                            </div>
-                            <span class="status-badge status-ongoing">In Transit</span>
-                            <span class="price">₱12,500.00</span>
-                        </div>
-
-                        <div class="transaction-item pending">
-                            <div class="icon-box"><i class="bi bi-hourglass-split"></i></div>
-                            <div class="details">
-                                <span class="id">#UE-99285</span>
-                                <span class="route">Davao City → Cagayan de Oro</span>
-                            </div>
-                            <span class="status-badge status-pending">Processing</span>
-                            <span class="price">₱8,200.00</span>
-                        </div>
-
-                        <div class="transaction-item completed">
-                            <div class="icon-box"><i class="bi bi-check2-circle"></i></div>
-                            <div class="details">
-                                <span class="id">#UE-99102</span>
-                                <span class="route">Batangas → Quezon City</span>
-                            </div>
-                            <span class="status-badge status-completed">Delivered</span>
-                            <span class="price">₱5,400.00</span>
-                        </div>
+                        <div class="empty-state"><p>Loading transactions…</p></div>
                     </div>
                 </div>
             </div>
@@ -125,7 +98,7 @@
 </aside></div>
     </main>
 
-    <!-- Read-only transaction details modal -->
+    <!-- View the booking -->
     <div class="modal" id="transactionDetailsModal">
         <div class="modal-content">
             <button type="button" class="modal-close" id="closeTransactionDetails" aria-label="Close transaction details">&times;</button>
@@ -142,7 +115,7 @@
         </div>
     </div>
 
-    <!-- Modal: Quotation Form -->
+    <!-- Ask for a quote -->
     <div class="modal" id="quoteModal">
         <div class="modal-content">
             <button type="button" class="modal-close" id="closeQuoteModal" aria-label="Close quotation form">&times;</button>
@@ -193,8 +166,9 @@
 
                 <div class="form-group">
                     <label><input type="checkbox" id="acceptQuoteTerms" required>
-                        I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms &amp; Conditions</a> and have read the <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a> for this service request.
+                        I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms &amp; Conditions</a> for this service request.
                     </label>
+                    <p><a href="privacy-policy.html" target="_blank" rel="noopener">How we handle your booking information</a></p>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block ue-quote-submit">
                     Submit Quote Request <i class="bi bi-send"></i>
@@ -205,6 +179,7 @@
 
     <footer>
         &copy; 2012 Ultimate Express. All rights reserved. <i class="bi bi-flag-fill ue-text-primary"></i>
+        <a href="privacy-policy.html" target="_self">Privacy Policy</a>
     </footer>
 
     <script>
@@ -368,7 +343,7 @@
                 const data = await response.json();
                 allTransactions = data.filter(item => String(item.customer_id) === String(currentUser.id)).map(item => ({
                     ...item,
-                    status: item.status || 'new'
+                    status: customerStatus(item.status)
                 }));
                 renderTransactions(currentFilter);
             } catch (err) {
@@ -380,21 +355,29 @@
             }
         }
 
+        function customerStatus(status) {
+            const savedStatus = String(status || '').trim().toLowerCase();
+            if (savedStatus === 'approved' || savedStatus === 'ongoing') return 'ongoing';
+            if (savedStatus === 'completed') return 'completed';
+            if (savedStatus === 'cancelled' || savedStatus === 'canceled') return 'cancelled';
+            return 'pending';
+        }
+
+        const statusLabels = { pending: 'Pending', ongoing: 'Ongoing', completed: 'Completed', cancelled: 'Cancelled' };
+
         function renderTransactions(category) {
             currentFilter = category;
-            const tabs = document.querySelectorAll('.tab');
+            const tabs = document.querySelectorAll('#transactionFilters [data-filter]');
             tabs.forEach(tab => {
-                tab.classList.toggle('active', tab.textContent.toLowerCase().includes(category) || (category === 'all' && tab.textContent.toLowerCase().includes('all')));
-                tab.setAttribute('aria-pressed', String(tab.classList.contains('active')));
+                const selected = tab.dataset.filter === category;
+                tab.classList.toggle('active', selected);
+                tab.setAttribute('aria-pressed', String(selected));
             });
 
             const container = document.getElementById('transactionContainer');
             if (!container) return;
 
-            const filtered = allTransactions.filter(item => {
-                if (category === 'all') return true;
-                return item.status.toLowerCase() === category;
-            });
+            const filtered = allTransactions.filter(item => category === 'all' || item.status === category);
 
             if (filtered.length === 0) {
                 container.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><p>No transactions found.</p></div>';
@@ -402,15 +385,14 @@
             }
 
             container.innerHTML = filtered.map(item => {
-                const statusClass = item.status === 'pending' ? 'pending' : item.status === 'completed' || item.status === 'approved' ? 'completed' : 'ongoing';
                 return `
-                    <div class="transaction-item ${statusClass}" onclick="openTransactionDetails(${item.id})" role="button" tabindex="0" onkeydown="if (event.key === 'Enter' || event.key === ' ') openTransactionDetails(${item.id})">
+                    <div class="transaction-item ${item.status}" onclick="openTransactionDetails(${Number(item.id)})" role="button" tabindex="0" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openTransactionDetails(${Number(item.id)}); }">
                         <div class="icon-box"><i class="bi bi-truck"></i></div>
                         <div class="details">
-                            <span class="id">${item.id || 'N/A'}</span>
+                            <span class="id">${escapeHtml(item.id || 'N/A')}</span>
                             <span class="route">${escapeHtml(item.pickup_location || 'Unknown pickup')} → ${escapeHtml(item.delivery_location || 'Unknown delivery')}</span>
                         </div>
-                        <div class="status-badge status-${statusClass}">${item.status}</div>
+                        <div class="status-badge status-${item.status}">${statusLabels[item.status]}</div>
                     </div>
                 `;
             }).join('');
@@ -429,10 +411,9 @@
             const transaction = allTransactions.find(item => String(item.id) === String(transactionId));
             if (!transaction) return;
 
-            const statusClass = transaction.status === 'pending' ? 'pending' : transaction.status === 'completed' || transaction.status === 'approved' ? 'completed' : 'ongoing';
             const details = [
                 ['Order Number', transaction.id],
-                ['Status', `<span class="status-badge status-${statusClass}">${escapeHtml(transaction.status)}</span>`],
+                ['Status', `<span class="status-badge status-${transaction.status}">${statusLabels[transaction.status]}</span>`],
                 ['Cargo Type', transaction.cargo_type],
                 ['Cargo Weight', transaction.cargo_weight],
                 ['Pickup Address', transaction.pickup_location],
@@ -477,7 +458,7 @@
             ), 180);
         }
 
-        // Modal Controls
+        // Open and close the popups
         const modal = document.getElementById('quoteModal');
         const openBtn = document.getElementById('openQuoteModal');
         const closeBtn = document.getElementById('closeQuoteModal');
@@ -596,6 +577,7 @@
 
                 this.reset();
                 modal.classList.remove('active');
+                currentFilter = 'pending';
                 UE.alert('Your quotation request was submitted. Our dispatch team will contact you soon.', { type: 'success', title: 'Request submitted' });
                 await loadTransactions();
             } catch (err) {

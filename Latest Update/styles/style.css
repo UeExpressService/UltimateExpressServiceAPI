@@ -1,9 +1,7 @@
 /*
- * Ultimate Express — all first-party presentation styles.
- * Search the numbered section headings below to find a page or component.
- * Third-party fonts, Bootstrap Icons and Leaflet retain their vendor stylesheets.
- * Page selectors use :where() to preserve specificity and prevent layout leakage.
- * JavaScript only sets styles for runtime state (visibility, progress and transforms).
+ * All our site styles are here. Search the list below to find a page.
+ * Fonts, icons and Leaflet use their own files.
+ * Each page has a data-page selector so its layout stays separate.
  *
  * Contents:
  * 01. Shared authentication forms — login, forgot password, reset password
@@ -16,13 +14,12 @@
  * 08. login page
  * 09. forgot-password page
  * 10. reset-password page
- * 11. terms page
- * 12. Shared presentation helpers — runtime visibility can override these classes
- * 13. Shared UE alerts and confirmation dialogs — after page styles to preserve priority
+ * 11. terms and privacy pages
+ * 12. Shared layout helpers
+ * 13. Shared popups
  * 14. Company email recovery
  * 15. User activity log
- * 16. Fleet availability, daily attendance and booking reviews
- * 17. Scheduled payments
+ * 16. Revision tools and printable documents
  */
 
 /* ==========================================================================
@@ -352,6 +349,11 @@
         :where(html[data-page="landing"]) .service-icon { width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.2rem; color: white; }
         :where(html[data-page="landing"]) .service-card h3 { color: var(--secondary); font-size: 1.15rem; margin-bottom: .8rem; }
         :where(html[data-page="landing"]) .service-card p { color: var(--gray); font-size: .9rem; margin-bottom: 1rem; }
+
+        :where(html[data-page="landing"]) .truck-types-heading { color: var(--secondary); font-size: .85rem; margin-bottom: .65rem; }
+        :where(html[data-page="landing"]) .service-truck-types { display: flex; flex-wrap: wrap; gap: .45rem; list-style: none; padding: 0; margin: 0 0 1rem; }
+        :where(html[data-page="landing"]) .service-truck-types li { max-width: 100%; padding: .35rem .65rem; border: 1px solid rgba(224,123,57,.2); border-radius: 8px; background: rgba(224,123,57,.07); color: var(--secondary); font-size: .78rem; line-height: 1.5; overflow-wrap: anywhere; }
+        :where(html[data-page="landing"]) .service-card .truck-types-note { font-size: .8rem; line-height: 1.6; }
 
         :where(html[data-page="landing"]) .service-link { color: var(--primary); text-decoration: none; font-weight: 600; font-size: .9rem; display: inline-flex; align-items: center; gap: .4rem; transition: gap .3s ease; }
         :where(html[data-page="landing"]) .service-link:hover { gap: .8rem; }
@@ -837,8 +839,9 @@
             flex-wrap: wrap;
         }
 
-        /* ── Transaction Tabs ── */
-        :where(html[data-page="customer"]) .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--light-gray); }
+        /* Booking filters */
+        :where(html[data-page="customer"]) .tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .25rem .5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--light-gray); }
+        :where(html[data-page="customer"]) .tab[data-filter="cancelled"] { grid-column: 1 / -1; justify-self: start; }
         :where(html[data-page="customer"]) .tab { padding: 0.75rem 1rem; min-height: 44px; cursor: pointer; font: inherit; font-weight: 600; color: var(--gray); font-size: 0.9rem; border: 0; border-bottom: 3px solid transparent; background: transparent; }
         :where(html[data-page="customer"]) .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
         :where(html[data-page="customer"]) .tab:focus-visible,:where(html[data-page="customer"])  .btn:focus-visible,:where(html[data-page="customer"])  .logout-btn:focus-visible,:where(html[data-page="customer"])  .modal-close:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
@@ -873,6 +876,8 @@
         :where(html[data-page="customer"]) .status-ongoing { background: #e0f2fe; color: #0369a1; }
         :where(html[data-page="customer"]) .status-pending { background: #fef3c7; color: #92400e; }
         :where(html[data-page="customer"]) .status-completed { background: #dcfce7; color: #166534; }
+        :where(html[data-page="customer"], html[data-page="dispatcher"]) .status-cancelled { background: #fee2e2; color: #991b1b; }
+        :where(html[data-page="customer"]) footer a { color: inherit; margin-inline-start: .5rem; text-decoration: underline; }
         :where(html[data-page="customer"]) .details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1.25rem; }
         :where(html[data-page="customer"]) .detail-group { padding: 0.85rem 1rem; background: var(--light); border-radius: 10px; }
         :where(html[data-page="customer"]) .detail-group.full-width { grid-column: 1 / -1; }
@@ -1157,8 +1162,11 @@
             gap: 1rem;
         }
         :where(html[data-page="dispatcher"]) .inquiries-header h2 { display: flex; align-items: center; gap: 0.75rem; font-size: 1.3rem; color: var(--secondary); }
-        :where(html[data-page="dispatcher"]) .tabs { display: flex; gap: 0.5rem; }
+        :where(html[data-page="dispatcher"]) .tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; }
         :where(html[data-page="dispatcher"]) .tab {
+            border: 0;
+            background: transparent;
+            font-family: inherit;
             padding: 0.5rem 1.2rem;
             cursor: pointer;
             font-weight: 600;
@@ -1188,6 +1196,8 @@
         :where(html[data-page="dispatcher"]) .inquiry-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
         :where(html[data-page="dispatcher"]) .inquiry-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; margin-bottom: 0.7rem; }
         :where(html[data-page="dispatcher"]) .inquiry-actions .btn { padding: 0.35rem 0.65rem; font-size: 0.75rem; }
+        :where(html[data-page="dispatcher"]) .inquiry-actions .cancel-booking-btn { color: #991b1b; border-color: #991b1b; }
+        :where(html[data-page="dispatcher"]) .inquiry-actions .cancel-booking-btn:hover { background: #fee2e2; }
         :where(html[data-page="dispatcher"]) .inquiry-actions .status-select { min-width: 112px; padding: 0.38rem 0.5rem; border: 1px solid var(--light-gray); border-radius: 6px; color: var(--dark); background: white; font: inherit; font-size: 0.75rem; cursor: pointer; }
         :where(html[data-page="dispatcher"]) .inquiry-id { font-weight: 700; color: var(--primary); font-size: 0.85rem; }
         :where(html[data-page="dispatcher"]) .status-badge { padding: 4px 12px; border-radius: 50px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
@@ -1937,9 +1947,6 @@
         :where(html[data-page="manager"]) .receipt-link { color: var(--primary-dark); font-weight: 600; font-size: .85rem; }
         :where(html[data-page="manager"]) .payment-modal-content { max-width: 480px; }
         :where(html[data-page="manager"]) .payment-intro { margin-bottom: 1rem; color: var(--gray); font-size: .88rem; }
-        :where(html[data-page="manager"]) .payment-quote { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.25rem; padding: 1rem; border: 1px solid var(--light-gray); border-radius: 12px; background: var(--light); }
-        :where(html[data-page="manager"]) .payment-quote span { color: var(--gray); font-size: .8rem; font-weight: 600; }
-        :where(html[data-page="manager"]) .payment-quote strong { color: var(--secondary); font-size: 1rem; }
         :where(html[data-page="manager"]) .payment-amount-group { margin-bottom: .5rem; }
         :where(html[data-page="manager"]) .payment-amount-group label { display: block; margin-bottom: .4rem; color: var(--dark); font-size: .85rem; font-weight: 600; }
         :where(html[data-page="manager"]) .payment-amount-wrap { display: flex; align-items: center; border: 1px solid #ced4da; border-radius: 10px; overflow: hidden; }
@@ -2457,8 +2464,7 @@
 :where(html[data-page="terms"], html[data-page="privacy"]) body { max-width: 850px; margin: 40px auto; padding: 0 22px; font: 16px/1.7 Arial, sans-serif; color: #283329; }
         :where(html[data-page="terms"], html[data-page="privacy"]) h1 { color: #4a5d3a; }
         :where(html[data-page="terms"], html[data-page="privacy"]) h2 { margin-top: 1.5em; font-size: 1.1em; }
-
-:where(html[data-page="privacy"]) a { color: #385329; overflow-wrap: anywhere; }
+        :where(html[data-page="privacy"]) a { color: #385329; overflow-wrap: anywhere; }
 
 /* ==========================================================================
    12. Shared presentation helpers — runtime visibility can override these classes
@@ -2618,3 +2624,120 @@ html[data-page=dispatcher] .ue-booking-payment-schedule input,html[data-page=dis
 @media(max-width:600px) { html[data-page] .ue-schedules-content { padding:18px; width:94vw; } html[data-page] .ue-schedule-controls { align-items:stretch; } html[data-page] .ue-schedule-controls label { flex:1 1 100%; min-width:0; } html[data-page] .ue-schedule-controls input,html[data-page] .ue-schedule-controls select { min-width:0; width:100%; } }
 
 html[data-page=manager] #partnerModal textarea { width:100%; padding:.75rem; border:1.5px solid var(--light-gray); border-radius:10px; font:inherit; font-size:.85rem; resize:vertical; }
+
+/* 16. Revision tools and printable documents */
+.ue-revision-card { background:#fff; border:1px solid #e0e5e3; border-radius:14px; padding:24px; margin:20px 0; box-shadow:0 4px 18px #25322908; }
+.ue-revision-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:16px; }
+.ue-revision-heading h2 { font-size:1.25rem; margin:0 0 8px; color:#24352a; }
+.ue-revision-heading p { color:#627169; font-size:.9rem; max-width:850px; line-height:1.6; }
+.ue-revision-message { font-size:.88rem; color:#4a5d3a; margin:12px 0; min-height:1.3em; }
+.ue-revision-filter { display:flex; align-items:center; gap:10px; margin:12px 0; }
+.ue-revision-filter select { min-width:0; max-width:100%; flex:1; }
+.ue-revision-card select,.ue-revision-card input,.ue-revision-card textarea { border:1px solid #ced7d0; border-radius:7px; padding:10px; font:inherit; background:white; color:#253229; max-width:100%; }
+.ue-inquiry-item { border:1px solid #e0e5e3; border-radius:9px; margin:10px 0; overflow:hidden; }
+.ue-inquiry-item summary { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; padding:16px; cursor:pointer; background:#f7f9f6; }
+.ue-inquiry-item summary span { font-size:.82rem; color:#627169; }
+.ue-inquiry-body { padding:18px; }
+.ue-inquiry-body p { margin-bottom:12px; overflow-wrap:anywhere; }
+.ue-inquiry-body label { display:block; font-weight:500; margin:14px 0; }
+.ue-inquiry-body textarea { display:block; width:100%; margin-top:8px; }
+.ue-inquiry-text { white-space:pre-wrap; padding:16px; background:#f7f9f6; border-radius:7px; }
+.ue-revision-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:16px 0; }
+.ue-revision-form label { display:flex; flex-direction:column; gap:6px; font-size:.88rem; }
+.ue-revision-form .ue-form-wide { grid-column:1/-1; }
+.ue-maintenance-component { min-width:0; border:1px solid #dce3dd; border-radius:9px; padding:16px; }
+.ue-maintenance-component legend { padding:0 8px; font-weight:600; color:#24352a; }
+.ue-maintenance-component .ue-revision-form { margin:8px 0; }
+.ue-maintenance-report-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+.ue-revision-scroll { overflow-x:auto; }
+.ue-revision-card table { width:100%; border-collapse:collapse; font-size:.85rem; }
+.ue-revision-card th,.ue-revision-card td { padding:12px; text-align:left; border-bottom:1px solid #e0e5e3; }
+.ue-revision-card th { background:#f6f8f4; }
+.ue-document-open { overflow:hidden; }
+#ueDocumentPreview { position:fixed; inset:0; z-index:20000; overflow:auto; background:#e8ece9; color:#17251c; font:14px/1.5 Arial,sans-serif; padding:0 20px 40px; }
+#ueDocumentPreview * { box-sizing:border-box; }
+.ue-document-toolbar { position:sticky; top:0; z-index:1; max-width:1000px; margin:0 auto 24px; padding:16px 0; display:flex; align-items:center; justify-content:space-between; gap:16px; background:#e8ece9; }
+.ue-document-toolbar button { padding:10px 16px; margin-left:8px; border:1px solid #adb9b0; border-radius:6px; background:white; cursor:pointer; font:inherit; }
+.ue-document-toolbar button[data-print] { background:#3e593e; color:white; border-color:#3e593e; }
+.ue-document-sheet { max-width:1000px; margin:0 auto; background:#fff; padding:44px; box-shadow:0 4px 25px #12251916; }
+.ue-document-brand { display:flex; align-items:center; gap:16px; padding-bottom:20px; border-bottom:2px solid #3e593e; }
+.ue-document-brand img { width:58px; height:58px; object-fit:contain; }
+.ue-document-brand strong { font-size:20px; letter-spacing:1px; }
+.ue-document-brand p { margin:0; font-size:12px; }
+#ueDocumentPreview h1 { font-size:25px; color:#17251c; margin:24px 0 5px; }
+.ue-document-reference { color:#5f6d63; font-size:12px; margin-bottom:22px; }
+.ue-document-facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 25px; margin:20px 0; }
+.ue-document-facts div { border-bottom:1px solid #dce3dd; padding:9px 0; }
+.ue-document-facts dt { font-size:12px; color:#5f6d63; }
+.ue-document-facts dd { margin:4px 0 0; font-weight:600; overflow-wrap:anywhere; }
+.ue-document-section { margin-top:25px; }
+#ueDocumentPreview h2 { font-size:17px; margin:12px 0; color:#17251c; }
+.ue-document-sheet table { width:100%; border-collapse:collapse; font-size:12px; table-layout:auto; }
+.ue-document-sheet th,.ue-document-sheet td { text-align:left; vertical-align:top; padding:9px 8px; border:1px solid #cdd7cf; overflow-wrap:anywhere; }
+.ue-document-sheet th { background:#eef3ed; font-weight:700; }
+.ue-document-sheet tr:nth-child(even) td { background:#fafbf9; }
+.ue-document-note,.ue-document-footer { font-size:11px; color:#5f6d63; margin-top:24px; }
+#ueDocumentPreview .receipt-brand { display:none; }
+#ueDocumentPreview .receipt-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; }
+#ueDocumentPreview .receipt-field { border-bottom:1px solid #dce3dd; padding-bottom:8px; }
+#ueDocumentPreview .receipt-field small,#ueDocumentPreview .receipt-field strong { display:block; overflow-wrap:anywhere; }
+#ueDocumentPreview .receipt-total { margin:20px 0; padding:16px; background:#eef3ed; display:flex; justify-content:space-between; gap:16px; }
+#ueDocumentPreview .receipt-heading { margin:18px 0; }
+@media (max-width:640px) {
+ .ue-revision-card { padding:16px; }
+ .ue-revision-heading { flex-direction:column; }
+ .ue-revision-form { grid-template-columns:1fr; }
+ .ue-revision-filter { display:block; }
+ .ue-revision-filter select { display:block; width:100%; margin:8px 0; }
+ #ueDocumentPreview { padding:0 10px 20px; }
+ .ue-document-sheet { padding:22px; }
+ .ue-document-toolbar { align-items:flex-start; flex-direction:column; }
+ .ue-document-toolbar button { margin:0 6px 0 0; }
+ .ue-document-facts,#ueDocumentPreview .receipt-grid { grid-template-columns:1fr; }
+}
+@media print {
+ @page { size:A4; margin:14mm; }
+ body.ue-document-printing { display:block !important; background:white !important; overflow:visible !important; margin:0 !important; padding:0 !important; }
+ body.ue-document-printing > :not(#ueDocumentPreview) { display:none !important; }
+ body.ue-document-printing #ueDocumentPreview { display:block !important; position:static !important; overflow:visible !important; background:white; padding:0; width:100%; height:auto; visibility:visible !important; }
+ body.ue-document-printing #ueDocumentPreview * { visibility:visible !important; }
+ body.ue-document-printing .ue-document-toolbar { display:none !important; }
+ body.ue-document-printing .ue-document-sheet { max-width:none; width:100%; box-shadow:none; padding:0; margin:0; color:black; }
+ body.ue-document-printing .ue-document-sheet h1,body.ue-document-printing .ue-document-sheet h2 { break-after:avoid; }
+ body.ue-document-printing .ue-document-sheet tr { break-inside:avoid; }
+ body.ue-document-printing .ue-document-sheet thead { display:table-header-group; }
+ body.ue-document-printing .ue-document-sheet a { color:inherit; text-decoration:none; }
+ body.ue-document-printing .receipt-link { display:none; }
+ body.ue-document-printing #ueDocumentPreview .receipt-sheet { max-width:none; padding:0; border:0; box-shadow:none; }
+ body.ue-document-printing #ueDocumentPreview .receipt-grid { gap:8px 16px; }
+ body.ue-document-printing #ueDocumentPreview .receipt-field { border:0; border-bottom:1px solid #dce3dd; border-radius:0; padding:5px 0; font-size:11px; }
+ body.ue-document-printing #ueDocumentPreview .receipt-field small { font-size:10px; letter-spacing:0; }
+ body.ue-document-printing #ueDocumentPreview .receipt-heading { margin:10px 0; }
+ body.ue-document-printing #ueDocumentPreview .receipt-total { margin:12px 0; padding:12px; }
+ body.ue-document-printing #ueDocumentPreview .receipt-note { font-size:10px; margin:8px 0; }
+}
+.ue-document-landscape .ue-document-sheet { max-width:1450px; }
+:where(html[data-page="landing"]) .ue-landing-faq { min-width:0; align-self:start; padding:2rem; border-radius:16px; background:var(--light); scroll-margin-top:100px; }
+:where(html[data-page="landing"]) .ue-landing-faq h2 { font-size:clamp(1.5rem,3vw,2rem); color:var(--secondary); margin-bottom:24px; }
+:where(html[data-page="landing"]) .ue-landing-faq details { border:1px solid #e0e5e3; border-radius:9px; padding:18px; margin-bottom:12px; }
+:where(html[data-page="landing"]) .ue-landing-faq summary { cursor:pointer; font-weight:600; color:var(--secondary); }
+:where(html[data-page="landing"]) .ue-landing-faq summary:focus-visible { outline:2px solid var(--primary); outline-offset:5px; border-radius:3px; }
+:where(html[data-page="landing"]) .ue-landing-faq p { margin-top:12px; line-height:1.7; }
+:where(html[data-page="landing"]) .ue-landing-faq a,:where(html[data-page="landing"]) .contact-item a { color:var(--primary-dark); overflow-wrap:anywhere; }
+@media(max-width:480px) { :where(html[data-page="landing"]) .ue-landing-faq { padding:1.25rem; } }
+
+/* Dispatcher requests and Supervisor inspection reviews */
+#maintenanceRequests { scroll-margin-top:110px; }
+.ue-inspection-item { margin-top:14px; padding:16px; border:1px solid #dfe5e1; border-radius:10px; background:#fff; }
+.ue-inspection-item summary { cursor:pointer; display:flex; flex-wrap:wrap; gap:8px 20px; justify-content:space-between; color:#344b31; }
+.ue-inspection-item p { margin:12px 0; line-height:1.6; overflow-wrap:anywhere; }
+.ue-inspection-item form { margin:16px 0; }
+.ue-inspection-text { white-space:pre-wrap; }
+#maintenanceRequests .ue-revision-form label { min-width:0; }
+#maintenanceRequests .ue-revision-form input,#maintenanceRequests .ue-revision-form select,#maintenanceRequests .ue-revision-form textarea { width:100%; min-width:0; box-sizing:border-box; }
+@media print {
+ @page ue-landscape { size:A4 landscape; margin:10mm; }
+ body.ue-document-printing .ue-document-landscape .ue-document-sheet { page:ue-landscape; }
+ body.ue-document-printing .ue-document-landscape .ue-document-sheet table { font-size:12px; }
+ body.ue-document-printing .ue-document-landscape .ue-document-sheet th,body.ue-document-printing .ue-document-landscape .ue-document-sheet td { padding:5px; }
+}

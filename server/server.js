@@ -1,4 +1,4 @@
-// server.js  (updated: connection pool, Railway-ready, security + bug fixes)
+// Website and API server
 require('dotenv').config();
 const crypto = require('crypto');
 const fs = require('fs');
@@ -34,9 +34,7 @@ if (gmailConfigured) {
     console.warn('No email provider is configured. Email sending will be disabled.');
 }
 
-// ------------------------------------------------------------------
-// Small helpers
-// ------------------------------------------------------------------
+// A few shared checks
 class HttpError extends Error {
     constructor(status, message) {
         super(message);
@@ -93,9 +91,7 @@ const codeLimiter = rateLimit({ windowMs: 15 * 60_000, max: 40, message: 'Too ma
 const resetLimiter = rateLimit({ windowMs: 60 * 60_000, max: 15, message: 'Too many reset requests. Try again later.' });
 const accountRequestLimiter = rateLimit({ windowMs: 60 * 60_000, max: 10, message: 'Too many requests. Try again later.' });
 
-// ------------------------------------------------------------------
-// Session tokens (HS256 JWT)
-// ------------------------------------------------------------------
+// Sign and check session tokens
 function createSessionToken(user) {
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
     const payload = Buffer.from(JSON.stringify({
@@ -146,7 +142,7 @@ function verifySessionToken(token) {
     }
 }
 
-// The website address used in the links inside emails (sign-in link, password reset link).
+// Use this site address in emails.
 const DEFAULT_RAILWAY_URL = 'https://ultimateexpressserviceapi-production.up.railway.app';
 const runningOnRailway = Boolean(
     process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID
@@ -162,7 +158,7 @@ function normalizeBaseUrl(value) {
     try {
         const url = new URL(text);
         if (!['http:', 'https:'].includes(url.protocol)) return null;
-        // *.proxy.rlwy.net is the DATABASE address, never the website.
+        // Skip Railway's database address.
         if (/\.proxy\.rlwy\.net$/i.test(url.hostname)) return null;
         return url.toString().replace(/\/$/, '');
     } catch {
@@ -265,7 +261,7 @@ async function sendEmail(message) {
         );
         oauth2Client.setCredentials({ refresh_token: await gmailConnection.getRefreshToken() });
         const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-        // Strip line breaks so user-supplied values can never inject extra mail headers.
+        // Remove line breaks so they can't add extra email headers.
         const to = String(message.to).replace(/[\r\n]+/g, ' ').trim();
         const subject = String(message.subject).replace(/[\r\n]+/g, ' ').trim();
         const rawMessage = [
@@ -321,10 +317,7 @@ async function sendEmail(message) {
     });
 }
 
-// ------------------------------------------------------------------
-// Database (connection POOL - survives Railway idle disconnects)
-// Works with DB_* variables OR Railway's MYSQL* variables.
-// ------------------------------------------------------------------
+// Reuse database connections. Railway's MYSQL settings work here too.
 const dbTimezone = process.env.DB_TIMEZONE || '+08:00'; // Philippine time
 const db = mysql.createPool({
     host: process.env.DB_HOST || process.env.MYSQLHOST,
@@ -382,16 +375,14 @@ function sendError(res, error, fallbackMessage) {
 
 const auditUserAction = auditTrail.describe;
 
-// ------------------------------------------------------------------
-// Middleware
-// ------------------------------------------------------------------
+// Settings for incoming requests
 const allowedOrigins = new Set(
     (process.env.CORS_ORIGINS || 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5500,http://127.0.0.1:5500')
         .split(',')
         .map(origin => origin.trim())
         .filter(Boolean)
 );
-// Same-site requests (page and API on the same host, e.g. Railway) are always allowed.
+// Allow the page and API to share a host.
 app.use(cors((req, callback) => {
     const origin = req.header('Origin');
     if (!origin) return callback(null, { origin: false });
@@ -410,9 +401,7 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '200kb' }));
 app.use('/api', auditTrail.middleware);
 
-// ------------------------------------------------------------------
-// Front-end files
-// ------------------------------------------------------------------
+// Serve the website files
 function findFrontendDir() {
     const candidates = [
         process.env.FRONTEND_DIR,
@@ -426,13 +415,13 @@ function findFrontendDir() {
 const frontendPath = findFrontendDir();
 console.log(`Serving front-end files from: ${frontendPath}`);
 
-const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js', 'waybills.js', 'email-recovery.js', 'operations.js', 'payment-schedules.js']);
+const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js', 'waybills.js', 'operations.js', 'payment-schedules.js', 'email-recovery.js', 'website-inquiries.js', 'print-documents.js', 'route-pricing.js', 'maintenance.js', 'inspection-requests.js']);
 const publicExtensions = /\.(html|css|js|png|jpe?g|webp|gif|svg|ico|woff2?)$/i;
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 app.get(['/', '/index.html'], (req, res) => res.sendFile(path.join(frontendPath, 'LandingPage.html')));
 
-// Only web files may be served. Blocks .env, .sql, .json, server.js, scripts, etc.
+// Keep private files out of the browser.
 app.use((req, res, next) => {
     if (req.path.startsWith('/api/') || req.path.endsWith('/')) return next();
     const base = path.basename(req.path);
@@ -443,18 +432,24 @@ app.use((req, res, next) => {
 });
 app.use(express.static(frontendPath));
 
-// ---------- API Routes ----------
+// API routes
 
-app.post('/api/logout', requireRoles('customer', 'dispatcher', 'supervisor', 'manager'), (req, res) => {
-    res.status(204).end();
-});
-
-require('./payment-schedules')(app, { dbp, withTransaction, requireRoles, auditUserAction, HttpError, sendError });
+require('./payment-schedules')(app, { dbp, withTransaction, requireRoles, auditUserAction: auditUserAction, HttpError, sendError });
 require('./operations')(app, { dbp, withTransaction, requireRoles, HttpError, sendError, auditUserAction });
-require('./waybills')(app, { dbp, withTransaction, requireRoles, rateLimit, HttpError, sendError });
+require('./waybills')(app, { dbp, withTransaction, requireRoles, rateLimit, HttpError, sendError, auditUserAction });
+require('./website-inquiries')(app, { dbp, requireRoles, auditUserAction, HttpError, sendError });
+require('./route-pricing')(app, { dbp, requireRoles, auditUserAction, HttpError, sendError });
+const maintenance = require('./maintenance')(app, { dbp, withTransaction, requireRoles, auditUserAction, HttpError, sendError });
+const tripMaintenance = require('./trip-maintenance')(app, { dbp, withTransaction, requireRoles, auditUserAction, HttpError, sendError, ensureMaintenance:maintenance.ready });
 gmailConnection.register(app, rateLimit);
 
-app.post('/api/account/first-login-password', requireRoles('customer', 'dispatcher', 'supervisor', 'manager'), async (req, res) => {
+app.post('/api/logout', requireRoles('customer', 'dispatcher', 'supervisor', 'manager'),
+    auditUserAction('session.signed_out', 'user', 'Signed out.'), (req, res) => {
+        res.locals.auditEntityId = req.auth.sub;
+        res.status(204).end();
+    });
+
+app.post('/api/account/first-login-password', requireRoles('customer', 'dispatcher', 'supervisor', 'manager'), auditUserAction('password.changed', 'user', 'Set a new password.'), async (req, res) => {
     if (req.auth.mustChangePassword !== true) {
         return res.status(403).json({ error: 'This account does not require a first-login password change.' });
     }
@@ -483,6 +478,7 @@ app.post('/api/account/first-login-password', requireRoles('customer', 'dispatch
         if (users.length === 0) {
             return res.status(404).json({ error: 'Account not found.' });
         }
+        res.locals.auditEntityId = req.auth.sub;
         res.json({
             authToken: createSessionToken(users[0]),
             message: 'Password set successfully.'
@@ -492,7 +488,7 @@ app.post('/api/account/first-login-password', requireRoles('customer', 'dispatch
     }
 });
 
-// First factor: validate the account password and email a short-lived code.
+// Check the password, then send a code.
 app.post('/api/login', loginLimiter, async (req, res) => {
     const email = typeof req.body.email === 'string' ? req.body.email.trim() : '';
     const password = typeof req.body.password === 'string' ? req.body.password : '';
@@ -519,7 +515,6 @@ app.post('/api/login', loginLimiter, async (req, res) => {
         }
 
         const user = users[0];
-        res.locals.auditActorUserId = user.id;
         if (!isBcryptHash(user.password)) {
             const hashedPassword = await hashPassword(password);
             await dbp.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, user.id]);
@@ -578,8 +573,8 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     }
 });
 
-// Second factor: consume a valid login code and create the account session.
-app.post('/api/login/verify-code', codeLimiter, async (req, res) => {
+// Use the code once and start the session.
+app.post('/api/login/verify-code', codeLimiter, auditUserAction('session.signed_in', 'user', 'Signed in.'), async (req, res) => {
     const challengeId = typeof req.body.challengeId === 'string' ? req.body.challengeId : '';
     const code = typeof req.body.code === 'string' ? req.body.code.trim() : '';
     if (!/^[0-9a-f-]{36}$/i.test(challengeId) || !/^\d{6}$/.test(code)) {
@@ -640,7 +635,10 @@ app.post('/api/login/verify-code', codeLimiter, async (req, res) => {
                 }
             };
         });
-        if (outcome.status === 200) res.locals.auditActorUserId = outcome.body.id;
+        if (outcome.status === 200) {
+            res.locals.auditActorUserId = outcome.body.id;
+            res.locals.auditEntityId = outcome.body.id;
+        }
         res.status(outcome.status).json(outcome.body);
     } catch (error) {
         sendError(res, error, 'Unable to verify the login code.');
@@ -708,7 +706,7 @@ app.post('/api/customer/password-reset/request', resetLimiter, async (req, res) 
     }
 });
 
-app.post('/api/customer/password-reset/confirm', resetLimiter, async (req, res) => {
+app.post('/api/customer/password-reset/confirm', resetLimiter, auditUserAction('password.reset', 'user', 'Reset their password.'), async (req, res) => {
     const token = typeof req.body.token === 'string' ? req.body.token : '';
     const newPassword = typeof req.body.password === 'string' ? req.body.password : '';
     if (!/^[A-Za-z0-9_-]{40,50}$/.test(token)) {
@@ -750,7 +748,8 @@ app.post('/api/customer/password-reset/confirm', resetLimiter, async (req, res) 
             );
             return { status: 200, userId: resets[0].user_id, body: { message: 'Password changed. You can now sign in with your new password.' } };
         });
-        if (outcome.status === 200) res.locals.auditActorUserId = outcome.userId;
+        res.locals.auditActorUserId = outcome.userId;
+        res.locals.auditEntityId = outcome.userId;
         res.status(outcome.status).json(outcome.body);
     } catch (error) {
         sendError(res, error, 'Unable to change the password.');
@@ -768,7 +767,7 @@ app.get('/api/trucks', requireRoles('manager', 'supervisor', 'dispatcher'), (req
     });
 });
 
-app.post('/api/trucks', requireRoles('manager', 'supervisor'), (req, res) => {
+app.post('/api/trucks', requireRoles('manager', 'supervisor'), auditUserAction('truck.created', 'truck', 'Added a truck.'), (req, res) => {
     const type = cleanText(req.body.type, 255);
     const licensePlate = cleanText(req.body.license_plate, 100);
     const status = FLEET_STATUSES.includes(req.body.status) ? req.body.status : 'available';
@@ -795,7 +794,7 @@ app.post('/api/trucks', requireRoles('manager', 'supervisor'), (req, res) => {
     });
 });
 
-app.put('/api/trucks/:id', requireRoles('manager', 'supervisor'), (req, res) => {
+app.put('/api/trucks/:id', requireRoles('manager', 'supervisor'), auditUserAction('truck.updated', 'truck', 'Updated a truck.'), (req, res) => {
     const type = cleanText(req.body.type, 255);
     const licensePlate = cleanText(req.body.license_plate, 100);
     const status = FLEET_STATUSES.includes(req.body.status) ? req.body.status : null;
@@ -803,9 +802,7 @@ app.put('/api/trucks/:id', requireRoles('manager', 'supervisor'), (req, res) => 
         return res.status(400).json({ error: 'Truck type, plate number, and a valid status are required.' });
     }
     const dailyRate = req.body.daily_rate === undefined ? null : Number(req.body.daily_rate);
-    if (dailyRate !== null && (!Number.isFinite(dailyRate) || dailyRate < 0)) {
-        return res.status(400).json({ error: 'Truck rate must be a valid nonnegative amount.' });
-    }
+    if (dailyRate !== null && (!Number.isFinite(dailyRate) || dailyRate < 0)) return res.status(400).json({ error: 'Truck rate must be a valid nonnegative amount.' });
     const { third_party, capacity, location, notes } = req.body;
     const sql = `UPDATE trucks SET type=?, license_plate=?, daily_rate=COALESCE(?,daily_rate), status=?,
         third_party=COALESCE(?, third_party), capacity=COALESCE(?, capacity),
@@ -817,16 +814,17 @@ app.put('/api/trucks/:id', requireRoles('manager', 'supervisor'), (req, res) => 
         location == null ? null : cleanText(location, 255),
         notes == null ? null : cleanText(notes, 2000),
         req.params.id
-    ], (err) => {
+    ], (err, result) => {
         if (err) {
             if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'A truck with that plate number already exists.' });
             return sendError(res, err, 'Unable to update truck.');
         }
+        res.locals.skipAudit = result.affectedRows === 0;
         res.json({ message: 'Truck updated' });
     });
 });
 
-app.delete('/api/trucks/:id', requireRoles('manager', 'supervisor'), async (req, res) => {
+app.delete('/api/trucks/:id', requireRoles('manager', 'supervisor'), auditUserAction('truck.deleted', 'truck', 'Removed a truck.'), async (req, res) => {
     try {
         const [active] = await dbp.query(
             `SELECT COUNT(*) AS total FROM service_requests
@@ -836,14 +834,15 @@ app.delete('/api/trucks/:id', requireRoles('manager', 'supervisor'), async (req,
         if (Number(active[0].total) > 0) {
             return res.status(409).json({ error: 'This truck is assigned to an active delivery and cannot be deleted.' });
         }
-        await dbp.query('DELETE FROM trucks WHERE id=?', [req.params.id]);
+        const [deleted] = await dbp.query('DELETE FROM trucks WHERE id=?', [req.params.id]);
+        res.locals.skipAudit = deleted.affectedRows === 0;
         res.json({ message: 'Truck deleted' });
     } catch (error) {
         sendError(res, error, 'Unable to delete truck.');
     }
 });
 
-// ---------- Drivers ----------
+// Drivers
 app.get('/api/drivers', requireRoles('manager', 'supervisor', 'dispatcher'), (req, res) => {
     db.query('SELECT * FROM drivers', (err, results) => {
         if (err) return sendError(res, err, 'Unable to load drivers.');
@@ -851,7 +850,7 @@ app.get('/api/drivers', requireRoles('manager', 'supervisor', 'dispatcher'), (re
     });
 });
 
-app.post('/api/drivers', requireRoles('manager', 'supervisor'), (req, res) => {
+app.post('/api/drivers', requireRoles('manager', 'supervisor'), auditUserAction('driver.created', 'driver', 'Added a driver.'), (req, res) => {
     const name = cleanText(req.body.name, 255);
     const licenseNumber = cleanText(req.body.license_number, 100);
     const status = FLEET_STATUSES.includes(req.body.status) ? req.body.status : 'available';
@@ -877,7 +876,7 @@ app.post('/api/drivers', requireRoles('manager', 'supervisor'), (req, res) => {
     });
 });
 
-app.put('/api/drivers/:id', requireRoles('manager', 'supervisor'), (req, res) => {
+app.put('/api/drivers/:id', requireRoles('manager', 'supervisor'), auditUserAction('driver.updated', 'driver', 'Updated a driver.'), (req, res) => {
     const name = cleanText(req.body.name, 255);
     const licenseNumber = cleanText(req.body.license_number, 100);
     const status = FLEET_STATUSES.includes(req.body.status) ? req.body.status : null;
@@ -894,16 +893,17 @@ app.put('/api/drivers/:id', requireRoles('manager', 'supervisor'), (req, res) =>
         experience == null ? null : cleanText(experience, 100),
         notes == null ? null : cleanText(notes, 2000),
         req.params.id
-    ], (err) => {
+    ], (err, result) => {
         if (err) {
             if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'A driver with that license number already exists.' });
             return sendError(res, err, 'Unable to update driver.');
         }
+        res.locals.skipAudit = result.affectedRows === 0;
         res.json({ message: 'Driver updated' });
     });
 });
 
-app.delete('/api/drivers/:id', requireRoles('manager', 'supervisor'), async (req, res) => {
+app.delete('/api/drivers/:id', requireRoles('manager', 'supervisor'), auditUserAction('driver.deleted', 'driver', 'Removed a driver.'), async (req, res) => {
     try {
         const [active] = await dbp.query(
             `SELECT COUNT(*) AS total FROM service_requests
@@ -913,15 +913,17 @@ app.delete('/api/drivers/:id', requireRoles('manager', 'supervisor'), async (req
         if (Number(active[0].total) > 0) {
             return res.status(409).json({ error: 'This driver is assigned to an active delivery and cannot be deleted.' });
         }
-        await dbp.query('DELETE FROM drivers WHERE id=?', [req.params.id]);
+        const [deleted] = await dbp.query('DELETE FROM drivers WHERE id=?', [req.params.id]);
+        res.locals.skipAudit = deleted.affectedRows === 0;
         res.json({ message: 'Driver deleted' });
     } catch (error) {
         sendError(res, error, 'Unable to delete driver.');
     }
 });
 
-// ---------- Service Requests ----------
-app.get('/api/service-requests', requireRoles('manager', 'supervisor', 'dispatcher', 'customer'), (req, res) => {
+// Quotes and bookings
+app.get('/api/service-requests', requireRoles('manager', 'supervisor', 'dispatcher', 'customer'), async (req, res) => {
+    try { await tripMaintenance.ready(); } catch(error) { return sendError(res,error,'Unable to prepare trip distance storage.'); }
     const customerOnly = req.auth.role === 'customer';
     const sql = `
         SELECT sr.*, u.name AS customer_name, u.company AS customer_company
@@ -936,36 +938,42 @@ app.get('/api/service-requests', requireRoles('manager', 'supervisor', 'dispatch
     });
 });
 
-app.put('/api/service-requests/:id/payment', requireManager, auditUserAction('payment.recorded', 'service_request', 'Manager recorded or changed a final payment amount.'), async (req, res) => {
+app.put('/api/service-requests/:id/payment', requireManager, auditUserAction('payment.recorded', 'service_request', 'Confirmed the dispatcher’s quote as paid.'), async (req, res) => {
     const requestId = Number(req.params.id);
-    const paidAmount = Number(req.body.paid_amount);
-    if (!Number.isInteger(requestId) || requestId < 1) {
+    const reviewedAmount = Number(req.body?.paid_amount);
+    if (!Number.isSafeInteger(requestId) || requestId < 1) {
         return res.status(400).json({ error: 'A valid service request ID is required.' });
     }
-    if (!isValidMoney(paidAmount)) {
-        return res.status(400).json({ error: 'Enter a payment amount greater than zero with no more than two decimal places.' });
+    if (!isValidMoney(reviewedAmount)) {
+        return res.status(400).json({ error: 'Review the dispatcher’s quote before confirming payment.' });
     }
 
     try {
-        const [existing] = await dbp.query('SELECT id FROM service_requests WHERE id = ?', [requestId]);
-        if (existing.length === 0) {
-            return res.status(404).json({ error: 'Service request not found.' });
-        }
-        await dbp.query(
-            'UPDATE service_requests SET paid_amount = ?, paid_at = CURRENT_TIMESTAMP WHERE id = ?',
-            [paidAmount, requestId]
-        );
-        const [updated] = await dbp.query(
-            'SELECT id, paid_amount, paid_at FROM service_requests WHERE id = ?',
-            [requestId]
-        );
-        res.json(updated[0]);
+        const payment = await withTransaction(async connection => {
+            const [rows] = await connection.query(
+                'SELECT id, status, quoted_amount, paid_amount, paid_at FROM service_requests WHERE id = ? FOR UPDATE', [requestId]
+            );
+            const booking = rows[0];
+            if (!booking) throw new HttpError(404, 'Service request not found.');
+            if (booking.status === 'cancelled') throw new HttpError(409, 'This booking was cancelled.');
+            if (booking.paid_amount != null) {
+                if (Number(booking.paid_amount) !== reviewedAmount) throw new HttpError(409, 'This payment is already confirmed.');
+                res.locals.skipAudit = true;
+                return { id: booking.id, paid_amount: booking.paid_amount, paid_at: booking.paid_at };
+            }
+            if (!isValidMoney(Number(booking.quoted_amount))) throw new HttpError(409, 'Ask the dispatcher to save a quote first.');
+            if (Number(booking.quoted_amount) !== reviewedAmount) throw new HttpError(409, 'The amount does not match the saved quote. Reopen the payment to review it.');
+            await connection.query('UPDATE service_requests SET paid_amount = quoted_amount, paid_at = CURRENT_TIMESTAMP WHERE id = ?', [requestId]);
+            const [updated] = await connection.query('SELECT id, paid_amount, paid_at FROM service_requests WHERE id = ?', [requestId]);
+            return updated[0];
+        });
+        res.json(payment);
     } catch (error) {
         sendError(res, error, 'Unable to record payment.');
     }
 });
 
-app.post('/api/service-requests', requireRoles('customer', 'dispatcher'), (req, res) => {
+app.post('/api/service-requests', requireRoles('customer', 'dispatcher'), auditUserAction('service_request.created', 'service_request', 'Submitted a quote request.'), async (req, res) => {
     const body = req.body || {};
     if (req.auth.role === 'customer' && Number(body.customer_id) !== Number(req.auth.sub)) {
         return res.status(403).json({ error: 'Customers may only submit service requests for their own account.' });
@@ -999,23 +1007,29 @@ app.post('/api/service-requests', requireRoles('customer', 'dispatcher'), (req, 
         return res.status(400).json({ error: 'Enter a contact name, a valid email address, and pickup and delivery addresses.' });
     }
 
+    let distance;
+    try {
+        distance=tripMaintenance.prepareDistance(null,body,req.auth.role,pickupLocation,deliveryLocation);
+        await tripMaintenance.ready();
+    } catch(error) { return sendError(res,error,'Unable to prepare trip distance storage.'); }
     const sql = `
         INSERT INTO service_requests
         (customer_id, cargo_type, cargo_weight, special_requirements,
          pickup_location, delivery_location, pickup_date, preferred_time,
-         truck_type, contact_person, contact_phone, contact_email, quoted_amount)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         truck_type, contact_person, contact_phone, contact_email, quoted_amount, status,
+         one_way_distance_km,distance_source,distance_pickup_location,distance_delivery_location)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending',?,?,?,?)
     `;
     db.query(sql, [
         customerId, cargoType, cargoWeight, specialRequirements,
         pickupLocation, deliveryLocation, pickupDate, preferredTime,
-        truckType, contactPerson, contactPhone, contactEmail, quotedAmount
+        truckType, contactPerson, contactPhone, contactEmail, quotedAmount,...Object.values(distance)
     ], (err, result) => {
         if (err) return sendError(res, err, 'Unable to submit the request.');
 
+        // Save the request first, then send the emails.
         res.locals.auditEntityId = result.insertId;
-        // Answer the user right away; emails are sent in the background.
-        res.status(201).json({ id: result.insertId, message: 'Request submitted' });
+        res.status(201).json({ id: result.insertId, status: 'pending', message: 'Request submitted' });
 
         const customerBody = `
             <p>Hi ${escapeHtml(contactPerson)},</p>
@@ -1068,7 +1082,47 @@ app.post('/api/service-requests', requireRoles('customer', 'dispatcher'), (req, 
     });
 });
 
-app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), auditUserAction('service_request.updated', 'service_request', 'Updated booking details, pricing, or assignments.'), async (req, res) => {
+const ACTIVE_BOOKING_STATUSES = ['approved', 'ongoing'];
+
+async function releaseBookingResources(connection, driverId, truckId) {
+    for (const [table, field, id] of [['drivers', 'assigned_driver_id', driverId], ['trucks', 'assigned_truck_id', truckId]]) {
+        if (!id) continue;
+        // Leave it busy if another active booking still needs it.
+        await connection.query(
+            `UPDATE ${table} SET status = 'available' WHERE id = ? AND status = 'busy'
+             AND NOT EXISTS (SELECT 1 FROM service_requests WHERE ${field} = ? AND status IN ('approved', 'ongoing'))`,
+            [id, id]
+        );
+    }
+}
+
+app.put('/api/service-requests/:id/cancel', requireRoles('dispatcher'), auditUserAction('service_request.cancelled', 'service_request', 'Cancelled a booking.'), async (req, res) => {
+    const requestId = Number(req.params.id);
+    if (!Number.isSafeInteger(requestId) || requestId < 1) return res.status(400).json({ error: 'A valid booking ID is required.' });
+    try {
+        await withTransaction(async connection => {
+            const [rows] = await connection.query('SELECT status, paid_amount, assigned_driver_id, assigned_truck_id FROM service_requests WHERE id = ? FOR UPDATE', [requestId]);
+            const booking = rows[0];
+            if (!booking) throw new HttpError(404, 'Booking not found.');
+            if (booking.status === 'cancelled') {
+                res.locals.skipAudit = true;
+                return;
+            }
+            if (booking.status === 'completed' || booking.paid_amount != null) {
+                throw new HttpError(409, 'Completed bookings and bookings with confirmed payments cannot be cancelled here.');
+            }
+            await connection.query("UPDATE service_requests SET status = 'cancelled', assigned_driver_id = NULL, assigned_truck_id = NULL WHERE id = ?", [requestId]);
+            if (ACTIVE_BOOKING_STATUSES.includes(booking.status)) {
+                await releaseBookingResources(connection, booking.assigned_driver_id, booking.assigned_truck_id);
+            }
+        });
+        res.json({ id: requestId, status: 'cancelled', message: 'Booking cancelled.' });
+    } catch (error) {
+        sendError(res, error, 'Unable to cancel the booking.');
+    }
+});
+
+app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), auditUserAction('service_request.updated', 'service_request', 'Updated a booking.'), async (req, res) => {
     const body = req.body || {};
     const allowedStatuses = ['new', 'pending', 'approved', 'ongoing', 'completed'];
     if (!allowedStatuses.includes(body.status)) {
@@ -1080,15 +1134,23 @@ app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), audi
     }
 
     try {
-        const savedChange = await withTransaction(async connection => {
+        await tripMaintenance.ready();
+        let mileage;
+        await withTransaction(async connection => {
             const [requests] = await connection.query(
                 'SELECT * FROM service_requests WHERE id = ? FOR UPDATE',
                 [req.params.id]
             );
             if (requests.length === 0) throw new HttpError(404, 'Service request not found');
             const previous = requests[0];
+            if (previous.status === 'cancelled') throw new HttpError(409, 'This booking was cancelled.');
+            if (previous.status === 'completed') {
+                if (body.status !== 'completed' || Object.keys(body).some(key=>key!=='status')) throw new HttpError(409,'Completed bookings cannot be changed or reopened here.');
+                res.locals.skipAudit=true;
+                return;
+            }
 
-            // Any field the browser did not send keeps its current value.
+            // Keep fields the form left out.
             const pick = (field, max) => body[field] === undefined
                 ? previous[field]
                 : (max ? cleanText(body[field], max) : body[field]);
@@ -1099,15 +1161,26 @@ app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), audi
 
             const assignedDriverId = body.driver_id === undefined ? previous.assigned_driver_id : body.driver_id || null;
             const assignedTruckId = body.truck_id === undefined ? previous.assigned_truck_id : body.truck_id || null;
-            const quotedAmount = body.quoted_amount === undefined ? previous.quoted_amount : body.quoted_amount;
+            const oldQuote = previous.quoted_amount == null ? null : Number(previous.quoted_amount);
+            const quotedAmount = body.quoted_amount === undefined ? oldQuote : (body.quoted_amount === null ? null : Number(body.quoted_amount));
+            const pickupLocation=pick('pickup_location',500),deliveryLocation=pick('delivery_location',500);
+            const distance=tripMaintenance.prepareDistance(previous,body,req.auth.role,pickupLocation,deliveryLocation);
+            if (quotedAmount !== oldQuote) {
+                if (req.auth.role !== 'dispatcher') throw new HttpError(403, 'Only dispatchers can change the quote.');
+                if (previous.paid_amount != null) throw new HttpError(409, 'The quote is locked because payment was confirmed.');
+            }
 
-            // Block double-booking: a newly chosen driver/truck must be available right now.
-            if (assignedDriverId && String(assignedDriverId) !== String(previous.assigned_driver_id)) {
+            const wasActive = ACTIVE_BOOKING_STATUSES.includes(previous.status);
+            const isActive = ACTIVE_BOOKING_STATUSES.includes(body.status);
+            const driverChanged = String(assignedDriverId) !== String(previous.assigned_driver_id);
+            const truckChanged = String(assignedTruckId) !== String(previous.assigned_truck_id);
+            // Check availability when we pick a new resource or start the job.
+            if (assignedDriverId && (driverChanged || (isActive && !wasActive))) {
                 const [drivers] = await connection.query('SELECT status FROM drivers WHERE id = ? FOR UPDATE', [assignedDriverId]);
                 if (drivers.length === 0) throw new HttpError(400, 'The selected driver no longer exists.');
                 if (drivers[0].status !== 'available') throw new HttpError(409, 'The selected driver is not available.');
             }
-            if (assignedTruckId && String(assignedTruckId) !== String(previous.assigned_truck_id)) {
+            if (assignedTruckId && (truckChanged || (isActive && !wasActive))) {
                 const [trucks] = await connection.query('SELECT status FROM trucks WHERE id = ? FOR UPDATE', [assignedTruckId]);
                 if (trucks.length === 0) throw new HttpError(400, 'The selected truck no longer exists.');
                 if (trucks[0].status !== 'available') throw new HttpError(409, 'The selected truck is not available.');
@@ -1118,44 +1191,42 @@ app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), audi
                  SET status = ?, cargo_type = ?, cargo_weight = ?, special_requirements = ?,
                      pickup_location = ?, delivery_location = ?, pickup_date = ?, preferred_time = ?,
                      truck_type = ?, contact_person = ?, contact_phone = ?, contact_email = ?,
-                     assigned_driver_id = ?, assigned_truck_id = ?, quoted_amount = ?
+                     assigned_driver_id = ?, assigned_truck_id = ?, quoted_amount = ?,
+                     one_way_distance_km=?,distance_source=?,distance_pickup_location=?,distance_delivery_location=?
                  WHERE id = ?`,
                 [
                     body.status, pick('cargo_type', 100), pick('cargo_weight', 100), pick('special_requirements', 2000),
-                    pick('pickup_location', 500), pick('delivery_location', 500), pickupDate, pick('preferred_time', 100),
+                    pickupLocation, deliveryLocation, pickupDate, pick('preferred_time', 100),
                     pick('truck_type', 255), pick('contact_person', 255), pick('contact_phone', 64), pick('contact_email', 255),
-                    assignedDriverId, assignedTruckId, quotedAmount, req.params.id
+                    assignedDriverId, assignedTruckId, quotedAmount,...Object.values(distance), req.params.id
                 ]
             );
 
-            const resourceStatus = ['approved', 'ongoing'].includes(body.status) ? 'busy' : 'available';
-            if (previous.assigned_driver_id && String(previous.assigned_driver_id) !== String(assignedDriverId)) {
-                await connection.query('UPDATE drivers SET status = ? WHERE id = ?', ['available', previous.assigned_driver_id]);
+            if (body.status==='completed') {
+                mileage=await tripMaintenance.applyCompletion(connection,{...previous,...distance,assigned_truck_id:assignedTruckId,pickup_location:pickupLocation,delivery_location:deliveryLocation},req.auth.sub);
+                res.locals.auditSummary=`Completed booking and added ${mileage.round_trip_km} mapped round-trip km to truck ${mileage.truck_id}.`;
             }
-            if (previous.assigned_truck_id && String(previous.assigned_truck_id) !== String(assignedTruckId)) {
-                await connection.query('UPDATE trucks SET status = ? WHERE id = ?', ['available', previous.assigned_truck_id]);
+
+            if (wasActive) {
+                await releaseBookingResources(connection,
+                    driverChanged || !isActive ? previous.assigned_driver_id : null,
+                    truckChanged || !isActive ? previous.assigned_truck_id : null
+                );
             }
-            if (assignedDriverId) {
-                await connection.query('UPDATE drivers SET status = ? WHERE id = ?', [resourceStatus, assignedDriverId]);
+            if (isActive && assignedDriverId) {
+                await connection.query("UPDATE drivers SET status = 'busy' WHERE id = ?", [assignedDriverId]);
             }
-            if (assignedTruckId) {
-                await connection.query('UPDATE trucks SET status = ? WHERE id = ?', [resourceStatus, assignedTruckId]);
+            if (isActive && assignedTruckId) {
+                await connection.query("UPDATE trucks SET status = 'busy' WHERE id = ?", [assignedTruckId]);
             }
-            const changes = [];
-            if (previous.status !== body.status) changes.push(`Status: ${previous.status} to ${body.status}`);
-            if (String(previous.assigned_driver_id) !== String(assignedDriverId)) changes.push(`Driver: ${previous.assigned_driver_id || 'unassigned'} to ${assignedDriverId || 'unassigned'}`);
-            if (String(previous.assigned_truck_id) !== String(assignedTruckId)) changes.push(`Truck: ${previous.assigned_truck_id || 'unassigned'} to ${assignedTruckId || 'unassigned'}`);
-            if (String(previous.quoted_amount) !== String(quotedAmount)) changes.push('Updated the quotation');
-            return changes.join('; ') || 'Updated booking details.';
         });
-        res.locals.auditSummary = savedChange;
-        res.json({ message: 'Request updated' });
+        res.json({ message: mileage ? `Delivery completed. ${mileage.round_trip_km.toFixed(1)} round-trip km added once to the assigned truck.` : 'Request updated', mileage });
     } catch (error) {
         sendError(res, error, 'Unable to update service request');
     }
 });
 
-// ---------- Users (for manager) ----------
+// Account management
 app.get('/api/users', requireManager, (req, res) => {
     db.query('SELECT id, name, email, role, company, phone, address, employee_id, department, created_at FROM users', (err, results) => {
         if (err) return sendError(res, err, 'Unable to load accounts.');
@@ -1163,9 +1234,8 @@ app.get('/api/users', requireManager, (req, res) => {
     });
 });
 
-require('./account-management')(app, { dbp, withTransaction, requireManager, auditUserAction, isValidEmail, HttpError, sendError, ensureSessionVersion });
+require('./account-management')(app, { dbp, withTransaction, requireManager, auditUserAction: auditUserAction, isValidEmail, HttpError, sendError, ensureSessionVersion });
 
-// Customer registration
 app.post('/api/register', (req, res) => {
     return res.status(410).json({ error: 'Customer self-registration is disabled. Please contact Ultimate Express to request an account.' });
 });
@@ -1262,7 +1332,7 @@ app.post('/api/customer-account-requests', accountRequestLimiter, (req, res) => 
         if (err) return sendError(res, err, 'Unable to save your request.');
         res.status(201).json({ id: result.insertId, message: 'Request received' });
 
-        // Tell the company about the new inquiry (the inquiry is already saved in the Manager page).
+        // The inquiry is saved, so now we can email the team.
         if (process.env.ADMIN_EMAIL && hasEmailProvider()) {
             sendEmail({
                 to: process.env.ADMIN_EMAIL,
@@ -1276,7 +1346,7 @@ app.post('/api/customer-account-requests', accountRequestLimiter, (req, res) => 
                     </ul>
                     <p><strong>Message:</strong></p>
                     <p>${escapeHtml(message)}</p>
-                    <p>You can review it in the Manager dashboard under Accounts, Customer Account Requests.</p>`
+                    <p>The Dispatcher and Manager can review it under Website Inquiries, reference WEB-${Number(result.insertId)}.</p>`
             }).catch(emailError => console.error('Inquiry notification email failed:', mailErrorSummary(emailError)));
         }
     });
@@ -1294,7 +1364,7 @@ app.put('/api/customer-account-requests/:id', requireManager, auditUserAction('c
     });
 });
 
-// Customer accounts get their own random first-time password (no shared default password).
+// Make a temporary password for this customer.
 app.post('/api/users/create-customer', requireManager, auditUserAction('customer_account.created', 'user', 'Manager created a customer account.'), async (req, res) => {
     const { name, email, phone, company, requestId } = req.body;
     if (requestId === undefined && (!name || !email)) {
@@ -1316,7 +1386,7 @@ app.post('/api/users/create-customer', requireManager, auditUserAction('customer
                     [parsedRequestId]
                 );
                 if (requests.length === 0) throw new HttpError(404, 'Customer account request not found');
-                if (requests[0].status !== 'pending') throw new HttpError(409, 'Customer account request has already been handled');
+                if (!['pending', 'contacted'].includes(requests[0].status)) throw new HttpError(409, 'Customer account request has already been handled');
                 customer = requests[0];
             }
             if (!customer.name || !customer.email) throw new HttpError(400, 'Name and email are required');
@@ -1384,10 +1454,10 @@ app.post('/api/users/create-customer', requireManager, auditUserAction('customer
     }
 });
 
-// ---------- Partners ----------
+// Partners
 require('./partners')(app, { dbp, requireManager, auditManagerAction: auditUserAction, cleanText, isValidEmail, HttpError, sendError });
 
-// ---------- Manager analytics (calculated from the live database) ----------
+// Build the manager's report from the database.
 app.get('/api/manager/report', requireManager, async (req, res) => {
     const requestedYear = Number(req.query.year) || new Date().getFullYear();
     if (requestedYear < 2000 || requestedYear > 2100) {
@@ -1406,7 +1476,7 @@ app.get('/api/manager/report', requireManager, async (req, res) => {
         `, [requestedYear]);
         const [customerActivity] = await dbp.query(`
             SELECT u.id AS customer_id, u.name AS customer_name, u.company, u.email,
-                   COUNT(sr.id) AS total_requests,
+                   COUNT(CASE WHEN sr.status IN ('approved', 'completed') THEN 1 END) AS total_requests,
                    SUM(sr.status = 'completed') AS completed_requests
             FROM service_requests sr
             JOIN users u ON u.id = sr.customer_id
@@ -1455,7 +1525,7 @@ app.get('/api/manager/report', requireManager, async (req, res) => {
             GROUP BY COALESCE(NULLIF(cargo_type, ''), 'Unspecified')
             ORDER BY total DESC
         `, [requestedYear]);
-        // "pending" now includes brand-new requests; "ongoing" includes approved ones.
+        // Group older new requests with pending, and approved with ongoing.
         const [summary] = await dbp.query(`
             SELECT COUNT(*) AS total_transactions,
                    SUM(status = 'completed') AS completed,
@@ -1549,7 +1619,7 @@ app.get('/api/manager/report', requireManager, async (req, res) => {
     }
 });
 
-// ---------- Fallbacks ----------
+// Handle missing routes and errors
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
 app.use((error, req, res, next) => {
     console.error('Unhandled error:', error);
@@ -1559,7 +1629,7 @@ app.use((error, req, res, next) => {
 
 process.on('unhandledRejection', reason => console.error('Unhandled promise rejection:', reason));
 
-// ---------- Start server ----------
+// Start the app
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });

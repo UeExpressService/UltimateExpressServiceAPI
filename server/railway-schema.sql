@@ -1,6 +1,4 @@
--- Fresh MySQL schema for a new Railway database.
--- Run once against an empty database. This includes the changes from all
--- server/migrations/*.sql files; do not apply those migrations afterward.
+-- Use this once on an empty Railway database. The migrations are already included.
 
 SET NAMES utf8mb4;
 
@@ -73,10 +71,14 @@ CREATE TABLE service_requests (
     contact_person VARCHAR(255) NULL,
     contact_phone VARCHAR(64) NULL,
     contact_email VARCHAR(255) NULL,
-    status VARCHAR(32) NOT NULL DEFAULT 'new',
+    status VARCHAR(32) NOT NULL DEFAULT 'pending',
     assigned_driver_id INT NULL,
     assigned_truck_id INT NULL,
     quoted_amount DECIMAL(12, 2) NULL,
+    one_way_distance_km DECIMAL(10,3) NULL,
+    distance_source VARCHAR(20) NULL,
+    distance_pickup_location VARCHAR(500) NULL,
+    distance_delivery_location VARCHAR(500) NULL,
     paid_amount DECIMAL(12, 2) NULL,
     paid_at DATETIME NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -101,6 +103,10 @@ CREATE TABLE customer_account_requests (
     phone VARCHAR(64) NULL,
     message TEXT NOT NULL,
     status VARCHAR(32) NOT NULL DEFAULT 'pending',
+    followup_notes TEXT NULL,
+    contacted_at DATETIME NULL,
+    updated_by BIGINT UNSIGNED NULL,
+    updated_at DATETIME NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     INDEX idx_customer_account_requests_status (status),
@@ -188,3 +194,50 @@ CREATE TABLE IF NOT EXISTS service_request_payment_schedules (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX payment_due_date (due_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Panel revisions: company tariffs and maintenance records.
+CREATE TABLE IF NOT EXISTS route_rates (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, label VARCHAR(200) NOT NULL,
+            base_fare DECIMAL(12,2) NOT NULL, included_km DECIMAL(10,2) NOT NULL DEFAULT 0,
+            per_km DECIMAL(12,2) NOT NULL, max_km DECIMAL(10,2) NOT NULL,
+            notes VARCHAR(1000) NOT NULL DEFAULT '', active TINYINT(1) NOT NULL DEFAULT 1,
+            updated_by BIGINT UNSIGNED NOT NULL, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS truck_maintenance (
+        truck_id BIGINT UNSIGNED PRIMARY KEY, odometer DECIMAL(12,1) NULL,
+        oil_interval_km INT UNSIGNED NOT NULL DEFAULT 5000, oil_interval_months INT UNSIGNED NOT NULL DEFAULT 3,
+        last_oil_km DECIMAL(12,1) NULL,last_oil_date DATE NULL,engine_number VARCHAR(100) NOT NULL DEFAULT '',
+        oil_filter VARCHAR(200) NOT NULL DEFAULT '',oil_liters DECIMAL(8,2) NULL,
+        tire_size VARCHAR(100) NOT NULL DEFAULT '',tire_unit VARCHAR(20) NULL,tire_readings JSON NULL,tire_checked_at DATE NULL,
+        vehicle_model VARCHAR(100) NOT NULL DEFAULT '',
+        battery_serial VARCHAR(255) NOT NULL DEFAULT '',battery_installed_at DATE NULL,battery_due_date DATE NULL,battery_notes VARCHAR(1000) NOT NULL DEFAULT '',
+        fuel_filter_model VARCHAR(255) NOT NULL DEFAULT '',fuel_filter_installed_at DATE NULL,fuel_filter_due_date DATE NULL,fuel_filter_notes VARCHAR(1000) NOT NULL DEFAULT '',
+        notes VARCHAR(2000) NOT NULL DEFAULT '',version INT UNSIGNED NOT NULL DEFAULT 0,updated_by BIGINT UNSIGNED NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS truck_maintenance_events (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,truck_id BIGINT UNSIGNED NOT NULL,
+        snapshot JSON NOT NULL,recorded_by BIGINT UNSIGNED NOT NULL,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX maintenance_history(truck_id,id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Completed-trip mileage and Dispatcher maintenance check requests.
+CREATE TABLE IF NOT EXISTS completed_trip_mileage (
+        service_request_id BIGINT UNSIGNED PRIMARY KEY, truck_id BIGINT UNSIGNED NOT NULL,
+        one_way_km DECIMAL(10,3) NOT NULL, round_trip_km DECIMAL(12,1) NOT NULL,
+        odometer_before DECIMAL(12,1) NOT NULL, odometer_after DECIMAL(12,1) NOT NULL,
+        recorded_by BIGINT UNSIGNED NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX trip_mileage_truck(truck_id,created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS truck_inspection_requests (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, truck_id BIGINT UNSIGNED NOT NULL,
+        priority VARCHAR(12) NOT NULL DEFAULT 'normal', reason VARCHAR(2000) NOT NULL,
+        status VARCHAR(16) NOT NULL DEFAULT 'pending', requested_by BIGINT UNSIGNED NOT NULL,
+        reviewed_by BIGINT UNSIGNED NULL, findings VARCHAR(2000) NOT NULL DEFAULT '',
+        version INT UNSIGNED NOT NULL DEFAULT 0, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX inspection_truck_status(truck_id,status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

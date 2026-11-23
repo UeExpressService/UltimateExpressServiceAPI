@@ -20,7 +20,8 @@
     "test:partners": "node test-partners.js",
     "test:password-resets": "node test-password-resets.js",
     "test:gmail-recovery": "node --test test-gmail-connection.js",
-    "test:audit": "node --test test-audit-log.js"
+    "test:audit": "node --test test-audit-log.js",
+    "test:revisions": "node --test test-revision-rules.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.4",

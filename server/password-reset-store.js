@@ -1,4 +1,4 @@
-// Older databases may not have received the password-reset migration.
+// Make the reset table if an older database is missing it.
 module.exports = function passwordResetStore(dbp) {
     let ready;
     return function ensurePasswordResetTable() {
@@ -6,9 +6,7 @@ module.exports = function passwordResetStore(dbp) {
             ready = (async () => {
                 const [columns] = await dbp.query("SHOW COLUMNS FROM users LIKE 'id'");
                 const userIdType = columns[0]?.Type;
-                // Legacy users.id is INT; fresh databases use BIGINT UNSIGNED.
-                // MySQL requires matching types for the foreign key. Only permit
-                // integer definitions from database metadata in this DDL statement.
+                // Match the user ID type. Older databases use INT and newer ones use BIGINT UNSIGNED.
                 if (!/^(?:tinyint|smallint|mediumint|int|bigint)(?:\(\d+\))?(?: unsigned)?$/i.test(userIdType || '')) {
                     throw new Error('Unsupported users.id type for password-reset storage.');
                 }
@@ -27,7 +25,7 @@ module.exports = function passwordResetStore(dbp) {
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB`);
             })().catch(error => {
-                ready = null; // A transient connection/permission failure can be retried.
+                ready = null; // Let the next request try again.
                 throw error;
             });
         }

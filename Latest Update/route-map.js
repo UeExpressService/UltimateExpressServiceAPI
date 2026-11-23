@@ -43,7 +43,7 @@
         setTimeout(() => map.invalidateSize({ pan: false }), 150);
     }
 
-    // One request to Nominatim (max 1 per ~1.1 seconds, as their usage policy requires).
+    // Leave about a second between address lookups.
     async function nominatimSearch(query) {
         const waitTime = Math.max(0, 1100 - (Date.now() - lastGeocodeAt));
         if (waitTime) await new Promise(resolve => setTimeout(resolve, waitTime));
@@ -70,8 +70,7 @@
         return location;
     }
 
-    // Detailed Philippine addresses (house no., barangay, "NCR") often fail in OpenStreetMap.
-    // Try the full address first, then simpler versions (dropping the most detailed parts).
+    // Try a shorter address if the full one isn't found.
     function addressCandidates(address) {
         const parts = address.split(',').map(part => part.trim()).filter(Boolean);
         const cleaned = parts.filter(part => !REGION_WORDS.test(part) && !/^\d{4}$/.test(part));
@@ -117,6 +116,9 @@
         if (!map) return false;
         const requestId = (map._ueRouteRequestId || 0) + 1;
         map._ueRouteRequestId = requestId;
+        map._ueRoadDistanceKm = null;
+        map._ueRoundTripDistanceKm = null;
+        map._ueDistanceAddresses = null;
         map._ueRouteLayer.clearLayers();
         map._ueMarkerLayer.clearLayers();
         invalidateMapSize(map);
@@ -166,8 +168,11 @@
                     .map(([lng, lat]) => [Number(lat), Number(lng)]);
                 distanceMeters = Number.isFinite(Number(route.distance)) ? Number(route.distance) : null;
                 if (routePoints.length < 2) throw new Error('The route service returned no road geometry.');
+                map._ueRoadDistanceKm = distanceMeters > 0 ? Math.round(distanceMeters) / 1000 : null;
+                map._ueRoundTripDistanceKm = map._ueRoadDistanceKm == null ? null : roundTripKm(map._ueRoadDistanceKm);
+                map._ueDistanceAddresses = map._ueRoadDistanceKm == null ? null : {pickup:pickupText,delivery:deliveryText};
                 window.L.polyline(routePoints, { color: '#e07b39', weight: 5, opacity: 0.85 }).addTo(map._ueRouteLayer);
-                setStatus(statusElement, `Road route${distanceMeters ? ` · ${(distanceMeters / 1000).toFixed(1)} km` : ''}. Estimated map route; not live vehicle tracking.${approximateNote}`);
+                setStatus(statusElement, `Road route${distanceMeters ? ` · One way ${map._ueRoadDistanceKm.toFixed(1)} km × 2 = ${map._ueRoundTripDistanceKm.toFixed(1)} km round trip` : ''}. Return trip assumes the same distance. Estimated map route; not live vehicle tracking.${approximateNote}`);
             } catch (routeError) {
                 console.warn('Road route unavailable; displaying a straight-line estimate:', routeError);
                 window.L.polyline([pickupPoint, deliveryPoint], {
@@ -193,5 +198,10 @@
     }
 
     window.UE = window.UE || {};
-    window.UE.RouteMap = { create: createRouteMap, draw: drawAddressRoute, invalidate: invalidateMapSize };
+    function roundTripKm(oneWay) { return Math.round((Number(oneWay) * 2 + Number.EPSILON) * 10) / 10; }
+    function oneWayFor(map,pickup,delivery) {
+        return map?._ueDistanceAddresses?.pickup === String(pickup).trim() && map?._ueDistanceAddresses?.delivery === String(delivery).trim()
+            ? map._ueRoadDistanceKm : null;
+    }
+    window.UE.RouteMap = { create: createRouteMap, draw: drawAddressRoute, invalidate: invalidateMapSize, roundTripKm, oneWayFor };
 })();

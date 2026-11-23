@@ -60,6 +60,15 @@ async function main() {
     await connection.query('CREATE DATABASE ue_password_reset_test');
     await connection.query('USE ue_password_reset_test');
     await connection.query(fs.readFileSync(path.join(__dirname, 'railway-schema.sql'), 'utf8'));
+    // Simulate the deployed oil/tire schema before battery and fuel-filter fields existed.
+    const componentColumns=['vehicle_model','battery_serial','battery_installed_at','battery_due_date','battery_notes','fuel_filter_model','fuel_filter_installed_at','fuel_filter_due_date','fuel_filter_notes'];
+    await connection.query('ALTER TABLE truck_maintenance '+componentColumns.map(name=>'DROP COLUMN '+name).join(','));
+    // Older deployments have no trip-distance fields or inspection request tables.
+    await connection.query('ALTER TABLE service_requests DROP COLUMN one_way_distance_km,DROP COLUMN distance_source,DROP COLUMN distance_pickup_location,DROP COLUMN distance_delivery_location');
+    await connection.query('DROP TABLE completed_trip_mileage');
+    await connection.query('DROP TABLE truck_inspection_requests');
+    const [{insertId:legacyMaintenanceTruck}]=await connection.query("INSERT INTO trucks (type,license_plate,status) VALUES ('Legacy maintenance truck','TEST-MAINT-LEGACY','available')");
+    await connection.query('INSERT INTO truck_maintenance (truck_id,odometer,last_oil_km,last_oil_date,updated_by) VALUES (?,4321,4000,?,2)',[legacyMaintenanceTruck,new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Manila'})]);
     // This table belongs only to the fresh temporary test database above.
     await connection.query('DROP TABLE customer_password_resets');
     await assert.rejects(connection.query('SELECT COUNT(*) FROM customer_password_resets'), error => error.code === 'ER_NO_SUCH_TABLE');
@@ -159,7 +168,7 @@ async function main() {
     }
     await connection.query('UPDATE users SET must_change_password=0 WHERE id=2');
     let managerToken;
-    const operationsTokens = {};
+    const sessions = {};
     for (const [id, role, password] of [[3,'customer',newPassword],[2,'manager',originalPassword],[4,'dispatcher',originalPassword],[5,'supervisor',originalPassword]]) {
         const email=`${role}${id}@example.invalid`;
         const challenge=await (await post('/login',{email,password})).json();
@@ -170,7 +179,7 @@ async function main() {
         const verified=await post('/login/verify-code',{challengeId:challenge.challengeId,code});
         assert.equal(verified.status,200);
         const session=await verified.json();
-        operationsTokens[role]=session.authToken;
+        sessions[role] = session.authToken;
         if(role==='manager')managerToken=session.authToken;
         const headers={'Content-Type':'application/json',Authorization:`Bearer ${session.authToken}`};
         const activity=await fetch(base+'/activity',{method:'POST',headers,body:JSON.stringify({action:'page.opened',page:role,actor_user_id:999})});
@@ -189,19 +198,9 @@ async function main() {
     assert.equal(auditResponse.status,200);assert.ok(Number(auditResponse.headers.get('X-Total-Count'))>0);
     const filtered=await auditResponse.json();assert.ok(filtered.length<=2 && filtered.every(row=>row.actor_role==='customer'));
 
-    await require('./test-operations')(connection, base, operationsTokens);
-    await require('./test-manager-features')(connection, base, operationsTokens, { originalHash, login: async email => {
-        // Advance only the temporary fixture's code cooldown; production limits stay enabled.
-        await connection.query('UPDATE login_code_challenges c JOIN users u ON u.id=c.user_id SET c.created_at=DATE_SUB(NOW(), INTERVAL 2 MINUTE) WHERE u.email=?',[email]);
-        const before=emails.filter(mail=>mail.to===email&&mail.subject.includes('login code')).length;
-        const requested=await post('/login',{email,password:originalPassword});assert.equal(requested.status,200);
-        const challenge=await requested.json();
-        for(let attempt=0;attempt<30&&emails.filter(mail=>mail.to===email&&mail.subject.includes('login code')).length===before;attempt++)await delay(20);
-        const mail=emails.findLast(mail=>mail.to===email&&mail.subject.includes('login code'));
-        const code=mail.html.match(/>(\d{6})<\/p>/)[1];
-        const response=await post('/login/verify-code',{challengeId:challenge.challengeId,code});
-        assert.equal(response.status,200);return (await response.json()).authToken;
-    } });
+    const panelRecords = await require('./test-panel-revisions')({ connection, base, sessions, post });
+    const tripRecords = await require('./test-trip-maintenance')({connection,base,sessions,receiptId:panelRecords.receiptId});
+    if (process.env.UE_PLAYWRIGHT_MODULE) await require('./test-revision-ui')({ base, sessions, ...panelRecords,...tripRecords });
 
     // Check legacy signed INT IDs as well as the fresh BIGINT UNSIGNED schema.
     await connection.query('CREATE DATABASE ue_password_reset_legacy');

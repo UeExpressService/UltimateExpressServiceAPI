@@ -9,6 +9,10 @@
     <script src="ue-dialog.js"></script>
     <script src="payment-schedules.js" defer></script>
     <script src="operations.js" defer></script>
+    <script src="website-inquiries.js" defer></script>
+    <script src="print-documents.js" defer></script>
+    <script src="route-pricing.js" defer></script>
+    <script src="inspection-requests.js" defer></script>
     <script src="waybills.js"></script>
     <script>if (!requireRole('dispatcher')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -33,6 +37,7 @@
         <div class="page-header">
             <div><h1><i class="bi bi-headset ue-text-primary"></i> Dispatcher Dashboard</h1><p>Manage inquiries, assign drivers & trucks, and optimize delivery routes</p></div>
             <button class="btn btn-outline" type="button" onclick="UEPaymentSchedules.open()"><i class="bi bi-calendar-event"></i> View scheduled payments</button>
+            <a class="btn btn-outline" href="#maintenanceRequests"><i class="bi bi-tools"></i> Maintenance Check Form</a>
             <button class="manual-quote-btn" id="openManualQuoteModal"><i class="bi bi-file-earmark-plus"></i> Manual Quotation (Call-in)</button>
         </div>
 
@@ -43,22 +48,26 @@
             <div class="stat-card"><div class="stat-icon red"><i class="bi bi-people-fill"></i></div><div class="stat-details"><h3 id="statTotal">0</h3><p>Total Inquiries</p></div></div>
         </div>
 
+        <section id="websiteInquiries" class="ue-revision-card" aria-label="Website guest inquiries"></section>
+        <section id="maintenanceRequests" class="ue-revision-card" aria-label="Maintenance check requests"></section>
+
         <div class="inquiries-container">
             <div class="inquiries-header">
-                <h2><i class="bi bi-chat-dots ue-text-primary"></i> Customer Inquiries</h2>
+                <h2><i class="bi bi-chat-dots ue-text-primary"></i> Booking Requests</h2>
                 <div class="tabs">
-                    <div class="tab active" onclick="filterInquiries('all')">All</div>
-                    <div class="tab" onclick="filterInquiries('new')">New</div>
-                    <div class="tab" onclick="filterInquiries('pending')">Pending</div>
-                    <div class="tab" onclick="filterInquiries('ongoing')">Ongoing</div>
-                    <div class="tab" onclick="filterInquiries('completed')">Completed</div>
+                    <button type="button" class="tab active" aria-pressed="true" data-filter="all" onclick="filterInquiries(this.dataset.filter)">All</button>
+                    <button type="button" class="tab" aria-pressed="false" data-filter="new" onclick="filterInquiries(this.dataset.filter)">New</button>
+                    <button type="button" class="tab" aria-pressed="false" data-filter="pending" onclick="filterInquiries(this.dataset.filter)">Pending</button>
+                    <button type="button" class="tab" aria-pressed="false" data-filter="ongoing" onclick="filterInquiries(this.dataset.filter)">Ongoing</button>
+                    <button type="button" class="tab" aria-pressed="false" data-filter="completed" onclick="filterInquiries(this.dataset.filter)">Completed</button>
+                    <button type="button" class="tab" aria-pressed="false" data-filter="cancelled" onclick="filterInquiries(this.dataset.filter)">Cancelled</button>
                 </div>
             </div>
             <div class="inquiry-grid" id="inquiryGrid"></div>
         </div>
     </div>
 
-    <!-- Inquiry Edit Modal -->
+    <!-- Edit a booking -->
     <div class="modal-overlay" id="inquiryModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -75,10 +84,10 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeInquiryModal()">Cancel</button>
+                <button class="btn btn-outline" onclick="closeInquiryModal()">Close</button>
                 <button class="btn btn-primary" onclick="saveInquiryChanges()">Save Changes</button>
                 <p id="handoffMessage" class="ue-ops-message" role="status"></p><button type="button" class="btn btn-outline" id="sendSupervisorBtn">Send to Supervisor</button>
-                <button class="btn btn-success" onclick="approveWithAssignment()">Approve & Assign</button>
+                <button class="btn btn-success" id="approveDealBtn" onclick="approveWithAssignment()">Approve & Assign</button>
                 <button class="btn btn-success" id="completeDealBtn" onclick="completeInquiry()">Mark Completed</button>
             </div>
         </div>
@@ -93,7 +102,7 @@
             <div class="modal-body" id="receiptContent"></div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeReceiptModal()">Close</button>
-                <button class="btn btn-primary" onclick="window.print()">Print Receipt</button>
+                <button class="btn btn-primary" onclick="UEDocuments.receiptElement(document.getElementById('receiptContent'))">Print Receipt</button>
             </div>
         </div>
     </div>
@@ -108,7 +117,7 @@
         </div>
     </div>
 
-    <!-- Manual Quotation Modal -->
+    <!-- Quote for a call-in customer -->
     <div class="modal-overlay" id="manualQuoteModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -152,14 +161,8 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="form-section">
-                                <div class="section-title"><i class="bi bi-person-badge"></i> Driver Assignment</div>
-                                <div class="searchable-select" id="driverSelectContainer"></div>
-                            </div>
-                            <div class="form-section">
-                                <div class="section-title"><i class="bi bi-truck"></i> Truck Assignment</div>
-                                <div class="searchable-select" id="truckSelectContainer"></div>
-                            </div>
+                            <div id="manualPriceHelper"></div>
+                            <p>Save the pending quote first. Assign a driver and truck when you approve it.</p>
                         </form>
                     </div>
                     <div class="map-column">
@@ -170,7 +173,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeManualQuoteModal()">Cancel</button>
-                <button class="btn btn-success" id="submitManualQuoteBtn" onclick="submitManualQuote()">Create & Assign Deal</button>
+                <button class="btn btn-success" id="submitManualQuoteBtn" onclick="submitManualQuote()">Save Pending Quote</button>
             </div>
         </div>
     </div>
@@ -206,7 +209,12 @@
 
         async function drawDispatcherRoute(mapKey, elementId, pickupAddress, deliveryAddress) {
             const map = getDispatcherMap(mapKey, elementId);
-            return window.UE.RouteMap.draw(map, pickupAddress, deliveryAddress, getMapStatusElement(mapKey));
+            const result = await window.UE.RouteMap.draw(map, pickupAddress, deliveryAddress, getMapStatusElement(mapKey));
+            UERoutePricing.setDistance(document.getElementById(mapKey === 'inquiry' ? 'editPriceHelper' : 'manualPriceHelper'), map?._ueRoundTripDistanceKm);
+            if (mapKey==='inquiry' && map?._ueRoadDistanceKm && document.getElementById('bookingTripDistance')) {
+                document.getElementById('bookingTripDistance').textContent=`One-way map distance ${map._ueRoadDistanceKm.toFixed(3)} km × 2 = ${map._ueRoundTripDistanceKm.toFixed(1)} km round trip. Save to keep this route. These kilometers are added to the truck once on completion.`;
+            }
+            return result;
         }
 
         function updateManualMap() {
@@ -260,6 +268,7 @@
                         date: item.created_at ? new Date(item.created_at).toLocaleString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleString('en-PH'),
                         driverId: item.assigned_driver_id ? String(item.assigned_driver_id) : null,
                         truckId: item.assigned_truck_id ? String(item.assigned_truck_id) : null,
+                        oneWayDistanceKm:item.one_way_distance_km == null ? null : Number(item.one_way_distance_km),
                         paymentMethod: 'Bank Transfer',
                         customer: {
                             name: item.contact_person || item.customer_name || 'Unknown Customer',
@@ -384,7 +393,7 @@
             }
         }
 
-        // Create searchable select component
+        // Let staff search for a driver or truck.
         function createSearchableSelect(containerId, items, type, selectedId = null, onSelect) {
             const container = document.getElementById(containerId);
             if (!container) return;
@@ -457,7 +466,8 @@
         }
 
         function renderInquiries() {
-            const filtered = currentFilter === 'all' ? inquiries : inquiries.filter(i => i.status === currentFilter);
+            const filtered = inquiries.filter(inquiry => currentFilter === 'all' || inquiry.status === currentFilter ||
+                (currentFilter === 'ongoing' && inquiry.status === 'approved'));
             const grid = document.getElementById('inquiryGrid');
             if (filtered.length === 0) {
                 grid.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><h3>No inquiries found</h3></div>';
@@ -465,20 +475,22 @@
                 grid.innerHTML = filtered.map(inq => {
                     const driver = drivers.find(d => d.id === inq.driverId);
                     const truck = trucks.find(t => t.id === inq.truckId);
-                    const isCompleted = inq.status === 'completed';
+                    const isClosed = ['completed', 'cancelled'].includes(inq.status);
+                    const openInquiry = isClosed ? 'openInquiryReceipt' : 'openInquiryModal';
                     return `
-                        <div class="inquiry-card" data-inquiry-id="${inq.id}" role="button" tabindex="0" aria-label="${isCompleted ? `View completed inquiry ${inq.id}` : `Edit inquiry ${inq.id}`}" onclick="openInquiryModal('${inq.id}')" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openInquiryModal('${inq.id}'); }">
+                        <div class="inquiry-card" data-inquiry-id="${inq.id}" role="button" tabindex="0" aria-label="${isClosed ? 'View' : 'Edit'} inquiry ${inq.id}" onclick="${openInquiry}('${inq.id}')" onkeydown="if (event.target === this && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); ${openInquiry}('${inq.id}'); }">
                             <div class="inquiry-actions">
                                 <button class="btn btn-outline" onkeydown="event.stopPropagation()" onclick="event.stopPropagation(); openWaybillModal('${inq.id}')"><i class="bi bi-file-earmark-arrow-up"></i> Waybills</button>
                                 <button class="btn btn-outline" onclick="event.stopPropagation(); openInquiryReceipt('${inq.id}')"><i class="bi bi-receipt"></i> Receipt</button>
-                                ${isCompleted ? '<span class="status-badge status-completed">Completed</span>' : `<button class="btn btn-outline" onclick="event.stopPropagation(); openInquiryModal('${inq.id}')"><i class="bi bi-pencil"></i> Edit</button><select class="status-select" aria-label="Change status for ${inq.id}" onchange="changeInquiryStatus('${inq.id}', this.value)" onclick="event.stopPropagation()"><option value="new" ${inq.status === 'new' ? 'selected' : ''}>New</option><option value="pending" ${inq.status === 'pending' ? 'selected' : ''}>Pending</option><option value="approved" ${inq.status === 'approved' ? 'selected' : ''}>Approved</option><option value="ongoing" ${inq.status === 'ongoing' ? 'selected' : ''}>Ongoing</option><option value="completed" ${inq.status === 'completed' ? 'selected' : ''}>Completed</option></select>`}
+                                ${isClosed ? `<span class="status-badge status-${inq.status}">${inq.status === 'cancelled' ? 'Cancelled' : 'Completed'}</span>` : `<button class="btn btn-outline" onclick="event.stopPropagation(); openInquiryModal('${inq.id}')"><i class="bi bi-pencil"></i> Edit</button><select class="status-select" aria-label="Change status for ${inq.id}" onchange="changeInquiryStatus('${inq.id}', this.value)" onclick="event.stopPropagation()"><option value="new" ${inq.status === 'new' ? 'selected' : ''}>New</option><option value="pending" ${inq.status === 'pending' ? 'selected' : ''}>Pending</option><option value="approved" ${inq.status === 'approved' ? 'selected' : ''}>Approved</option><option value="ongoing" ${inq.status === 'ongoing' ? 'selected' : ''}>Ongoing</option><option value="completed" ${inq.status === 'completed' ? 'selected' : ''}>Completed</option></select>`}
+                                ${!isClosed && inq.paidAmount == null ? `<button type="button" class="btn btn-outline cancel-booking-btn" onclick="event.stopPropagation(); cancelInquiry('${inq.id}', this)">Cancel booking</button>` : ''}
                             </div>
                             <div class="inquiry-card-header"><span class="inquiry-id">${inq.id}</span></div>
-                            <div class="customer-name"><i class="bi bi-person-circle"></i> ${inq.customer.name}</div>
-                            <div class="route-info"><i class="bi bi-geo-alt"></i> ${inq.pickup.full.substring(0, 40)} → ${inq.delivery.full.substring(0, 40)}</div>
-                            <div class="cargo-preview"><i class="bi bi-box"></i> ${inq.cargo.substring(0, 60)}${inq.cargo.length > 60 ? '...' : ''}</div>
+                            <div class="customer-name"><i class="bi bi-person-circle"></i> ${escapeReceiptText(inq.customer.name)}</div>
+                            <div class="route-info"><i class="bi bi-geo-alt"></i> ${escapeReceiptText(inq.pickup.full.substring(0, 40))} → ${escapeReceiptText(inq.delivery.full.substring(0, 40))}</div>
+                            <div class="cargo-preview"><i class="bi bi-box"></i> ${escapeReceiptText(inq.cargo.substring(0, 60))}${inq.cargo.length > 60 ? '...' : ''}</div>
                             <div class="inquiry-date"><i class="bi bi-calendar"></i> ${inq.date} • ₱${inq.estimatedPrice.toLocaleString()}</div>
-                            ${driver || truck ? `<div class="cargo-preview"><i class="bi bi-person-badge"></i> ${driver ? driver.name : 'Unassigned'} | <i class="bi bi-truck"></i> ${truck ? truck.plate : 'Unassigned'}</div>` : ''}
+                            ${driver || truck ? `<div class="cargo-preview"><i class="bi bi-person-badge"></i> ${escapeReceiptText(driver ? driver.name : 'Unassigned')} | <i class="bi bi-truck"></i> ${escapeReceiptText(truck ? truck.plate : 'Unassigned')}</div>` : ''}
                         </div>
                     `;
                 }).join('');
@@ -487,6 +499,35 @@
             document.getElementById('statPending').innerText = inquiries.filter(i => i.status === 'pending').length;
             document.getElementById('statOngoing').innerText = inquiries.filter(i => ['approved', 'ongoing'].includes(i.status)).length;
             document.getElementById('statTotal').innerText = inquiries.length;
+        }
+
+        async function cancelInquiry(id, button) {
+            const inquiry = inquiries.find(item => item.id === id);
+            if (!inquiry || ['completed', 'cancelled'].includes(inquiry.status) || inquiry.paidAmount != null) return;
+            button.disabled = true;
+            try {
+                const confirmed = await UE.confirm(`Cancel ${inquiry.id}? The booking will stay in history and any assigned resources will be released.`, {
+                    type: 'danger', title: 'Cancel booking', confirmText: 'Cancel booking', cancelText: 'Keep booking'
+                });
+                if (!confirmed) return;
+                const response = await fetch(`${API_URL}/service-requests/${inquiry.requestId}/cancel`, {
+                    method: 'PUT', headers: authenticatedApiHeaders()
+                });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.error || 'Unable to cancel the booking.');
+                }
+                inquiry.status = 'cancelled';
+                inquiry.driverId = null;
+                inquiry.truckId = null;
+                filterInquiries('cancelled');
+                await loadDispatcherData();
+                showToast(`${inquiry.id} was cancelled.`, 'success');
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                button.disabled = false;
+            }
         }
 
         let waybillTrigger = null;
@@ -522,8 +563,8 @@
         function openInquiryModal(id) {
             selectedInquiry = inquiries.find(i => i.id === id);
             if (!selectedInquiry) return;
-            if (selectedInquiry.status === 'completed') {
-                showToast('Completed inquiries are locked and cannot be edited.', 'error');
+            if (['completed', 'cancelled'].includes(selectedInquiry.status)) {
+                openInquiryReceipt(id);
                 return;
             }
             window.UEOperations.openHandoff(selectedInquiry.requestId);
@@ -535,17 +576,18 @@
                 <div class="form-section">
                     <div class="section-title"><i class="bi bi-person"></i> Customer Information</div>
                     <div class="form-grid">
-                        <div class="form-group"><label>Name</label><input type="text" id="editName" value="${i.customer.name.replace(/"/g, '&quot;')}"></div>
-                        <div class="form-group"><label>Company</label><input type="text" id="editCompany" value="${(i.customer.company || '').replace(/"/g, '&quot;')}"></div>
-                        <div class="form-group"><label>Email</label><input type="email" id="editEmail" value="${i.customer.email}"></div>
-                        <div class="form-group"><label>Phone</label><input type="text" id="editPhone" value="${i.customer.phone}"></div>
+                        <div class="form-group"><label>Name</label><input type="text" id="editName" value="${escapeReceiptText(i.customer.name)}"></div>
+                        <div class="form-group"><label>Company</label><input type="text" id="editCompany" value="${escapeReceiptText(i.customer.company || '')}"></div>
+                        <div class="form-group"><label>Email</label><input type="email" id="editEmail" value="${escapeReceiptText(i.customer.email)}"></div>
+                        <div class="form-group"><label>Phone</label><input type="text" id="editPhone" value="${escapeReceiptText(i.customer.phone)}"></div>
                     </div>
                 </div>
-                <div class="form-section"><div class="section-title"><i class="bi bi-geo-alt"></i> Pickup Address</div><div class="form-group"><input type="text" id="editPickup" value="${i.pickup.full.replace(/"/g, '&quot;')}"></div></div>
-                <div class="form-section"><div class="section-title"><i class="bi bi-truck"></i> Delivery Address</div><div class="form-group"><input type="text" id="editDelivery" value="${i.delivery.full.replace(/"/g, '&quot;')}"></div></div>
-                <div class="form-section"><div class="section-title"><i class="bi bi-box-seam"></i> Cargo</div><div class="form-group"><textarea id="editCargo" rows="2">${i.cargo.replace(/"/g, '&quot;')}</textarea></div></div>
+                <div class="form-section"><div class="section-title"><i class="bi bi-geo-alt"></i> Pickup Address</div><div class="form-group"><input type="text" id="editPickup" value="${escapeReceiptText(i.pickup.full)}"></div></div>
+                <div class="form-section"><div class="section-title"><i class="bi bi-truck"></i> Delivery Address</div><div class="form-group"><input type="text" id="editDelivery" value="${escapeReceiptText(i.delivery.full)}"></div></div>
+                <p class="ue-ops-message" id="bookingTripDistance">${i.oneWayDistanceKm ? `Saved one-way map distance ${i.oneWayDistanceKm.toFixed(3)} km × 2 = ${UE.RouteMap.roundTripKm(i.oneWayDistanceKm).toFixed(1)} km round trip.` : 'Load the road route to save its distance before completing this delivery.'} Completion adds the saved round-trip kilometers once to the assigned truck. Its starting odometer must be recorded by the Supervisor.</p>
+                <div class="form-section"><div class="section-title"><i class="bi bi-box-seam"></i> Cargo</div><div class="form-group"><textarea id="editCargo" rows="2">${escapeReceiptText(i.cargo)}</textarea></div></div>
                 <div class="form-section"><div class="section-title"><i class="bi bi-currency-exchange"></i> Pricing & Payment</div><div class="form-grid">
-                    <div class="form-group"><label>Dispatcher quote (₱)</label><input type="number" id="editPrice" min="0.01" step="0.01" value="${i.estimatedPrice || ''}"><small>The manager reviews this quote before recording the final paid amount.</small></div>
+                    <div class="form-group"><label>Dispatcher quote (₱)</label><input type="number" id="editPrice" min="0.01" max="9999999999.99" step="0.01" value="${i.estimatedPrice || ''}" ${i.paidAmount == null ? '' : 'readonly'}><small>${i.paidAmount == null ? 'The manager confirms this exact amount.' : 'Payment is confirmed, so the quote is locked.'}</small></div>
                     <div class="form-group"><label>Payment Method</label><select id="editPayment"><option ${i.paymentMethod === 'Bank Transfer' ? 'selected' : ''}>Bank Transfer</option><option ${i.paymentMethod === 'Online Payment' ? 'selected' : ''}>Online Payment</option></select></div>
                 </div></div>
                 <div class="form-section"><div class="section-title"><i class="bi bi-person-badge"></i> Assign Driver</div><div id="inquiryDriverSelect"></div></div>
@@ -553,9 +595,17 @@
                 <div class="form-section"><div class="section-title"><i class="bi bi-flag"></i> Status</div><div class="form-group"><select id="editStatus"><option value="new" ${i.status === 'new' ? 'selected' : ''}>New</option><option value="pending" ${i.status === 'pending' ? 'selected' : ''}>Pending</option><option value="approved" ${i.status === 'approved' ? 'selected' : ''}>Approved</option><option value="ongoing" ${i.status === 'ongoing' ? 'selected' : ''}>Ongoing</option><option value="completed" ${i.status === 'completed' ? 'selected' : ''}>Completed</option></select></div></div>
             `;
             
+            if (i.paidAmount == null) {
+                const helper = document.createElement('div'); helper.id = 'editPriceHelper';
+                document.getElementById('editPrice').closest('.form-section').appendChild(helper);
+                UERoutePricing.mount(helper, 'editPrice').then(()=>{
+                    if (selectedInquiry?.id===i.id && i.oneWayDistanceKm) UERoutePricing.setDistance(helper,UE.RouteMap.roundTripKm(i.oneWayDistanceKm));
+                });
+            }
             createSearchableSelect('inquiryDriverSelect', drivers, 'driver', i.driverId, null);
             createSearchableSelect('inquiryTruckSelect', trucks, 'truck', i.truckId, null);
             window.UEPaymentSchedules.openBooking(i.requestId);
+            checkAssignmentComplete();
             document.getElementById('completeDealBtn').style.display = ['approved', 'ongoing'].includes(i.status) ? '' : 'none';
             
             document.getElementById('inquiryModal').classList.add('active');
@@ -594,10 +644,13 @@
                 ['Status', inquiry.status],
                 ['Pickup address', inquiry.pickup.full],
                 ['Delivery address', inquiry.delivery.full],
+                ['One-way map distance',inquiry.oneWayDistanceKm == null ? 'Not recorded' : `${inquiry.oneWayDistanceKm.toFixed(3)} km`],
+                ['Round-trip distance',inquiry.oneWayDistanceKm == null ? 'Not recorded' : `${UE.RouteMap.roundTripKm(inquiry.oneWayDistanceKm).toFixed(1)} km (outbound and return)`],
                 ['Cargo', inquiry.cargo],
                 ['Pickup date', inquiry.pickupDate],
                 ['Assigned driver', driver ? driver.name : 'Unassigned'],
                 ['Assigned truck', truck ? `${truck.plate} (${truck.type})` : 'Unassigned'],
+                ['Dispatcher quote', inquiry.estimatedPrice > 0 ? UEDocuments.money(inquiry.estimatedPrice) : 'Not quoted'],
                 ['Paid amount', inquiry.paidAmount == null ? 'Not recorded' : `₱${inquiry.paidAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
                 ['Payment recorded', inquiry.paidAt ? new Date(inquiry.paidAt).toLocaleString('en-PH') : 'Not recorded']
             ];
@@ -606,8 +659,9 @@
             directions.searchParams.set('origin', inquiry.pickup.full || '');
             directions.searchParams.set('destination', inquiry.delivery.full || '');
             document.getElementById('receiptContent').innerHTML = `
-                <div class="form-grid">${rows.map(([label, value]) => `
-                    <div class="form-group"><strong>${escapeReceiptText(label)}</strong><div>${escapeReceiptText(value || 'Not provided')}</div></div>
+                <h2>${inquiry.paidAmount == null ? 'Service Summary · Payment not recorded' : 'Service Payment Receipt'}</h2>
+                <div class="receipt-grid">${rows.map(([label, value]) => `
+                    <div class="receipt-field"><small>${escapeReceiptText(label)}</small><strong>${escapeReceiptText(value || 'Not provided')}</strong></div>
                 `).join('')}</div>
                 <p><strong>Route:</strong> <a href="${escapeReceiptText(directions.toString())}" target="_blank" rel="noopener">Open address directions in Google Maps</a>
                 <small>(address-based directions, not live GPS tracking)</small></p>`;
@@ -618,93 +672,78 @@
             document.getElementById('receiptModal').classList.remove('active');
         }
 
-        async function persistInquiry(inquiry) {
-            const response = await fetch(`${API_URL}/service-requests/${inquiry.requestId}`, {
+        async function persistInquiry(requestId, changes) {
+            const response = await fetch(`${API_URL}/service-requests/${requestId}`, {
                 method: 'PUT',
                 headers: authenticatedApiHeaders({ 'Content-Type': 'application/json' }),
-                body: JSON.stringify({
-                    status: inquiry.status,
-                    cargo_type: inquiry.cargo,
-                    cargo_weight: inquiry.cargoWeight || '',
-                    special_requirements: inquiry.notes || inquiry.cargo,
-                    pickup_location: inquiry.pickup.full,
-                    delivery_location: inquiry.delivery.full,
-                    pickup_date: inquiry.pickupDate || null,
-                    preferred_time: inquiry.preferredTime || '',
-                    truck_type: inquiry.truckType || '',
-                    contact_person: inquiry.customer.name,
-                    contact_phone: inquiry.customer.phone,
-                    contact_email: inquiry.customer.email,
-                    driver_id: inquiry.driverId || null,
-                    truck_id: inquiry.truckId || null,
-                    quoted_amount: inquiry.estimatedPrice > 0 ? inquiry.estimatedPrice : null
-                })
+                body: JSON.stringify(changes)
             });
-            if (!response.ok) throw new Error('Unable to save service request');
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.error || 'Unable to save the booking.');
+            }
         }
 
         async function changeInquiryStatus(id, nextStatus) {
             const inquiry = inquiries.find(item => item.id === id);
-            if (!inquiry || inquiry.status === 'completed') return;
-            if (nextStatus === 'completed') {
-                selectedInquiry = inquiry;
-                selectedDriverId = inquiry.driverId;
-                selectedTruckId = inquiry.truckId;
-                await completeInquiry();
+            if (!inquiry || ['completed', 'cancelled'].includes(inquiry.status) || nextStatus === inquiry.status) return;
+            if (nextStatus==='completed' && !inquiry.oneWayDistanceKm) {
+                openInquiryModal(id);
+                showToast('Load and review the road-map distance, then complete this delivery from the booking form.', 'error');
                 return;
             }
-            const previousStatus = inquiry.status;
-            if (!(await UE.confirm(`Are you sure you want to change this request from ${previousStatus} to ${nextStatus}?`, { title: 'Change status', confirmText: 'Yes, change it' }))) {
+            if (!(await UE.confirm(`Change ${inquiry.id} from ${inquiry.status} to ${nextStatus}?`, { title: 'Change status', confirmText: 'Save status' }))) {
                 renderInquiries();
                 return;
             }
-            inquiry.status = nextStatus;
 
             try {
-                await persistInquiry(inquiry);
-                renderInquiries();
-                showToast(`Status changed to ${nextStatus}.`, 'success');
+                await persistInquiry(inquiry.requestId, { status: nextStatus });
+                if (selectedInquiry?.id === id) closeInquiryModal();
+                await loadDispatcherData();
+                showToast(nextStatus==='completed' ? 'Delivery completed. Saved round-trip kilometers were added once to the truck.' : `Status changed to ${nextStatus}.`, 'success');
             } catch (error) {
-                inquiry.status = previousStatus;
                 renderInquiries();
                 showToast(error.message, 'error');
             }
         }
 
-        async function saveInquiryChanges() {
-            if (!selectedInquiry || selectedInquiry.status === 'completed') return;
-            const nextStatus = document.getElementById('editStatus').value;
-            if (nextStatus !== selectedInquiry.status && !(await UE.confirm(`Are you sure you want to change this request to ${nextStatus}?`, { title: 'Change status', confirmText: 'Yes, change it' }))) return;
+        function validQuote(amount) {
+            return Number.isFinite(amount) && amount > 0 && amount < 10000000000 &&
+                Math.abs(amount * 100 - Math.round(amount * 100)) <= 1e-7;
+        }
+
+        async function saveInquiryChanges(nextStatus = document.getElementById('editStatus').value) {
+            const inquiry = selectedInquiry;
+            if (!inquiry || ['completed', 'cancelled'].includes(inquiry.status)) return;
             const priceInput = document.getElementById('editPrice').value.trim();
             const quotedAmount = priceInput ? Number(priceInput) : null;
-            if (quotedAmount !== null && (!Number.isFinite(quotedAmount) || quotedAmount <= 0 || quotedAmount >= 10000000000 ||
-                Math.abs(quotedAmount * 100 - Math.round(quotedAmount * 100)) > 1e-7)) {
+            if (inquiry.paidAmount == null && quotedAmount !== null && !validQuote(quotedAmount)) {
                 showToast('Enter a quote greater than zero with no more than two decimal places.', 'error');
                 return;
             }
-            selectedInquiry.customer.name = document.getElementById('editName').value;
-            selectedInquiry.customer.company = document.getElementById('editCompany').value;
-            selectedInquiry.customer.email = document.getElementById('editEmail').value;
-            selectedInquiry.customer.phone = document.getElementById('editPhone').value;
-            selectedInquiry.pickup.full = document.getElementById('editPickup').value;
-            selectedInquiry.delivery.full = document.getElementById('editDelivery').value;
-            selectedInquiry.cargo = document.getElementById('editCargo').value;
-            selectedInquiry.estimatedPrice = quotedAmount || 0;
-            selectedInquiry.paymentMethod = document.getElementById('editPayment').value;
-            selectedInquiry.status = nextStatus;
-            selectedInquiry.driverId = selectedDriverId;
-            selectedInquiry.truckId = selectedTruckId;
+            if (nextStatus !== inquiry.status && !(await UE.confirm(`Save ${inquiry.id} as ${nextStatus}?`, { title: 'Change status', confirmText: 'Save changes' }))) return;
 
-            if (selectedInquiry.status === 'completed') {
-                await completeInquiry();
-                return;
-            }
+            const changes = {
+                status: nextStatus,
+                cargo_type: document.getElementById('editCargo').value,
+                pickup_location: document.getElementById('editPickup').value,
+                delivery_location: document.getElementById('editDelivery').value,
+                contact_person: document.getElementById('editName').value,
+                contact_email: document.getElementById('editEmail').value,
+                contact_phone: document.getElementById('editPhone').value,
+                driver_id: selectedDriverId,
+                truck_id: selectedTruckId
+            };
+            if (inquiry.paidAmount == null) changes.quoted_amount = quotedAmount;
+            const mappedDistance=UE.RouteMap.oneWayFor(dispatcherMaps.inquiry,changes.pickup_location,changes.delivery_location);
+            if (mappedDistance != null) changes.one_way_distance_km=mappedDistance;
             
             try {
-                await persistInquiry(selectedInquiry);
+                await persistInquiry(inquiry.requestId, changes);
                 closeInquiryModal();
-                renderInquiries();
-                showToast('Changes saved successfully', 'success');
+                await loadDispatcherData();
+                showToast(nextStatus==='completed' ? 'Delivery completed. Round-trip kilometers added once to the truck.' : 'Booking saved.', 'success');
             } catch (error) {
                 showToast(error.message, 'error');
             }
@@ -716,54 +755,12 @@
                 showToast('Please assign both driver and truck before approving', 'error');
                 return;
             }
-            if (!(await UE.confirm('Are you sure you want to approve this request and assign the selected driver and truck?', { title: 'Approve and assign', confirmText: 'Approve' }))) return;
-            selectedInquiry.status = 'approved';
-            selectedInquiry.driverId = selectedDriverId;
-            selectedInquiry.truckId = selectedTruckId;
-            const driver = drivers.find(d => d.id === selectedDriverId);
-            const truck = trucks.find(t => t.id === selectedTruckId);
-            if (driver) driver.status = 'busy';
-            if (truck) truck.status = 'busy';
-            try {
-                await persistInquiry(selectedInquiry);
-                closeInquiryModal();
-                renderInquiries();
-                showToast(`Deal approved! Assigned to ${driver.name} with ${truck.plate}`, 'success');
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
+            await saveInquiryChanges('approved');
         }
 
         async function completeInquiry() {
-            if (!selectedInquiry || !['approved', 'ongoing', 'completed'].includes(selectedInquiry.status)) return;
-            if (!(await UE.confirm('Are you sure you want to mark this delivery as completed?', { title: 'Mark as completed', confirmText: 'Mark completed' }))) return;
-            const previousStatus = selectedInquiry.status;
-            selectedInquiry.status = 'completed';
-            const driver = drivers.find(item => item.id === selectedInquiry.driverId);
-            const truck = trucks.find(item => item.id === selectedInquiry.truckId);
-            if (driver) driver.status = 'available';
-            if (truck) truck.status = 'available';
-            try {
-                await persistInquiry(selectedInquiry);
-                closeInquiryModal();
-                renderInquiries();
-                showToast('Delivery marked as completed.', 'success');
-            } catch (error) {
-                selectedInquiry.status = previousStatus;
-                if (driver) driver.status = 'busy';
-                if (truck) truck.status = 'busy';
-                renderInquiries();
-                showToast(error.message, 'error');
-            }
-        }
-
-        async function completeInquiryById(id) {
-            const inquiry = inquiries.find(item => item.id === id);
-            if (!inquiry) return;
-            selectedInquiry = inquiry;
-            selectedDriverId = inquiry.driverId;
-            selectedTruckId = inquiry.truckId;
-            await completeInquiry();
+            if (!selectedInquiry || !['approved', 'ongoing'].includes(selectedInquiry.status)) return;
+            await saveInquiryChanges('completed');
         }
 
         function closeInquiryModal() {
@@ -778,14 +775,15 @@
 
         function filterInquiries(filter) {
             currentFilter = filter;
-            document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+            document.querySelectorAll('.tabs .tab[data-filter]').forEach(tab => {
+                const selected = tab.dataset.filter === filter;
+                tab.classList.toggle('active', selected);
+                tab.setAttribute('aria-pressed', String(selected));
+            });
             renderInquiries();
         }
 
         function openManualQuoteModal() {
-            createSearchableSelect('driverSelectContainer', drivers, 'driver', null, null);
-            createSearchableSelect('truckSelectContainer', trucks, 'truck', null, null);
             selectedDriverId = null;
             selectedTruckId = null;
             document.getElementById('manualQuoteModal').classList.add('active');
@@ -813,14 +811,7 @@
             const deliveryFull = document.getElementById('deliveryFull').value.trim();
             const cargo = document.getElementById('manualCargo').value.trim();
             const quotedAmount = Number(document.getElementById('manualPrice').value);
-            const driver = drivers.find(item => item.id === selectedDriverId);
-            const truck = trucks.find(item => item.id === selectedTruckId);
-            if (!driver || !truck || driver.status !== 'available' || truck.status !== 'available') {
-                showToast('Select an available driver and truck before creating this quotation.', 'error');
-                return;
-            }
-            if (!Number.isFinite(quotedAmount) || quotedAmount <= 0 || quotedAmount >= 10000000000 ||
-                Math.abs(quotedAmount * 100 - Math.round(quotedAmount * 100)) > 1e-7) {
+            if (!validQuote(quotedAmount)) {
                 showToast('Enter a quote greater than zero with no more than two decimal places.', 'error');
                 return;
             }
@@ -836,12 +827,13 @@
                 delivery_location: deliveryFull,
                 pickup_date: pickupDate,
                 preferred_time: 'Call-in',
-                truck_type: truck.type,
                 contact_person: name,
                 contact_phone: phone,
                 contact_email: email,
                 quoted_amount: quotedAmount
             };
+            const mappedDistance=UE.RouteMap.oneWayFor(dispatcherMaps.manual,pickupFull,deliveryFull);
+            if (mappedDistance != null) requestDetails.one_way_distance_km=mappedDistance;
             const submitButton = document.getElementById('submitManualQuoteBtn');
             submitButton.disabled = true;
             try {
@@ -853,24 +845,10 @@
                 const created = await createResponse.json();
                 if (!createResponse.ok) throw new Error(created.error || 'Unable to create the call-in request.');
 
-                const assignmentResponse = await fetch(`${API_URL}/service-requests/${created.id}`, {
-                    method: 'PUT',
-                    headers: authenticatedApiHeaders({ 'Content-Type': 'application/json' }),
-                    body: JSON.stringify({
-                        ...requestDetails,
-                        status: 'approved',
-                        driver_id: selectedDriverId,
-                        truck_id: selectedTruckId
-                    })
-                });
-                const assignment = await assignmentResponse.json();
-                await loadDispatcherData();
                 closeManualQuoteModal();
-                if (!assignmentResponse.ok) {
-                    showToast(`Request REQ-${created.id} was saved, but assignment failed: ${assignment.error || 'please open the request and assign resources.'}`, 'error');
-                    return;
-                }
-                showToast(`Request REQ-${created.id} created, quoted, and assigned to ${driver.name} with ${truck.plate}.`, 'success');
+                filterInquiries('pending');
+                await loadDispatcherData();
+                showToast(`Quote REQ-${created.id} saved as Pending.`, 'success');
             } catch (error) {
                 console.error('Manual quotation save failed:', error);
                 showToast(error.message || 'Unable to save the call-in quotation.', 'error');

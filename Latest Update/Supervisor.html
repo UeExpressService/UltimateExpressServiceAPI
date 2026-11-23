@@ -8,6 +8,9 @@
     <script src="auth.js"></script>
     <script src="ue-dialog.js"></script>
     <script src="operations.js" defer></script>
+    <script src="print-documents.js" defer></script>
+    <script src="maintenance.js" defer></script>
+    <script src="inspection-requests.js" defer></script>
     <script>if (!requireRole('supervisor')) document.documentElement.style.display = 'none';</script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -39,11 +42,14 @@
                 <h1><i class="bi bi-clipboard-data ue-text-primary"></i> Fleet Supervisor Dashboard</h1>
                 <p>Manage drivers, trucks, and fleet resources for dispatch operations</p>
             </div>
+            <button class="btn-add" type="button" onclick="printFleetReport()"><i class="bi bi-printer"></i> Print Fleet Report</button>
             <button class="btn-add" type="button" onclick="downloadFleetReport()">
                 <i class="bi bi-download"></i> Export Fleet Report
             </button>
         </div>
 
+        <section id="maintenanceRequests" class="ue-revision-card" aria-label="Maintenance check requests"></section>
+        <section id="truckMaintenance" class="ue-revision-card" aria-label="Truck maintenance"></section>
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon blue"><i class="bi bi-people-fill"></i></div>
@@ -239,7 +245,7 @@
     <div class="toast" id="toast"><i class="bi bi-check-circle-fill"></i><span id="toastMessage">Success</span></div>
 
     <script>
-        // Initial Data (Synced with Dispatcher Dashboard)
+        // Load the shared fleet records.
         const API_URL = window.UE_API_URL;
         let drivers = [];
         let trucks = [];
@@ -395,6 +401,18 @@
             return `"${text.replace(/"/g, '""')}"`;
         }
 
+        function printFleetReport() {
+            const visibleDrivers = getFilteredDrivers(), visibleTrucks = getFilteredTrucks();
+            UEDocuments.preview({ title: 'Fleet Report', reference: 'Filtered fleet records',
+                facts: [['Drivers shown', visibleDrivers.length], ['Trucks shown', visibleTrucks.length],
+                    ['Available drivers', visibleDrivers.filter(row => row.status === 'available').length],
+                    ['Available trucks', visibleTrucks.filter(row => row.status === 'available').length]],
+                sections: [
+                    { title: 'Drivers', columns: ['Name', 'License', 'Phone', 'Status'], rows: visibleDrivers.map(row => [row.name, row.license, row.phone, row.status]) },
+                    { title: 'Trucks', columns: ['Plate', 'Type', 'Capacity', 'Location', 'Status', 'Ownership'], rows: visibleTrucks.map(row => [row.plate, row.type, row.capacity, row.location, row.status, row.third_party ? 'Third-party' : 'Owned']) }
+                ], note: 'This report reflects the current search and status filters. Availability may change after this report is generated.' });
+        }
+
         function downloadFleetReport() {
             const visibleDrivers = getFilteredDrivers();
             const visibleTrucks = getFilteredTrucks();
@@ -431,7 +449,7 @@
             setTimeout(() => URL.revokeObjectURL(reportUrl), 0);
         }
 
-        // Driver CRUD
+        // Add, edit or remove drivers
         function openDriverModal(driver = null) {
             if (driver) {
                 document.getElementById('driverModalTitle').innerText = 'Edit Driver';
@@ -530,7 +548,7 @@
             }
         }
 
-        // Truck CRUD
+        // Add, edit or remove trucks
         function openTruckModal(truck = null) {
             if (truck) {
                 document.getElementById('truckModalTitle').innerText = 'Edit Truck';

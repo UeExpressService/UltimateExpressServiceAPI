@@ -21,10 +21,9 @@ function identifyFile(buffer) {
     return null;
 }
 
-module.exports = function registerWaybills(app, { dbp, withTransaction, requireRoles, rateLimit, HttpError, sendError }) {
+module.exports = function registerWaybills(app, { dbp, withTransaction, requireRoles, rateLimit, HttpError, sendError, auditUserAction }) {
     let tableReady;
-    // Files live in MySQL so Railway redeployments cannot erase them.
-    // No foreign keys are added here: existing installations use different ID column types.
+    // Keep files in MySQL so they survive a redeploy. Older booking IDs can use a different type.
     function ensureTable() {
         if (!tableReady) {
             tableReady = dbp.query(CREATE_TABLE).catch(error => {
@@ -74,7 +73,7 @@ module.exports = function registerWaybills(app, { dbp, withTransaction, requireR
         }
     });
 
-    app.post(base, uploadAccess, validIds, uploadLimit, (req, res, next) => {
+    app.post(base, uploadAccess, validIds, uploadLimit, auditUserAction('waybill.uploaded', 'waybill', 'Uploaded a waybill.'), (req, res, next) => {
         rawFile(req, res, error => {
             if (!error) return next();
             res.status(error.type === 'entity.too.large' ? 413 : 400).json({
@@ -98,7 +97,7 @@ module.exports = function registerWaybills(app, { dbp, withTransaction, requireR
             await requireBooking(req);
             await ensureTable();
             const file = await withTransaction(async connection => {
-                // Lock the parent booking to keep simultaneous uploads within the file limit.
+                // Lock the booking so two uploads can't go over the limit.
                 await requireBooking(req, connection, true);
                 const [counts] = await connection.query(
                     'SELECT COUNT(*) AS total FROM service_request_waybills WHERE service_request_id = ?', [req.params.id]
@@ -117,7 +116,7 @@ module.exports = function registerWaybills(app, { dbp, withTransaction, requireR
         }
     });
 
-    app.get(`${base}/:waybillId`, readAccess, validIds, async (req, res) => {
+    app.get(`${base}/:waybillId`, readAccess, validIds, auditUserAction('waybill.opened', 'waybill', 'Viewed or downloaded a waybill.'), async (req, res) => {
         try {
             await requireBooking(req);
             await ensureTable();

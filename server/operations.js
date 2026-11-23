@@ -19,7 +19,7 @@ function category(type) {
 function version(row) {
     const keys = ['cargo_type', 'cargo_weight', 'special_requirements', 'pickup_location', 'delivery_location',
         'pickup_date', 'preferred_time', 'truck_type', 'assigned_driver_id', 'assigned_truck_id', 'quoted_amount',
-        'contact_person', 'contact_phone', 'contact_email'];
+        'contact_person', 'contact_phone', 'contact_email','one_way_distance_km','distance_pickup_location','distance_delivery_location'];
     return createHash('sha256').update(JSON.stringify(keys.map(key => row[key] ?? null))).digest('hex');
 }
 const TABLES = [

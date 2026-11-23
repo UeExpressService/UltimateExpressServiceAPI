@@ -10,7 +10,7 @@ const UI_ACTIONS = {
     'report.export_requested': 'Requested a report export', 'receipt.opened': 'Opened a receipt', 'receipt.print_requested': 'Requested a receipt print',
     'route.open_requested': 'Requested route directions'
 };
-const SECTIONS = new Set(['dashboard', 'accounts', 'transactions', 'partners', 'audit', 'revenue', 'inquiries', 'drivers', 'trucks', 'history', 'profile', 'services', 'fleet', 'all', 'new', 'pending', 'approved', 'ongoing', 'completed', 'cancelled']);
+const SECTIONS = new Set(['dashboard', 'accounts', 'transactions', 'partners', 'audit', 'revenue', 'inquiries', 'website-inquiries', 'pricing', 'maintenance', 'drivers', 'trucks', 'history', 'profile', 'services', 'fleet', 'all', 'new', 'pending', 'approved', 'ongoing', 'completed', 'cancelled']);
 
 function routeActivity(req) {
     const path = typeof req.route?.path === 'string' ? req.route.path : '';
@@ -27,6 +27,10 @@ function routeActivity(req) {
     if (path === '/api/service-requests/:id/payment') return make('payment.recorded', 'service_request', 'Recorded the service payment.');
     if (path === '/api/service-requests/:id/cancel') return make('service_request.cancelled', 'service_request', 'Cancelled a booking.');
     if (path === '/api/users/create-customer') return make('customer_account.created', 'user', 'Created a customer account.');
+    if (path.startsWith('/api/website-inquiries')) return make(method === 'GET' ? 'website_inquiry.viewed' : 'website_inquiry.updated', 'website_inquiry', method === 'GET' ? 'Viewed website guest inquiries.' : 'Updated guest inquiry follow-up.', method === 'GET');
+    if (path === '/api/route-estimates' || path.startsWith('/api/route-rates')) return make(method === 'GET' ? 'route_rates.viewed' : path === '/api/route-estimates' ? 'route_estimate.calculated' : 'route_rate.updated', 'route_rate', 'Accessed route pricing.', method === 'GET');
+    if (path.startsWith('/api/maintenance-requests')) return make(method === 'GET' ? 'inspection_requests.viewed' : method === 'POST' ? 'inspection_request.created' : 'inspection_request.reviewed', 'truck_inspection', 'Accessed truck inspection requests.', method === 'GET');
+    if (path === '/api/truck-maintenance' || path.includes('/maintenance')) return make(method === 'GET' ? 'maintenance.viewed' : 'maintenance.recorded', 'truck', 'Accessed truck maintenance.', method === 'GET');
     const resources = {
         '/api/trucks': ['truck', 'truck records'], '/api/trucks/:id': ['truck', 'a truck'],
         '/api/drivers': ['driver', 'driver records'], '/api/drivers/:id': ['driver', 'a driver'],
@@ -98,7 +102,7 @@ function createAuditTrail({ dbp, now = Date.now, readWindowMs = 5 * 60_000 }) {
             const source = res.locals.auditSource === 'interface' ? 'interface' : 'server';
             // Collapse identical read refreshes, never writes, failures, downloads or interface actions.
             if (activity.read && res.statusCode < 400 && !aborted) {
-                const key = `${actor.id}:${activity.action}:${entityId || ''}:${req.query.year || req.query.date || ''}`;
+                const key = `${actor.id}:${activity.action}:${entityId || ''}:${req.query.year || ''}`;
                 const last = recentReads.get(key);
                 if (last !== undefined && now() - last < readWindowMs) return;
                 recentReads.set(key, now());

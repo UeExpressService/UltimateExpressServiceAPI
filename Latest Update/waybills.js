@@ -38,7 +38,7 @@
             }
 
             async function openFile(file, download) {
-                // Open the window during the click so browsers allow the PDF/image preview.
+                // Open the preview on click so the browser allows it.
                 const preview = download ? null : window.open('about:blank', '_blank');
                 if (!download && !preview) {
                     message('Allow a new tab to view this waybill, or choose Download.', true);

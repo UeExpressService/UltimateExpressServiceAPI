@@ -42,6 +42,7 @@ async function main() {
     };
     registerWaybills(app, {
         dbp, withTransaction: work => work(dbp), requireRoles, HttpError,
+        auditUserAction: () => (req, res, next) => next(),
         rateLimit: () => (req, res, next) => next(),
         sendError: (res, error) => res.status(error.status || 500).json({ error: error.message })
     });
