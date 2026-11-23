@@ -96,7 +96,7 @@
         <div id="panel-transactions" class="panel ue-initially-hidden">
             <div class="page-header"><div><h1>All <span class="ue-text-primary">Transactions</span></h1><p>Complete record of all freight and logistics bookings</p></div><button class="btn-outline-sm" type="button" onclick="UEPaymentSchedules.open()"><i class="bi bi-calendar-event"></i> View scheduled payments</button></div>
             <div class="stats-grid" id="txStatsGrid"></div>
-            <div class="card"><div class="card-header"><div class="tab-pills"><div class="pill active" onclick="filterTx('all',this)">All</div><div class="pill" onclick="filterTx('completed',this)">Completed</div><div class="pill" onclick="filterTx('ongoing',this)">Ongoing</div><div class="pill" onclick="filterTx('pending',this)">Pending</div></div><div class="search-box"><i class="bi bi-search"></i><input type="text" id="txSearch" placeholder="Search..." oninput="renderTransactions()"></div></div><div class="card-body"><table class="data-table"><thead><tr><th>Booking ID</th><th>Customer</th><th>Route</th><th>Dispatcher Quote</th><th>Date</th><th>Paid Amount</th><th>Status</th><th>Payment</th></tr></thead><tbody id="txBody"></tbody></table><div class="pagination"><span class="page-info" id="txPageInfo"></span><div class="page-btns" id="txPageBtns"></div></div></div></div>
+            <div class="card"><div class="card-header"><div class="tab-pills"><div class="pill active" onclick="filterTx('all',this)">All</div><div class="pill" onclick="filterTx('completed',this)">Completed</div><div class="pill" onclick="filterTx('ongoing',this)">Ongoing</div><div class="pill" onclick="filterTx('pending',this)">Pending</div></div><div class="search-box"><i class="bi bi-search"></i><input type="text" id="txSearch" placeholder="Search..." oninput="renderTransactions()"></div></div><div class="card-body"><table class="data-table"><thead><tr><th>Booking ID</th><th>Customer</th><th>Route</th><th>Dispatcher Quote</th><th>Date</th><th>Paid Amount</th><th>Status</th><th>Payment</th></tr></thead><tbody id="txBody"></tbody></table></div></div>
         </div>
 
         <!-- Partners Panel -->
@@ -165,7 +165,7 @@
         let customerRequests = [];
         const monthlyRequests = {2024:Array(12).fill(0),2025:Array(12).fill(0),2026:Array(12).fill(0)};
         const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        let txFilter = 'all', accPage = 1, txPage = 1, dashChart, revenueChart, quarterChart, reportData;
+        let txFilter = 'all', accPage = 1, dashChart, revenueChart, quarterChart, reportData;
         let reportRequest = 0;
         const PER = 5;
 
@@ -350,9 +350,7 @@
                     (txFilter === 'ongoing' && transaction.status === 'approved') ||
                     (txFilter === 'pending' && transaction.status === 'new'))
             );
-            const pages = Math.ceil(filtered.length / PER) || 1;
-            txPage = Math.min(txPage, pages);
-            document.getElementById('txBody').innerHTML = filtered.slice((txPage - 1) * PER, txPage * PER).map(transaction => `
+            document.getElementById('txBody').innerHTML = filtered.map(transaction => `
                 <tr><td><code class="ue-text-primary">${escapeHtml(transaction.id)}</code></td>
                 <td>${escapeHtml(transaction.customer)}</td><td>${escapeHtml(transaction.route)}</td>
                 <td><strong>${transaction.quoteAmount == null ? 'Not quoted' : `₱${transaction.quoteAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</strong></td>
@@ -363,10 +361,7 @@
                     ${transaction.amount != null ? '<span class="badge badge-green">Confirmed</span>' :
                         (transaction.status !== 'cancelled' && transaction.quoteAmount > 0 ? `<button class="btn-outline-sm" onclick="recordPayment(${transaction.requestId})">Confirm payment</button>` : '')}</td></tr>
             `).join('') || '<tr><td colspan="8"><div class="empty-state"><i class="bi bi-inbox"></i><p>No transactions found</p></div></td></tr>';
-            document.getElementById('txPageInfo').textContent = `${Math.min((txPage - 1) * PER + 1, filtered.length)}–${Math.min(txPage * PER, filtered.length)} of ${filtered.length}`;
-            document.getElementById('txPageBtns').innerHTML = Array.from({ length: pages }, (_, index) =>
-                `<div class="page-btn ${index + 1 === txPage ? 'active' : ''}" onclick="txPage=${index + 1};renderTransactions()">${index + 1}</div>`
-            ).join('');
+
         }
 
         async function recordPayment(requestId) {
@@ -733,7 +728,7 @@
                 button.textContent = originalLabel;
             }
         }
-        function filterTx(f,el){txFilter=f;document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');txPage=1;renderTransactions();}
+        function filterTx(f,el){txFilter=f;document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');renderTransactions();}
         function initDashChart() {
             const year = document.getElementById('dashYearSelect').value;
             const ctx = document.getElementById('dashChart').getContext('2d');
