@@ -42,14 +42,14 @@
                 <h1><i class="bi bi-clipboard-data ue-text-primary"></i> Fleet Supervisor Dashboard</h1>
                 <p>Manage drivers, trucks, and fleet resources for dispatch operations</p>
             </div>
+            <div class="ue-supervisor-report-actions">
             <button class="btn-add" type="button" onclick="printFleetReport()"><i class="bi bi-printer"></i> Print Fleet Report</button>
             <button class="btn-add" type="button" onclick="downloadFleetReport()">
                 <i class="bi bi-download"></i> Export Fleet Report
             </button>
+            </div>
         </div>
 
-        <section id="maintenanceRequests" class="ue-revision-card" aria-label="Maintenance check requests"></section>
-        <section id="truckMaintenance" class="ue-revision-card" aria-label="Truck maintenance"></section>
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon blue"><i class="bi bi-people-fill"></i></div>
@@ -81,6 +81,14 @@
             </div>
         </div>
 
+        <div class="ue-supervisor-tabs" role="tablist" aria-label="Supervisor sections">
+            <button type="button" role="tab" id="supervisor-tab-fleet" aria-controls="supervisor-fleet" aria-selected="true" tabindex="0" data-supervisor-section="fleet"><i class="bi bi-truck" aria-hidden="true"></i> Fleet</button>
+            <button type="button" role="tab" id="supervisor-tab-attendance" aria-controls="supervisor-attendance" aria-selected="false" tabindex="-1" data-supervisor-section="attendance"><i class="bi bi-clock-history" aria-hidden="true"></i> Attendance</button>
+            <button type="button" role="tab" id="supervisor-tab-booking-reviews" aria-controls="supervisor-booking-reviews" aria-selected="false" tabindex="-1" data-supervisor-section="booking-reviews"><i class="bi bi-send-check" aria-hidden="true"></i> Booking Reviews</button>
+            <button type="button" role="tab" id="supervisor-tab-maintenance-checks" aria-controls="supervisor-maintenance-checks" aria-selected="false" tabindex="-1" data-supervisor-section="maintenance-checks"><i class="bi bi-clipboard-check" aria-hidden="true"></i> Check Requests</button>
+            <button type="button" role="tab" id="supervisor-tab-truck-maintenance" aria-controls="supervisor-truck-maintenance" aria-selected="false" tabindex="-1" data-supervisor-section="truck-maintenance"><i class="bi bi-tools" aria-hidden="true"></i> Maintenance</button>
+        </div>
+        <section id="supervisor-fleet" class="ue-supervisor-panel " data-supervisor-panel="fleet" role="tabpanel" aria-labelledby="supervisor-tab-fleet" tabindex="0">
         <div class="dashboard-grid">
             <!-- Drivers Section -->
             <div class="card">
@@ -124,13 +132,22 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <section class="ue-operations-section" aria-labelledby="attendanceHeading">
+        </section>
+        <section id="supervisor-attendance" class="ue-supervisor-panel ue-operations-section" data-supervisor-panel="attendance" role="tabpanel" aria-labelledby="supervisor-tab-attendance" tabindex="0" hidden>
 <div class="card"><div class="ue-ops-heading"><h2 id="attendanceHeading"><i class="bi bi-clock-history"></i> Driver time in / out</h2><div class="ue-ops-controls"><label for="shiftDate">Work date</label><input type="date" id="shiftDate"><button type="button" id="refreshAttendance" class="ue-ops-button">Refresh</button></div></div>
 <p id="shiftMessage" class="ue-ops-message" role="status"></p><div class="ue-ops-table"><table><thead><tr><th>Driver</th><th>Time in</th><th>Time out</th><th>Status</th><th>Action</th></tr></thead><tbody id="shiftRows"><tr><td colspan="5">Loading attendance…</td></tr></tbody></table></div></div>
+        </section>
+        <section id="supervisor-booking-reviews" class="ue-supervisor-panel ue-operations-section" data-supervisor-panel="booking-reviews" role="tabpanel" aria-labelledby="supervisor-tab-booking-reviews" tabindex="0" hidden>
 <div class="card"><div class="ue-ops-heading"><h2 id="reviewsHeading"><i class="bi bi-send-check"></i> Confirmed booking reviews</h2><button type="button" id="refreshReviews" class="ue-ops-button">Refresh</button></div><p id="reviewMessage" class="ue-ops-message" role="status"></p><div id="bookingReviews"><p>Loading reviews…</p></div></div>
-</section>
+        </section>
+        <section id="supervisor-maintenance-checks" class="ue-supervisor-panel " data-supervisor-panel="maintenance-checks" role="tabpanel" aria-labelledby="supervisor-tab-maintenance-checks" tabindex="0" hidden>
+            <section id="maintenanceRequests" class="ue-revision-card" aria-label="Maintenance check requests"></section>
+        </section>
+        <section id="supervisor-truck-maintenance" class="ue-supervisor-panel " data-supervisor-panel="truck-maintenance" role="tabpanel" aria-labelledby="supervisor-tab-truck-maintenance" tabindex="0" hidden>
+            <section id="truckMaintenance" class="ue-revision-card" aria-label="Truck maintenance"></section>
+        </section>
+    </div>
+
     <!-- Driver Modal -->
     <div class="modal-overlay" id="driverModal">
         <div class="modal-content">
@@ -245,6 +262,38 @@
     <div class="toast" id="toast"><i class="bi bi-check-circle-fill"></i><span id="toastMessage">Success</span></div>
 
     <script>
+        // Show one task at a time, keeping the forms in place.
+        const supervisorTabs = [...document.querySelectorAll('[data-supervisor-section]')];
+        const supervisorPanels = [...document.querySelectorAll('[data-supervisor-panel]')];
+        const supervisorSectionAliases = {truckMaintenance:'truck-maintenance',maintenanceRequests:'maintenance-checks',attendanceHeading:'attendance',reviewsHeading:'booking-reviews'};
+        function selectSupervisorSection(section, updateHash = false) {
+            section = supervisorSectionAliases[section] || section;
+            if (!supervisorTabs.some(tab => tab.dataset.supervisorSection === section)) section = 'fleet';
+            supervisorTabs.forEach(tab => {
+                const selected = tab.dataset.supervisorSection === section;
+                tab.setAttribute('aria-selected', String(selected));
+                tab.tabIndex = selected ? 0 : -1;
+            });
+            supervisorPanels.forEach(panel => { panel.hidden = panel.dataset.supervisorPanel !== section; });
+            if (updateHash) history.replaceState(null, '', '#' + section);
+        }
+        supervisorTabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => selectSupervisorSection(tab.dataset.supervisorSection, true));
+            tab.addEventListener('keydown', event => {
+                let next;
+                if (event.key === 'ArrowRight') next = (index + 1) % supervisorTabs.length;
+                if (event.key === 'ArrowLeft') next = (index - 1 + supervisorTabs.length) % supervisorTabs.length;
+                if (event.key === 'Home') next = 0;
+                if (event.key === 'End') next = supervisorTabs.length - 1;
+                if (next === undefined) return;
+                event.preventDefault();
+                supervisorTabs[next].focus();
+                selectSupervisorSection(supervisorTabs[next].dataset.supervisorSection, true);
+            });
+        });
+        window.addEventListener('hashchange', () => selectSupervisorSection(location.hash.slice(1)));
+        selectSupervisorSection(location.hash.slice(1));
+
         // Load the shared fleet records.
         const API_URL = window.UE_API_URL;
         let drivers = [];

@@ -53,6 +53,10 @@
     }
     async function loadReviews() {
         if (reviewBusy || $('bookingReviews').contains(document.activeElement)) return;
+        if ([...$('bookingReviews').querySelectorAll('textarea')].some(field => field.value !== field.defaultValue)) {
+            $('reviewMessage').textContent = 'Save or clear your review notes before refreshing this list.';
+            return;
+        }
         reviewBusy = true;
         try {
             const rows = await api('/supervisor/confirmed-bookings');
@@ -120,6 +124,7 @@
                 const button = form.querySelector('button'); button.disabled = true;
                 try {
                     await api(`/service-requests/${form.dataset.review}/supervisor-review`, 'PUT', { version: form.dataset.version, notes: form.querySelector('textarea').value });
+                    form.querySelector('textarea').value = '';
                     button.blur(); await loadReviews();
                 } catch (error) { form.parentElement.querySelector('[role=status]').textContent = error.message; }
                 finally { if (button.isConnected) button.disabled = false; }

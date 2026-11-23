@@ -2738,3 +2738,26 @@ html[data-page=manager] #partnerModal textarea { width:100%; padding:.75rem; bor
 .ue-amounts-note { margin:0 0 18px; line-height:1.6; font-size:13px; color:var(--text-light,#6c757d); }
 .ue-amounts-footnote { margin:18px 0 0; }
 @media(max-width:600px) { .ue-amounts-grid { grid-template-columns:minmax(0,1fr); } .ue-amounts-item { padding:16px; } }
+
+/* Supervisor task sections */
+html[data-page=supervisor] .ue-supervisor-tabs { display:flex; flex-wrap:wrap; gap:8px; padding:8px; margin-bottom:24px; background:#fff; border:1px solid #e0e5e3; border-radius:14px; }
+html[data-page=supervisor] .ue-supervisor-tabs button { flex:1 1 auto; display:flex; align-items:center; justify-content:center; gap:8px; padding:13px 16px; border:0; border-radius:9px; background:transparent; color:var(--secondary); font:inherit; font-size:.85rem; font-weight:600; cursor:pointer; }
+html[data-page=supervisor] .ue-supervisor-tabs button:hover { background:#f5f7f3; }
+html[data-page=supervisor] .ue-supervisor-tabs button[aria-selected=true] { background:var(--secondary); color:#fff; }
+html[data-page=supervisor] .ue-supervisor-tabs button:focus-visible,html[data-page=supervisor] .ue-supervisor-panel:focus-visible { outline:3px solid var(--primary); outline-offset:3px; }
+html[data-page=supervisor] .ue-supervisor-panel { min-width:0; }
+html[data-page=supervisor] .ue-supervisor-panel[hidden] { display:none !important; }
+html[data-page=supervisor] .ue-supervisor-panel.ue-operations-section { padding:0; margin:0; max-width:none; }
+html[data-page=supervisor] .ue-supervisor-panel>.ue-revision-card { margin:0; }
+@media(max-width:600px) { html[data-page=supervisor] .ue-supervisor-tabs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; padding:6px; } html[data-page=supervisor] .ue-supervisor-tabs button { min-width:0; padding:12px 8px; font-size:.75rem; } }
+
+html[data-page=supervisor] .ue-supervisor-report-actions { display:flex; flex-wrap:wrap; gap:10px; }
+@media(max-width:600px) {
+ html[data-page=supervisor] .page-header h1 { font-size:1.4rem; }
+ html[data-page=supervisor] .ue-supervisor-report-actions .btn-add { padding:8px 10px; font-size:.7rem; }
+ html[data-page=supervisor] .stats-grid { gap:10px; margin-bottom:20px; }
+ html[data-page=supervisor] .stat-card { padding:12px; gap:10px; }
+ html[data-page=supervisor] .stat-icon { width:38px; height:38px; flex-shrink:0; font-size:1.15rem; }
+ html[data-page=supervisor] .stat-details h3 { font-size:1.45rem; }
+ html[data-page=supervisor] .stat-details p { font-size:.72rem; }
+}
