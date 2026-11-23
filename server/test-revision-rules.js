@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { calculate,MARKET_RATES } = require('./route-pricing');
+const { calculate,MARKET_RATES,PROVISIONAL_RATES } = require('./route-pricing');
 const { recommendations,addMonths,componentState } = require('./maintenance');
 const {roundTripKm}=require('./trip-maintenance');
 
@@ -22,6 +22,20 @@ test('tariff boundary, included distance, cents and unsupported ranges', () => {
     assert.equal(calculate(rate,10.01,0).total,1000.30); assert.equal(calculate(rate,500,0).total,15700);
     for(const distance of [0,-1,501,Infinity,NaN,'10']) assert.equal(calculate(rate,distance,0),null);
     assert.equal(calculate(rate,20,-1),null); assert.equal(calculate(MARKET_RATES[0],51,0),null);
+});
+
+test('provisional automatic quotes use truck type, included round-trip km and extras', () => {
+    assert.equal(PROVISIONAL_RATES.length,5);
+    for (const rate of PROVISIONAL_RATES) {
+        assert.equal(rate.provisional,true); assert.ok(rate.truck_type);
+        assert.equal(calculate(rate,20,0).total,rate.base_fare);
+        assert.equal(calculate(rate,40,0).distance_charge,0);
+        assert.equal(calculate(rate,100,250).total,rate.base_fare+60*rate.per_km+250);
+        assert.equal(calculate(rate,10000.01,0),null);
+    }
+    assert.equal(calculate(PROVISIONAL_RATES[0],100,250).total,7650);
+    assert.equal(calculate(PROVISIONAL_RATES[3],100,250).total,23950);
+    assert.equal(calculate(PROVISIONAL_RATES[0],40.01,0.25).total,5000.65);
 });
 test('oil reminder works at mileage and calendar boundaries and clamps month ends', () => {
     assert.equal(addMonths('2026-01-31',3),'2026-04-30'); assert.equal(addMonths('2023-11-30',3),'2024-02-29');

@@ -1,5 +1,14 @@
 // External references are identified separately from company-maintained tariffs.
 const SOURCE = 'https://www.lalamove.com/en-ph/all-delivery-pricing-detail';
+// Sample rates until the company supplies its approved prices.
+const PROVISIONAL_RATES = [
+    { id:'sample-l300', truck_type:'4-Wheeler L300', base_fare:5000, per_km:40 },
+    { id:'sample-6van', truck_type:'6-Wheeler Closed Van', base_fare:12000, per_km:65 },
+    { id:'sample-6drop', truck_type:'6-Wheeler Dropside', base_fare:20000, per_km:70 },
+    { id:'sample-10wing', truck_type:'10-Wheeler Wing Van', base_fare:18000, per_km:95 },
+    { id:'sample-trailer', truck_type:'Trailer Truck', base_fare:30000, per_km:130 }
+].map(row => ({ ...row, label:row.truck_type, included_km:40, max_km:10000, provisional:true,
+    notes:'Provisional sample pricing, not approved company rates. First 40 round-trip km included. Tolls, ferry, handling and other agreed charges are entered separately. No automatic tax or cargo surcharge.' }));
 const MARKET_RATES = [
     { id: 'market-3t', label: 'Lalamove regular delivery · 3,000 kg 6W aluminum van', base_fare: 1450, per_km: 33 },
     { id: 'market-5t', label: 'Lalamove regular delivery · 5,000 kg 6W large aluminum van', base_fare: 2694, per_km: 34 },
@@ -32,7 +41,7 @@ function registerRoutePricing(app, { dbp, requireRoles, auditUserAction, HttpErr
     };
     app.get('/api/route-rates', requireRoles('manager','dispatcher'), auditUserAction('route_rates.viewed','route_rate','Viewed company tariffs and external pricing references.',true), handler(async (req,res) => {
         const [rows] = await dbp.query('SELECT * FROM route_rates ORDER BY label,id');
-        res.json({ company: rows, market: MARKET_RATES });
+        res.json({ company: rows, market: MARKET_RATES, provisional: PROVISIONAL_RATES });
     }));
     const save = async (req,res) => {
         const body = req.body || {}, label = String(body.label || '').trim();
@@ -58,7 +67,7 @@ function registerRoutePricing(app, { dbp, requireRoles, auditUserAction, HttpErr
     app.put('/api/route-rates/:id', requireRoles('manager'), auditUserAction('route_rate.updated','route_rate','Updated a company route tariff.'), handler(save));
     app.post('/api/route-estimates', requireRoles('dispatcher','manager'), auditUserAction('route_estimate.calculated','route_rate','Calculated a draft route estimate.'), handler(async (req,res) => {
         const body = req.body || {};
-        let rate = MARKET_RATES.find(rate => rate.id === body.rate_id);
+        let rate = [...PROVISIONAL_RATES, ...MARKET_RATES].find(rate => rate.id === body.rate_id);
         if (!rate) {
             const id = Number(body.rate_id);
             if (!Number.isSafeInteger(id) || id <= 0) throw new HttpError(400,'Choose a rate reference.');
@@ -67,7 +76,8 @@ function registerRoutePricing(app, { dbp, requireRoles, auditUserAction, HttpErr
         if (!rate) throw new HttpError(404,'Active company tariff not found.');
         const result = calculate(rate,body.distance_km,body.extras);
         if (!result) throw new HttpError(400,`Enter a route distance above zero and no greater than ${rate.max_km} km, with valid additional charges. Choose a company tariff for routes outside a market reference range.`);
-        res.json({ ...result, rate_id:rate.id, label:rate.label, market_reference:!!rate.market_reference, distance_km:body.distance_km,
+        res.json({ ...result, rate_id:rate.id, label:rate.label, market_reference:!!rate.market_reference, provisional:!!rate.provisional,
+            included_km:Number(rate.included_km), per_km:Number(rate.per_km), distance_km:body.distance_km,
             notes:rate.notes, source_url:rate.source_url || null, reference_date:rate.reference_date || null,
             message:'Draft estimate only. Dispatch must review and save the final quote; recorded payments are unchanged.' });
     }));
@@ -75,3 +85,4 @@ function registerRoutePricing(app, { dbp, requireRoles, auditUserAction, HttpErr
 module.exports = registerRoutePricing;
 module.exports.calculate = calculate;
 module.exports.MARKET_RATES = MARKET_RATES;
+module.exports.PROVISIONAL_RATES = PROVISIONAL_RATES;

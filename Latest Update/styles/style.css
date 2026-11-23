@@ -2761,3 +2761,32 @@ html[data-page=supervisor] .ue-supervisor-report-actions { display:flex; flex-wr
  html[data-page=supervisor] .stat-details h3 { font-size:1.45rem; }
  html[data-page=supervisor] .stat-details p { font-size:.72rem; }
 }
+
+/* Automatic quotes use provisional rates until approved prices are ready. */
+.ue-auto-pricing h3 { margin:0 0 10px; color:var(--secondary,#4a5d3a); }
+.ue-auto-pricing .ue-pricing-notice { padding:10px 12px; border-radius:8px; background:#fff5e8; color:#7c451b; font-size:.8rem; }
+.ue-auto-pricing p { font-size:.8rem; line-height:1.6; }
+.ue-auto-pricing input,.ue-auto-pricing select { width:100%; min-width:0; box-sizing:border-box; }
+.ue-auto-pricing label { min-width:0; }
+.ue-auto-breakdown { padding:14px; margin:14px 0; border:1px solid #dfe5e1; border-radius:10px; background:#f7f9f5; font-size:.85rem; }
+.ue-auto-breakdown dl { margin:0; }
+.ue-auto-breakdown dl>div { display:flex; justify-content:space-between; gap:16px; margin:8px 0; }
+.ue-auto-breakdown dt { font-weight:400; }
+.ue-auto-breakdown dd { margin:0; font-weight:600; white-space:nowrap; }
+.ue-auto-breakdown .ue-auto-total { padding-top:10px; border-top:1px solid #dfe5e1; color:var(--secondary,#4a5d3a); }
+.ue-auto-breakdown .ue-auto-total dt { font-weight:700; }
+.ue-auto-rate-table { margin-top:18px; }
+.ue-auto-rate-table summary { cursor:pointer; color:var(--secondary,#4a5d3a); font-weight:600; }
+.ue-auto-rate-table table { min-width:440px; }
+@media(max-width:600px) { .ue-auto-breakdown dl>div { flex-wrap:wrap; gap:4px 12px; } }
+
+@media(max-width:600px) {
+ html[data-page=dispatcher] #manualQuoteModal { padding:8px; }
+ html[data-page=dispatcher] #manualQuoteModal .modal-content { display:flex; flex-direction:column; max-height:calc(100vh - 16px); max-height:calc(100dvh - 16px); overflow:hidden; border-radius:14px; }
+ html[data-page=dispatcher] #manualQuoteModal .modal-header,html[data-page=dispatcher] #manualQuoteModal .modal-footer { flex-shrink:0; padding:12px; }
+ html[data-page=dispatcher] #manualQuoteModal .modal-title { font-size:1rem; }
+ html[data-page=dispatcher] #manualQuoteModal .modal-body { min-height:0; overflow-y:auto; padding:16px; }
+ html[data-page=dispatcher] #manualQuoteModal .form-column { min-width:0; max-height:none; overflow:visible; padding-right:0; }
+ html[data-page=dispatcher] #manualQuoteModal .two-column-layout,html[data-page=dispatcher] #manualQuoteModal .form-grid { grid-template-columns:minmax(0,1fr); }
+ html[data-page=dispatcher] #manualQuoteModal .modal-footer .btn { padding:10px 12px; font-size:.8rem; }
+}

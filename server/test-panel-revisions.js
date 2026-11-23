@@ -27,6 +27,15 @@ module.exports = async function testPanelRevisions({ connection, base, sessions,
     assert.equal((await request('manager','POST','/users/create-customer',{requestId:inquiry.id})).status,409);
 
     for (const role of ['anonymous','customer','supervisor']) assert.equal((await request(role,'GET','/route-rates')).status,role==='anonymous'?401:403);
+    const pricing = await (await request('dispatcher','GET','/route-rates')).json();
+    assert.equal(pricing.provisional.length,5);
+    for (const role of ['anonymous','customer','supervisor']) assert.equal((await request(role,'POST','/route-estimates',{rate_id:'sample-l300',distance_km:100,extras:250})).status,role==='anonymous'?401:403);
+    const [[beforeEstimate]] = await connection.query('SELECT COUNT(*) AS requests,COALESCE(SUM(paid_amount),0) AS paid FROM service_requests');
+    const automatic = await request('dispatcher','POST','/route-estimates',{rate_id:'sample-l300',distance_km:100,extras:250});
+    assert.equal(automatic.status,200); const auto = await automatic.json();
+    assert.equal(auto.total,7650); assert.equal(auto.provisional,true); assert.equal(auto.included_km,40); assert.equal(auto.per_km,40);
+    const [[afterEstimate]] = await connection.query('SELECT COUNT(*) AS requests,COALESCE(SUM(paid_amount),0) AS paid FROM service_requests');
+    assert.deepEqual(afterEstimate,beforeEstimate,'Calculating must not create a booking or record a payment');
     const tariff = {label:'Company test route · truck',base_fare:1000,included_km:10,per_km:30,max_km:1000,notes:'Test-only approved tariff',active:true};
     assert.equal((await request('dispatcher','POST','/route-rates',tariff)).status,403);
     const rateResponse = await request('manager','POST','/route-rates',tariff); assert.equal(rateResponse.status,201);
