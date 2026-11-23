@@ -20,7 +20,6 @@
         </a>
         <ul class="nav-links">
             <li><a href="#home">Home</a></li>
-            <li><a href="#fleet">Trucks</a></li>
             <li><a href="#services">Services</a></li>
             <li><a href="#about">About</a></li>
             <li><a href="#routes">Routes</a></li>
@@ -35,7 +34,6 @@
     <!-- Mobile Menu -->
     <div class="mobile-menu" id="mobileMenu">
         <a href="#home"><i class="bi bi-house-door"></i> Home</a>
-        <a href="#fleet"><i class="bi bi-truck"></i> Trucks</a>
         <a href="#services"><i class="bi bi-grid"></i> Services</a>
         <a href="#about"><i class="bi bi-info-circle"></i> About</a>
         <a href="#routes"><i class="bi bi-map"></i> Routes</a>
@@ -78,51 +76,6 @@
         </div>
     </section>
 
-    <section class="services ue-fleet-section" id="fleet">
-        <div class="section-header fade-up">
-            <span class="section-tag">Our Fleet</span>
-            <h2>Flexible Vehicles!</h2>
-            <p>From urgent city deliveries to large inter-provincial hauls, we have the right truck for the job.</p>
-        </div>
-        <section class="fleet-section">
-            <div class="blade ue-fleet-light">
-                <div class="blade-content">
-                    <h3>Light Duty Van</h3>
-                    <p>Ideal for urban, last-mile deliveries and tight city routes.</p>
-                    <span class="blade-price">Initial Amount: ₱5,000</span>
-                </div>
-            </div>
-            <div class="blade ue-fleet-medium">
-                <div class="blade-content">
-                    <h3>Medium Box Truck</h3>
-                    <p>Reliable for local distribution, retail replenishment, and moving goods.</p>
-                    <span class="blade-price">Initial Amount: ₱12,000</span>
-                </div>
-            </div>
-            <div class="blade ue-fleet-ten-wheeler">
-                <div class="blade-content">
-                    <h3>Heavy Cargo Truck</h3>
-                    <p>Built for bulk freight, cross-country hauling, and heavy cargo loads.</p>
-                    <span class="blade-price">Initial Amount: ₱20,000</span>
-                </div>
-            </div>
-            <div class="blade ue-fleet-reefer">
-                <div class="blade-content">
-                    <h3>Refrigerated Truck</h3>
-                    <p>Perfect for cold-chain logistics, perishables, and pharmaceuticals.</p>
-                    <span class="blade-price">Initial Amount: ₱18,000</span>
-                </div>
-            </div>
-            <div class="blade ue-fleet-wing-van">
-                <div class="blade-content">
-                    <h3>Wing Van / Trailer</h3>
-                    <p>Suited for large warehouse transfers and container hauling operations.</p>
-                    <span class="blade-price">Initial Amount: ₱30,000</span>
-                </div>
-            </div>
-        </section>
-    </section>
-
     <!-- Services -->
     <section class="services" id="services">
         <div class="section-header fade-up">
@@ -135,17 +88,6 @@
                 <div class="service-icon"><i class="bi bi-truck"></i></div>
                 <h3>Trucking Services</h3>
                 <p>Reliable land transport with truck types for different cargo needs.</p>
-                <h4 class="truck-types-heading">Our truck types</h4>
-                <ul class="service-truck-types" aria-label="Truck types offered">
-                    <li>4-Wheeler L300</li>
-                    <li>6-Wheeler Closed Van</li>
-                    <li>10-Wheeler Wing Van</li>
-                    <li>Flatbed Truck</li>
-                    <li>Open Truck</li>
-                    <li>Partner Box Truck</li>
-                    <li>Refrigerated Truck</li>
-                </ul>
-                <p class="truck-types-note">Dispatch will confirm availability for your requested date.</p>
                 <a href="#faq" class="service-link">View FAQs <i class="bi bi-arrow-right"></i></a>
             </div>
             <div class="service-card fade-up">
@@ -178,6 +120,50 @@
                 <p>Inter-island and long distance trucking services with Ro-Ro and inter-provincial routes.</p>
                 <a href="#faq" class="service-link">View FAQs <i class="bi bi-arrow-right"></i></a>
             </div>
+        </div>
+        <div class="service-vehicles" aria-labelledby="serviceVehiclesHeading">
+            <div class="service-vehicles-heading fade-up">
+                <h3 id="serviceVehiclesHeading">The Right Vehicle for Your Cargo</h3>
+                <p>From city deliveries to long-distance hauls, choose a vehicle to suit your shipment.</p>
+            </div>
+            <div class="service-vehicles-grid">
+                <div class="service-vehicle ue-fleet-light">
+                    <div class="service-vehicle-content">
+                        <h4>Light Duty Van</h4>
+                        <p>Ideal for urban, last-mile deliveries and tight city routes.</p>
+                        <span class="service-vehicle-price">Initial Amount: ₱5,000</span>
+                    </div>
+                </div>
+                <div class="service-vehicle ue-fleet-medium">
+                    <div class="service-vehicle-content">
+                        <h4>Medium Box Truck</h4>
+                        <p>Reliable for local distribution, retail replenishment, and moving goods.</p>
+                        <span class="service-vehicle-price">Initial Amount: ₱12,000</span>
+                    </div>
+                </div>
+                <div class="service-vehicle ue-fleet-ten-wheeler">
+                    <div class="service-vehicle-content">
+                        <h4>Heavy Cargo Truck</h4>
+                        <p>Built for bulk freight, cross-country hauling, and heavy cargo loads.</p>
+                        <span class="service-vehicle-price">Initial Amount: ₱20,000</span>
+                    </div>
+                </div>
+                <div class="service-vehicle ue-fleet-reefer">
+                    <div class="service-vehicle-content">
+                        <h4>Refrigerated Truck</h4>
+                        <p>Perfect for cold-chain logistics, perishables, and pharmaceuticals.</p>
+                        <span class="service-vehicle-price">Initial Amount: ₱18,000</span>
+                    </div>
+                </div>
+                <div class="service-vehicle ue-fleet-wing-van">
+                    <div class="service-vehicle-content">
+                        <h4>Wing Van / Trailer</h4>
+                        <p>Suited for large warehouse transfers and container hauling operations.</p>
+                        <span class="service-vehicle-price">Initial Amount: ₱30,000</span>
+                    </div>
+                </div>
+            </div>
+            <p class="service-vehicles-note">Dispatch will confirm vehicle availability for your requested date.</p>
         </div>
     </section>
 
