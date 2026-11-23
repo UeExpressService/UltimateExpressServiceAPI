@@ -210,11 +210,11 @@
     :where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .container {
         max-width: 100%;
     }
-    
+
     :where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-header {
         padding: 20px;
     }
-    
+
     :where(html:is([data-page="login"], [data-page="forgot-password"], [data-page="reset-password"])) .form-content {
         padding: 20px;
     }
@@ -938,9 +938,9 @@
         :where(html[data-page="customer"]) .modal-title i { color: var(--primary); }
 
         /* ── Quotation Form inside Modal ── */
-        :where(html[data-page="customer"]) .form-section-label { 
-            font-size: 0.8rem; font-weight: 800; color: var(--primary); 
-            text-transform: uppercase; letter-spacing: 1px; 
+        :where(html[data-page="customer"]) .form-section-label {
+            font-size: 0.8rem; font-weight: 800; color: var(--primary);
+            text-transform: uppercase; letter-spacing: 1px;
             margin: 1.5rem 0 1rem; display: flex; align-items: center; gap: 8px;
         }
         :where(html[data-page="customer"]) .form-section-label::after { content: ""; flex: 1; height: 1px; background: var(--light-gray); }
@@ -1912,7 +1912,7 @@
         :where(html[data-page="manager"]) .kpi-mini-value { font-size: 1rem; font-weight: 700; color: var(--primary); }
 
         :where(html[data-page="manager"]) .receipt-modal-content { max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
-        :where(html[data-page="manager"]) .receipt-modal-content .modal-header,:where(html[data-page="manager"]) 
+        :where(html[data-page="manager"]) .receipt-modal-content .modal-header,:where(html[data-page="manager"])
         .receipt-modal-content .modal-footer { flex: 0 0 auto; }
         :where(html[data-page="manager"]) .receipt-modal-content .modal-body { min-height: 0; overflow-y: auto; }
         :where(html[data-page="manager"]) .receipt-sheet { max-width: 720px; margin: 0 auto; color: var(--dark); }
@@ -1943,11 +1943,11 @@
         :where(html[data-page="manager"]) .payment-help { color: var(--gray); font-size: .75rem; }
         @media print {
             :where(html[data-page="manager"]) body.printing-receipt * { visibility: hidden !important; }
-            :where(html[data-page="manager"]) body.printing-receipt #receiptModal,:where(html[data-page="manager"]) 
+            :where(html[data-page="manager"]) body.printing-receipt #receiptModal,:where(html[data-page="manager"])
             body.printing-receipt #receiptModal * { visibility: visible !important; }
             :where(html[data-page="manager"]) body.printing-receipt #receiptModal { position: absolute !important; inset: 0 !important; display: block !important; padding: 0 !important; background: white !important; }
             :where(html[data-page="manager"]) body.printing-receipt #receiptModal .modal-content { width: 100% !important; max-width: none !important; max-height: none !important; overflow: visible !important; box-shadow: none !important; border-radius: 0 !important; }
-            :where(html[data-page="manager"]) body.printing-receipt #receiptModal .modal-header,:where(html[data-page="manager"]) 
+            :where(html[data-page="manager"]) body.printing-receipt #receiptModal .modal-header,:where(html[data-page="manager"])
             body.printing-receipt #receiptModal .modal-footer { display: none !important; }
             :where(html[data-page="manager"]) body.printing-receipt #receiptModal .modal-body { padding: 0 !important; }
             :where(html[data-page="manager"]) body.printing-receipt .receipt-sheet { max-width: none; }
@@ -2208,7 +2208,7 @@
             flex-wrap: wrap;
             margin-bottom: 1rem;
         }
-        :where(html[data-page="supervisor"]) .resource-filters input,:where(html[data-page="supervisor"]) 
+        :where(html[data-page="supervisor"]) .resource-filters input,:where(html[data-page="supervisor"])
         .resource-filters select {
             min-height: 46px;
             padding: 0.7rem 0.9rem;
@@ -2229,7 +2229,7 @@
             min-width: 180px;
             cursor: pointer;
         }
-        :where(html[data-page="supervisor"]) .resource-filters input:focus,:where(html[data-page="supervisor"]) 
+        :where(html[data-page="supervisor"]) .resource-filters input:focus,:where(html[data-page="supervisor"])
         .resource-filters select:focus {
             outline: none;
             border-color: var(--primary);
@@ -2244,7 +2244,7 @@
             min-width: 96px;
             height: 100%;
         }
-        :where(html[data-page="supervisor"]) .resource-table th:last-child,:where(html[data-page="supervisor"]) 
+        :where(html[data-page="supervisor"]) .resource-table th:last-child,:where(html[data-page="supervisor"])
         .resource-table td:last-child {
             width: 120px;
             text-align: center;
@@ -2425,7 +2425,7 @@
             text-decoration: underline;
             text-underline-offset: 3px;
         }
-        :where(html[data-page="login"]) .password-help a:hover,:where(html[data-page="login"]) 
+        :where(html[data-page="login"]) .password-help a:hover,:where(html[data-page="login"])
         .password-help a:focus-visible {
             color: #ffc078;
         }
@@ -2475,6 +2475,7 @@ html[data-page] .ue-auth-error { display: none; margin-bottom: 15px; color: #e74
 html[data-page] .ue-auth-message { margin-bottom: 16px; color: #555; }
 html[data-page] .ue-auth-back { margin-top: 10px; background: #6c757d; }
 html[data-page] .ue-auth-password-title { font-size: 1.1rem; color: #e07b39; margin-bottom: 8px; }
+html[data-page] .ue-fleet-section { padding: 20px 0 80px; background: linear-gradient(135deg, #fff8f2 0%, #f3f7ee 100%); }
 html[data-page] .ue-contact-submit { width: 100%; display: flex; justify-content: center; align-items: center; gap: .5rem; }
 html[data-page] .ue-checkbox-row { display: flex; align-items: center; gap: .6rem; }
 html[data-page] .ue-checkbox-label { margin: 0; }
