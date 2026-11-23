@@ -2728,3 +2728,13 @@ html[data-page=manager] #partnerModal textarea { width:100%; padding:.75rem; bor
  body.ue-document-printing .ue-document-landscape .ue-document-sheet table { font-size:12px; }
  body.ue-document-printing .ue-document-landscape .ue-document-sheet th,body.ue-document-printing .ue-document-landscape .ue-document-sheet td { padding:5px; }
 }
+
+/* Saved amounts in Manager Records */
+.ue-amounts-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.ue-amounts-item { min-width:0; padding:20px; border:1px solid var(--border,#e9ecef); border-radius:12px; background:var(--bg-light,#f8f9fa); }
+.ue-amounts-item h2 { margin:0 0 10px; font-size:14px; font-weight:600; color:var(--secondary,#4a5d3a); }
+.ue-amounts-item strong { display:block; font-size:clamp(22px,2.2vw,30px); line-height:1.3; color:var(--secondary,#4a5d3a); overflow-wrap:anywhere; }
+.ue-amounts-item p { margin:12px 0 0; font-size:13px; line-height:1.6; color:var(--text-light,#6c757d); overflow-wrap:anywhere; }
+.ue-amounts-note { margin:0 0 18px; line-height:1.6; font-size:13px; color:var(--text-light,#6c757d); }
+.ue-amounts-footnote { margin:18px 0 0; }
+@media(max-width:600px) { .ue-amounts-grid { grid-template-columns:minmax(0,1fr); } .ue-amounts-item { padding:16px; } }

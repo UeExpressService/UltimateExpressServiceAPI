@@ -107,8 +107,16 @@
 
         <!-- Records reports -->
         <div id="panel-revenue" class="panel ue-initially-hidden">
-            <div class="page-header"><div><h1>Records <span class="ue-text-primary">Overview</span></h1><p>Customer activity and service volume from the database</p></div><div class="filter-bar"><select id="revYearSelect" class="filter-select" onchange="loadManagerReport()"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select><button class="btn-outline-sm" onclick="printManagerReport()"><i class="bi bi-printer"></i> Print Report</button><button class="btn-outline-sm" onclick="downloadManagerReport()"><i class="bi bi-download"></i> Download Report</button></div></div>
+            <div class="page-header"><div><h1>Records <span class="ue-text-primary">Overview</span></h1><p>Customer activity and service volume from the database</p></div><div class="filter-bar"><select id="revYearSelect" aria-label="Reporting year" class="filter-select" onchange="loadManagerReport()"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select><button class="btn-outline-sm" onclick="printManagerReport()"><i class="bi bi-printer"></i> Print Report</button><button class="btn-outline-sm" onclick="downloadManagerReport()"><i class="bi bi-download"></i> Download Report</button></div></div>
             <div class="stats-grid" id="revenueStatsGrid"></div>
+            <section class="card full-width ue-mb-card" aria-labelledby="calculatedAmountsTitle">
+                <div class="card-header"><div class="card-title" id="calculatedAmountsTitle"><i class="bi bi-calculator"></i> Calculated Amounts</div></div>
+                <div class="card-body">
+                    <p class="ue-amounts-note" id="calculatedAmountsPeriod"></p>
+                    <div class="ue-amounts-grid" id="calculatedAmountsGrid" aria-live="polite">Loading calculated amounts…</div>
+                    <p class="ue-amounts-note ue-amounts-footnote">Confirmed quotes include approved, ongoing, and completed bookings with a saved positive quote. Unpaid quotes have no recorded payment; they are not received revenue. Quotes and payments can belong to different reporting years.</p>
+                </div>
+            </section>
             <div class="card full-width ue-mb-card"><div class="card-body">Open <strong>Transactions</strong> to confirm the amount saved by the dispatcher. Confirmed payments appear in Records. Total Services in the contribution summary counts approved and completed bookings.</div></div>
             <div class="dashboard-grid">
                 <div class="card full-width"><div class="card-header"><div class="card-title"><i class="bi bi-people"></i> Top Customers: Total Services &amp; Average Payment</div></div><div class="card-body"><div class="chart-container ue-chart-tall"><canvas id="revenueChart"></canvas></div></div></div>
@@ -158,6 +166,7 @@
         const monthlyRequests = {2024:Array(12).fill(0),2025:Array(12).fill(0),2026:Array(12).fill(0)};
         const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         let txFilter = 'all', accPage = 1, txPage = 1, dashChart, revenueChart, quarterChart, reportData;
+        let reportRequest = 0;
         const PER = 5;
 
         async function loadManagerData() {
@@ -732,15 +741,23 @@
         }
         async function loadManagerReport(){
             const year = document.getElementById('revYearSelect').value;
+            const requestId = ++reportRequest;
+            reportData = null;
+            document.getElementById('calculatedAmountsGrid').textContent = 'Loading calculated amounts…';
+            document.getElementById('calculatedAmountsPeriod').textContent = `Reporting year ${year}`;
             try {
                 const response = await fetch(`${API_URL}/manager/report?year=${year}`, { headers: managerAuthHeaders() });
                 if (!response.ok) throw new Error('Report request failed');
-                reportData = await response.json();
+                const data = await response.json();
+                if (requestId !== reportRequest) return false;
+                reportData = data;
                 monthlyRequests[year] = reportData.monthlyTransactions;
                 if (dashChart) updateDashChart();
                 updateRevenueAnalytics();
                 return true;
             } catch (error) {
+                if (requestId !== reportRequest) return false;
+                document.getElementById('calculatedAmountsGrid').textContent = 'Unable to load amounts. Select the year again to retry.';
                 console.error('Manager report error:', error);
                 toast('Unable to load live analytics from the database.', 'error');
                 return false;
@@ -767,6 +784,10 @@
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             })}`;
+
+            document.getElementById('calculatedAmountsPeriod').textContent = `Reporting year ${reportData.year}. Quotes use the pickup date, or creation date if no pickup date is saved. Payments use the date the payment was recorded.`;
+            document.getElementById('calculatedAmountsGrid').innerHTML = calculatedAmountRows(formatPeso).map(row => `
+                <article class="ue-amounts-item"><h2>${escapeHtml(row[0])}</h2><strong>${escapeHtml(row[1])}</strong><p>${escapeHtml(row[2])}</p></article>`).join('');
 
             document.getElementById('revenueStatsGrid').innerHTML = `
                 <div class="stat-card"><div class="stat-icon primary"><i class="bi bi-cash-stack"></i></div><div class="stat-details"><h3>${formatPeso(summary.paid_revenue)}</h3><p>Recorded Payments in ${reportData.year}</p></div></div>
@@ -897,6 +918,18 @@
             }).join('');
         }
 
+        function calculatedAmountRows(cash) {
+            const amounts = reportData?.calculatedAmounts;
+            if (!amounts) return [['Calculated amounts', 'Unavailable', 'Reload the report to retrieve saved amounts.']];
+            return [
+                ['Total confirmed quotes', cash(amounts.confirmed_quotes), `Sum of saved quotes · Confirmed bookings: ${amounts.confirmed_quote_count}`],
+                ['Recorded payments', cash(amounts.recorded_payments), `Sum of recorded payment amounts · Paid bookings: ${amounts.paid_bookings}`],
+                ['Unpaid confirmed quotes', cash(amounts.unpaid_quotes), `Sum of confirmed quotes without a recorded payment · Bookings: ${amounts.unpaid_quote_count}`],
+                ['Average payment per paid booking', amounts.average_paid_amount === null ? '—' : cash(amounts.average_paid_amount),
+                    amounts.paid_bookings ? `${cash(amounts.recorded_payments)} ÷ ${amounts.paid_bookings} paid booking${amounts.paid_bookings === 1 ? '' : 's'} = ${cash(amounts.average_paid_amount)}` : 'Recorded payments ÷ paid bookings · No payments recorded']
+            ];
+        }
+
         function printManagerReport() {
             if (!reportData) return toast('Analytics are still loading.', 'error');
             const cash = UEDocuments.money, summary = reportData.summary;
@@ -905,13 +938,14 @@
                     ['Service requests', summary.total_transactions], ['Completed', summary.completed],
                     ['Ongoing', summary.ongoing], ['Pending', summary.pending]],
                 sections: [
+                    { title: 'Calculated Amounts', columns: ['Metric', 'Amount', 'Formula'], rows: calculatedAmountRows(cash) },
                     { title: 'Monthly Operations', columns: ['Month', 'Recorded payments', 'Paid bookings', 'Requests', 'Completed'],
                         rows: MONTHS.map((month,i) => [month,cash(reportData.monthlyPaidRevenue[i]),reportData.monthlyPaidOrders[i],reportData.monthlyTransactions[i],reportData.monthlyCompleted[i]]) },
                     { title: 'Quarterly Operations', columns: ['Quarter', 'Transactions', 'Recorded payments', 'Average daily payment'],
                         rows: (reportData.quarterlySummary || []).map(row => [`Q${row.quarter}`,row.total_transactions,cash(row.paid_revenue),cash(row.average_daily_revenue)]) },
                     { title: 'Customer Payments', columns: ['Customer', 'Paid bookings', 'Total paid'],
                         rows: reportData.customerPayments.map(row => [row.customer_name,row.paid_orders,cash(row.total_paid)]) }
-                ], note: 'Payment records include payments recorded by the Manager. Unpaid quotes are excluded. This report covers the selected reporting year.' });
+                ], note: 'Quotes use the pickup year, or creation year if no pickup date is saved. Payments use the year they were recorded by the Manager. Unpaid quotes are not received revenue and are not calculated by subtracting payments from quotes.' });
         }
 
         function downloadManagerReport(){
@@ -934,6 +968,10 @@
                 ['Month', 'Recorded payments', 'Paid bookings']
             ];
             reportData.monthlyPaidRevenue.forEach((amount, index) => rows.push([MONTHS[index], amount, reportData.monthlyPaidOrders[index]]));
+            rows.push([], ['Calculated Amounts'], ['Metric', 'Amount (PHP)', 'Formula']);
+            rows.push(...calculatedAmountRows(amount => String(amount)));
+            rows.push(['Date basis', 'Quotes: pickup year, or creation year when no pickup date; payments: recorded payment year.']);
+            rows.push(['Unpaid quotes', 'Confirmed quotes without a recorded payment; not received revenue.']);
             rows.push([], ['Month', 'Service requests', 'Completed requests']);
             reportData.monthlyTransactions.forEach((count, index) => rows.push([MONTHS[index], count, reportData.monthlyCompleted[index]]));
             rows.push([], ['Service type', 'Requests']);

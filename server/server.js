@@ -1459,8 +1459,8 @@ require('./partners')(app, { dbp, requireManager, auditManagerAction: auditUserA
 
 // Build the manager's report from the database.
 app.get('/api/manager/report', requireManager, async (req, res) => {
-    const requestedYear = Number(req.query.year) || new Date().getFullYear();
-    if (requestedYear < 2000 || requestedYear > 2100) {
+    const requestedYear = req.query.year === undefined ? new Date().getFullYear() : Number(req.query.year);
+    if (!Number.isInteger(requestedYear) || requestedYear < 2000 || requestedYear > 2100) {
         return res.status(400).json({ error: 'Year must be between 2000 and 2100' });
     }
 
@@ -1535,9 +1535,19 @@ app.get('/api/manager/report', requireManager, async (req, res) => {
             WHERE YEAR(COALESCE(pickup_date, created_at)) = ?
         `, [requestedYear]);
         const [paymentSummary] = await dbp.query(`
-            SELECT COALESCE(SUM(paid_amount), 0) AS paid_revenue, COUNT(*) AS paid_orders
+            SELECT COALESCE(SUM(paid_amount), 0) AS paid_revenue, COUNT(*) AS paid_orders,
+                   ROUND(SUM(paid_amount) / NULLIF(COUNT(*), 0), 2) AS average_paid_amount
             FROM service_requests
             WHERE paid_amount IS NOT NULL AND YEAR(paid_at) = ?
+        `, [requestedYear]);
+        const [quoteSummary] = await dbp.query(`
+            SELECT COALESCE(SUM(quoted_amount), 0) AS confirmed_quotes,
+                   COUNT(*) AS confirmed_quote_count,
+                   COALESCE(SUM(CASE WHEN paid_amount IS NULL THEN quoted_amount ELSE 0 END), 0) AS unpaid_quotes,
+                   COALESCE(SUM(paid_amount IS NULL), 0) AS unpaid_quote_count
+            FROM service_requests
+            WHERE status IN ('approved', 'ongoing', 'completed') AND quoted_amount > 0
+              AND YEAR(COALESCE(pickup_date, created_at)) = ?
         `, [requestedYear]);
         const [users] = await dbp.query('SELECT COUNT(*) AS total_users FROM users');
         const [partners] = await dbp.query('SELECT COUNT(*) AS total_partners FROM partners');
@@ -1584,6 +1594,16 @@ app.get('/api/manager/report', requireManager, async (req, res) => {
 
         res.json({
             year: requestedYear,
+            calculatedAmounts: {
+                confirmed_quotes: String(quoteSummary[0].confirmed_quotes),
+                confirmed_quote_count: Number(quoteSummary[0].confirmed_quote_count),
+                unpaid_quotes: String(quoteSummary[0].unpaid_quotes),
+                unpaid_quote_count: Number(quoteSummary[0].unpaid_quote_count),
+                recorded_payments: String(paymentSummary[0].paid_revenue),
+                paid_bookings: Number(paymentSummary[0].paid_orders),
+                average_paid_amount: paymentSummary[0].average_paid_amount === null
+                    ? null : String(paymentSummary[0].average_paid_amount)
+            },
             summary: {
                 ...summary[0],
                 total_transactions: Number(summary[0].total_transactions || 0),
