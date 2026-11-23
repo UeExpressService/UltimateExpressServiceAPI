@@ -55,18 +55,19 @@ module.exports = function registerTripMaintenance(app, { dbp, withTransaction, r
             distance_pickup_location:distance == null ? null : pickup, distance_delivery_location:distance == null ? null : delivery };
     }
     async function applyCompletion(connection, booking, actorId) {
-        if (!booking.assigned_truck_id) throw new HttpError(409,'Assign the delivery truck before completing this booking.');
+        const skipped = (reason, message) => ({ applied:false,reason,message:'Delivery completed. '+message });
+        if (!booking.assigned_truck_id) return skipped('no_truck','No truck is assigned, so no odometer update was made.');
         if (!(Number(booking.one_way_distance_km) > 0) || booking.distance_source !== 'road_map' ||
             booking.distance_pickup_location !== booking.pickup_location || booking.distance_delivery_location !== booking.delivery_location) {
-            throw new HttpError(409,'Load the road route in the booking and save its map distance before completing the delivery.');
+            return skipped('no_map_distance','No saved road-route distance is available, so no odometer update was made.');
         }
         const [[truck]] = await connection.query('SELECT id FROM trucks WHERE id=? FOR UPDATE',[booking.assigned_truck_id]);
         if (!truck) throw new HttpError(409,'The assigned truck no longer exists.');
         const [[record]] = await connection.query('SELECT * FROM truck_maintenance WHERE truck_id=? FOR UPDATE',[truck.id]);
-        if (record?.odometer == null) throw new HttpError(409,'Ask the Supervisor to record this truck’s starting odometer in Truck Maintenance before completing the delivery.');
+        if (record?.odometer == null) return skipped('no_starting_odometer','The starting odometer is not recorded, so no kilometers were added.');
         const before = Number(record.odometer), distance = roundTripKm(booking.one_way_distance_km);
         const after = Math.round((before + distance) * 10) / 10;
-        if (after > 100000000) throw new HttpError(409,'The resulting odometer is outside the allowed range. Ask the Supervisor to check the readings.');
+        if (after > 100000000) return skipped('odometer_range','The calculated odometer is outside the allowed range; no kilometers were added. Ask the Supervisor to check the reading.');
         await connection.query(`INSERT INTO completed_trip_mileage
             (service_request_id,truck_id,one_way_km,round_trip_km,odometer_before,odometer_after,recorded_by)
             VALUES (?,?,?,?,?,?,?)`,[booking.id,truck.id,booking.one_way_distance_km,distance,before,after,actorId]);
@@ -76,7 +77,7 @@ module.exports = function registerTripMaintenance(app, { dbp, withTransaction, r
             truck.id,JSON.stringify({...record,odometer:after,version,event_type:'completed_delivery_distance',
                 service_request_id:booking.id,one_way_km:Number(booking.one_way_distance_km),round_trip_km:distance,odometer_before:before}),actorId
         ]);
-        return { truck_id:truck.id, one_way_km:Number(booking.one_way_distance_km), round_trip_km:distance, odometer:after };
+        return { applied:true,truck_id:truck.id, one_way_km:Number(booking.one_way_distance_km), round_trip_km:distance, odometer:after };
     }
     const handle = action => async (req,res) => {
         res.setHeader('Cache-Control','no-store');
@@ -114,7 +115,7 @@ module.exports = function registerTripMaintenance(app, { dbp, withTransaction, r
             await withTransaction(async connection => {
                 const [[previous]]=await connection.query('SELECT * FROM truck_inspection_requests WHERE id=? FOR UPDATE',[id]);
                 if (!previous) throw new HttpError(404,'Maintenance check request not found.');
-                if (previous.status==='checked') throw new HttpError(409,'This inspection was already completed.');
+                if (previous.status==='checked' && status!=='checked') throw new HttpError(409,'A completed inspection stays checked. You can edit its findings.');
                 if (Number(previous.version)!==version) throw new HttpError(409,'Another Supervisor updated this request. Refresh before saving.');
                 await connection.query('UPDATE truck_inspection_requests SET status=?,findings=?,reviewed_by=?,version=version+1 WHERE id=?',[status,findings.trim(),req.auth.sub,id]);
             });

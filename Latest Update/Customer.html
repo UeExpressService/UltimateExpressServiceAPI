@@ -134,11 +134,11 @@
                 <!-- Pickup Details -->
                 <div class="form-section-label"><i class="bi bi-geo-alt"></i> Pickup Address</div>
                 <div class="form-grid">
-                    <div class="form-group"><label>Region</label><input type="text" id="quotePickupRegion" list="quotePickupRegionList" placeholder="Choose or type a region" required><datalist id="quotePickupRegionList"></datalist></div>
-                    <div class="form-group"><label>Province / District</label><input type="text" id="quotePickupProvince" list="quotePickupProvinceList" placeholder="e.g. Metro Manila" required><datalist id="quotePickupProvinceList"></datalist></div>
-                    <div class="form-group"><label>City/Municipality</label><input type="text" id="quotePickupCity" list="quotePickupCityList" placeholder="e.g. Makati" required><datalist id="quotePickupCityList"></datalist></div>
-                    <div class="form-group"><label>Barangay</label><input type="text" id="quotePickupBarangay" list="quotePickupBarangayList" placeholder="e.g. Bel-Air" required><datalist id="quotePickupBarangayList"></datalist></div>
-                    <div class="form-group"><label>Postal Code</label><input type="text" id="quotePickupPostal" placeholder="1209" readonly></div>
+                    <div class="form-group"><label>Region</label><input type="text" id="quotePickupRegion" autocomplete="off" list="quotePickupRegionList" placeholder="Choose or type a region" required><datalist id="quotePickupRegionList"></datalist></div>
+                    <div class="form-group"><label>Province / District</label><input type="text" id="quotePickupProvince" autocomplete="off" list="quotePickupProvinceList" placeholder="e.g. Metro Manila" required><datalist id="quotePickupProvinceList"></datalist></div>
+                    <div class="form-group"><label>City/Municipality</label><input type="text" id="quotePickupCity" autocomplete="off" list="quotePickupCityList" placeholder="e.g. Makati" required><datalist id="quotePickupCityList"></datalist></div>
+                    <div class="form-group"><label>Barangay</label><input type="text" id="quotePickupBarangay" autocomplete="off" list="quotePickupBarangayList" placeholder="e.g. Bel-Air" required><datalist id="quotePickupBarangayList"></datalist></div>
+                    <div class="form-group"><label>Postal Code</label><input type="text" id="quotePickupPostal" placeholder="e.g. 1209" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" title="Enter a four-digit Philippine postal code" autocomplete="off"></div>
                     <div class="form-group"><label>House/Bldg No.</label><input type="text" id="quotePickupHouse" placeholder="e.g. Unit 1201"></div>
                     <div class="form-group full"><label>Street Name</label><input type="text" id="quotePickupStreet" placeholder="e.g. Ayala Avenue"></div>
                 </div>
@@ -147,11 +147,11 @@
                 <div class="form-section-label"><i class="bi bi-truck"></i> Delivery Address</div>
                 <div class="form-group"><label><input type="checkbox" id="sameAsPickupAddress"> Use pickup address for delivery</label></div>
                 <div class="form-grid">
-                    <div class="form-group"><label>Region</label><input type="text" id="quoteDeliveryRegion" list="quoteDeliveryRegionList" placeholder="Choose or type a region" required><datalist id="quoteDeliveryRegionList"></datalist></div>
-                    <div class="form-group"><label>Province / District</label><input type="text" id="quoteDeliveryProvince" list="quoteDeliveryProvinceList" required><datalist id="quoteDeliveryProvinceList"></datalist></div>
-                    <div class="form-group"><label>City/Municipality</label><input type="text" id="quoteDeliveryCity" list="quoteDeliveryCityList" required><datalist id="quoteDeliveryCityList"></datalist></div>
-                    <div class="form-group"><label>Barangay</label><input type="text" id="quoteDeliveryBarangay" list="quoteDeliveryBarangayList" required><datalist id="quoteDeliveryBarangayList"></datalist></div>
-                    <div class="form-group"><label>Postal Code</label><input type="text" id="quoteDeliveryPostal" readonly></div>
+                    <div class="form-group"><label>Region</label><input type="text" id="quoteDeliveryRegion" autocomplete="off" list="quoteDeliveryRegionList" placeholder="Choose or type a region" required><datalist id="quoteDeliveryRegionList"></datalist></div>
+                    <div class="form-group"><label>Province / District</label><input type="text" id="quoteDeliveryProvince" autocomplete="off" list="quoteDeliveryProvinceList" required><datalist id="quoteDeliveryProvinceList"></datalist></div>
+                    <div class="form-group"><label>City/Municipality</label><input type="text" id="quoteDeliveryCity" autocomplete="off" list="quoteDeliveryCityList" required><datalist id="quoteDeliveryCityList"></datalist></div>
+                    <div class="form-group"><label>Barangay</label><input type="text" id="quoteDeliveryBarangay" autocomplete="off" list="quoteDeliveryBarangayList" required><datalist id="quoteDeliveryBarangayList"></datalist></div>
+                    <div class="form-group"><label>Postal Code</label><input type="text" id="quoteDeliveryPostal" placeholder="e.g. 1209" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" title="Enter a four-digit Philippine postal code" autocomplete="off"></div>
                     <div class="form-group"><label>House/Bldg No.</label><input type="text" id="quoteDeliveryHouse"></div>
                     <div class="form-group full"><label>Street Name</label><input type="text" id="quoteDeliveryStreet"></div>
                 </div>
@@ -267,27 +267,35 @@
             if (list) list.innerHTML = values.map(value => `<option value="${escapeHtml(value)}"></option>`).join('');
         }
 
-        function updateAddressSuggestions(prefix, resetLevel = '') {
-            const region = document.getElementById(`${prefix}Region`).value.trim();
-            const province = document.getElementById(`${prefix}Province`).value.trim();
-            const city = document.getElementById(`${prefix}City`).value.trim();
+        function updateAddressSuggestions(prefix, resetLevel = '', preservePostal = false) {
+            const field = part => document.getElementById(`${prefix}${part}`);
+            const matchingKey = (object, value) => Object.keys(object).find(key => key.toLowerCase() === value.trim().toLowerCase());
+            if (resetLevel === 'region' || resetLevel === 'province') {
+                if (resetLevel === 'region') field('Province').value = '';
+                field('City').value = ''; field('Barangay').value = ''; field('Postal').value = '';
+            } else if (resetLevel === 'city') field('Barangay').value = '';
+            const region = matchingKey(ADDRESS_CATALOG, field('Region').value);
             const provinces = ADDRESS_CATALOG[region] || {};
-            if (resetLevel === 'region') {
-                document.getElementById(`${prefix}Province`).value = '';
-                document.getElementById(`${prefix}City`).value = '';
-                document.getElementById(`${prefix}Barangay`).value = '';
-            } else if (resetLevel === 'province') {
-                document.getElementById(`${prefix}City`).value = '';
-                document.getElementById(`${prefix}Barangay`).value = '';
+            let province = matchingKey(provinces, field('Province').value);
+            const cityValue = field('City').value.trim();
+            // A city can fill its province when the customer picks it from the region list.
+            if (!field('Province').value.trim() && cityValue) {
+                const matches = Object.keys(provinces).filter(name => matchingKey(provinces[name],cityValue));
+                if (matches.length === 1) { province = matches[0]; field('Province').value = province; }
             }
+            const cities = province ? provinces[province] : !field('Province').value.trim() ? Object.assign({},...Object.values(provinces)) : {};
+            const city = matchingKey(cities,cityValue), details = cities[city];
             setDatalistOptions(`${prefix}RegionList`, Object.keys(ADDRESS_CATALOG));
-            setDatalistOptions(`${prefix}ProvinceList`, Object.keys(provinces));
-            const cities = provinces[province] || {};
-            setDatalistOptions(`${prefix}CityList`, Object.keys(cities));
-            const cityDetails = cities[city];
-            setDatalistOptions(`${prefix}BarangayList`, cityDetails ? cityDetails.barangays : []);
-            if (cityDetails) document.getElementById(`${prefix}Postal`).value = cityDetails.postal;
-            else if (resetLevel || !city) document.getElementById(`${prefix}Postal`).value = '';
+            setDatalistOptions(`${prefix}ProvinceList`, Object.keys(provinces).sort());
+            setDatalistOptions(`${prefix}CityList`, Object.keys(cities).sort());
+            setDatalistOptions(`${prefix}BarangayList`, details?.barangays || []);
+            const knownCity = Object.values(ADDRESS_CATALOG).some(group => Object.values(group).some(list => matchingKey(list,cityValue)));
+            field('City').setCustomValidity(region && cityValue && knownCity && !city ? 'Choose a city in the selected region and province, or change the region/province.' : '');
+            const cityKey = `${region || ''}|${province || ''}|${cityValue.toLowerCase()}`;
+            if (field('Postal').dataset.cityKey !== cityKey) {
+                if (!preservePostal) field('Postal').value = details?.postal || '';
+                field('Postal').dataset.cityKey = cityKey;
+            }
         }
 
         function populateCustomerProfile() {
@@ -308,7 +316,7 @@
             ['Region', 'Province', 'City', 'Barangay', 'Postal', 'House', 'Street'].forEach(part => {
                 document.getElementById(`quoteDelivery${part}`).value = document.getElementById(`quotePickup${part}`).value;
             });
-            updateAddressSuggestions('quoteDelivery');
+            updateAddressSuggestions('quoteDelivery', '', true);
         }
 
         function showSuccess(message, targetId = 'quoteSuccess') {
@@ -509,12 +517,12 @@
                 document.getElementById('quotePickupRegion').addEventListener('input', () => updateAddressSuggestions('quotePickup', 'region'));
                 document.getElementById('quotePickupProvince').addEventListener('input', () => updateAddressSuggestions('quotePickup', 'province'));
                 document.getElementById('quotePickupCity').addEventListener('input', () => {
-                    updateAddressSuggestions('quotePickup');
+                    updateAddressSuggestions('quotePickup', 'city');
                     copyPickupToDelivery();
                 });
                 document.getElementById('quoteDeliveryRegion').addEventListener('input', () => updateAddressSuggestions('quoteDelivery', 'region'));
                 document.getElementById('quoteDeliveryProvince').addEventListener('input', () => updateAddressSuggestions('quoteDelivery', 'province'));
-                document.getElementById('quoteDeliveryCity').addEventListener('input', () => updateAddressSuggestions('quoteDelivery'));
+                document.getElementById('quoteDeliveryCity').addEventListener('input', () => updateAddressSuggestions('quoteDelivery', 'city'));
                 ['Region', 'Province', 'Barangay', 'Postal', 'House', 'Street'].forEach(part => {
                     document.getElementById(`quotePickup${part}`).addEventListener('input', copyPickupToDelivery);
                 });

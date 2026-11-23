@@ -19,6 +19,8 @@ module.exports=async function testTripMaintenance({connection,base,sessions,rece
     assert.equal((await call('supervisor','PUT','/maintenance-requests/'+inspection.id,{status:'checked',findings:'Stale result',version:0})).status,409);
     assert.equal((await call('supervisor','PUT','/maintenance-requests/'+inspection.id,{status:'checked',findings:'Inspection complete in test environment',version:1})).status,200);
     assert.equal((await call('supervisor','PUT','/maintenance-requests/'+inspection.id,{status:'in_progress',findings:'Reopen',version:2})).status,409);
+    assert.equal((await call('supervisor','PUT','/maintenance-requests/'+inspection.id,{status:'checked',findings:'Corrected completed inspection findings',version:2})).status,200);
+    assert.equal((await call('supervisor','PUT','/maintenance-requests/'+inspection.id,{status:'checked',findings:'Stale correction',version:2})).status,409);
     const [[fleet]]=await connection.query('SELECT status FROM trucks WHERE id=?',[truckId]);assert.equal(fleet.status,'available');
 
     const details={contact_person:'Local mileage customer',contact_email:'trip@example.invalid',contact_phone:'09170000003',pickup_location:'Manila test pickup',delivery_location:'Laguna test delivery',cargo_type:'Test cargo',quoted_amount:1000,one_way_distance_km:75};
@@ -29,16 +31,23 @@ module.exports=async function testTripMaintenance({connection,base,sessions,rece
     assert.equal((await call('customer','POST','/service-requests',{...details,customer_id:1,terms_accepted:true})).status,403,'Customers cannot supply fleet mileage');
     assert.equal((await call('manager','PUT','/service-requests/'+id,{status:'pending',one_way_distance_km:50})).status,403);
     for(const invalid of [-1,0,5001,'10'])assert.equal((await call('dispatcher','PUT','/service-requests/'+id,{status:'pending',one_way_distance_km:invalid})).status,400);
-    const missingBaseline=await call('dispatcher','PUT','/service-requests/'+id,{status:'completed',truck_id:truckId});assert.equal(missingBaseline.status,409);
-    assert.match((await missingBaseline.json()).error,/starting odometer/);
-    const [[untouched]]=await connection.query('SELECT status,assigned_truck_id FROM service_requests WHERE id=?',[id]);
-    assert.equal(untouched.status,'pending');assert.equal(untouched.assigned_truck_id,null,'Failed completion rolls back assignment and status');
+    const noBaselineId=await newBooking(75);
+    const missingBaseline=await call('dispatcher','PUT','/service-requests/'+noBaselineId,{status:'completed',truck_id:truckId});assert.equal(missingBaseline.status,200);
+    const skipped=await missingBaseline.json();assert.equal(skipped.mileage.applied,false);assert.equal(skipped.mileage.reason,'no_starting_odometer');
+    const [[completedWithoutMileage]]=await connection.query('SELECT status,assigned_truck_id FROM service_requests WHERE id=?',[noBaselineId]);
+    assert.equal(completedWithoutMileage.status,'completed');assert.equal(completedWithoutMileage.assigned_truck_id,truckId);
+    assert.equal((await connection.query('SELECT * FROM completed_trip_mileage WHERE service_request_id=?',[noBaselineId]))[0].length,0);
+    assert.equal((await call('dispatcher','PUT','/service-requests/'+noBaselineId,{status:'completed',contact_phone:'09170000009'})).status,200,'Completed booking details remain editable');
+    const noMapId=await newBooking(null);
+    const noMap=await call('dispatcher','PUT','/service-requests/'+noMapId,{status:'completed',truck_id:truckId});assert.equal(noMap.status,200);assert.equal((await noMap.json()).mileage.reason,'no_map_distance');
+    const noTruckId=await newBooking(null);
+    const noTruck=await call('dispatcher','PUT','/service-requests/'+noTruckId,{status:'completed'});assert.equal(noTruck.status,200);assert.equal((await noTruck.json()).mileage.reason,'no_truck');
     assert.equal((await call('supervisor','PUT','/trucks/'+truckId+'/maintenance',maintenance)).status,200);
     assert.equal((await call('dispatcher','PUT','/service-requests/'+id,{status:'approved',truck_id:truckId})).status,200);
     assert.equal(Number((await connection.query('SELECT odometer FROM truck_maintenance WHERE truck_id=?',[truckId]))[0][0].odometer),4900,'Approving adds no kilometers');
     assert.equal((await call('dispatcher','PUT','/service-requests/'+id,{status:'approved',delivery_location:'Different test destination'})).status,200);
     assert.equal((await connection.query('SELECT one_way_distance_km FROM service_requests WHERE id=?',[id]))[0][0].one_way_distance_km,null,'Address change invalidates old distance');
-    assert.equal((await call('dispatcher','PUT','/service-requests/'+id,{status:'completed'})).status,409);
+    assert.equal((await connection.query('SELECT * FROM completed_trip_mileage WHERE service_request_id=?',[id]))[0].length,0,'Changing an address must not add mileage');
     assert.equal((await call('dispatcher','PUT','/service-requests/'+id,{status:'ongoing',delivery_location:details.delivery_location,one_way_distance_km:75})).status,200);
     const attempts=await Promise.all([1,2,3].map(()=>call('dispatcher','PUT','/service-requests/'+id,{status:'completed'})));
     assert.ok(attempts.every(r=>r.status===200),'Repeated concurrent completion is idempotent');
@@ -53,6 +62,12 @@ module.exports=async function testTripMaintenance({connection,base,sessions,rece
     const history=await (await call('supervisor','GET','/trucks/'+truckId+'/maintenance-history')).json();
     assert.ok(history.some(row=>{const data=typeof row.snapshot==='string'?JSON.parse(row.snapshot):row.snapshot;return data.event_type==='completed_delivery_distance'&&data.service_request_id===id&&data.round_trip_km===150;}));
     assert.equal((await call('dispatcher','PUT','/service-requests/'+id,{status:'ongoing'})).status,409,'Completed mileage cannot be reopened and counted twice');
+    assert.equal((await call('dispatcher','PUT','/service-requests/'+id,{status:'completed',contact_phone:'09170000008',one_way_distance_km:100})).status,200);
+    assert.equal(Number((await connection.query('SELECT odometer FROM truck_maintenance WHERE truck_id=?',[truckId]))[0][0].odometer),5050,'Editing a completed record cannot recount or rewrite mileage');
+    assert.equal(Number((await connection.query('SELECT round_trip_km FROM completed_trip_mileage WHERE service_request_id=?',[id]))[0][0].round_trip_km),150);
+    assert.equal((await call('dispatcher','PUT','/service-requests/'+noBaselineId,{status:'completed',cargo_type:'Corrected cargo'})).status,200);
+    assert.equal((await connection.query('SELECT * FROM completed_trip_mileage WHERE service_request_id=?',[noBaselineId]))[0].length,0,'Recording the baseline later does not backfill completed trips');
+
     const second=await newBooking(10);
     assert.equal((await call('dispatcher','PUT','/service-requests/'+second,{status:'approved',truck_id:truckId})).status,200);
     assert.equal((await call('dispatcher','PUT','/service-requests/'+second,{status:'completed'})).status,200);
@@ -67,6 +82,6 @@ module.exports=async function testTripMaintenance({connection,base,sessions,rece
     assert.equal((await call('supervisor','PUT','/trucks/'+uiTripTruckId+'/maintenance',{...maintenance,odometer:990,oil_interval_km:1000})).status,200);
     const uiBookingId=await newBooking(null);
     assert.equal((await call('dispatcher','PUT','/service-requests/'+uiBookingId,{status:'approved',truck_id:uiTripTruckId})).status,200);
-    console.log('Trip mileage and inspection integration passed: permissions, duplicate checks, Supervisor findings, map invalidation, starting baseline, atomic completion, concurrent retries, reminder threshold, history, stale forms, cancellation and no historical backfill.');
+    console.log('Trip mileage and inspection integration passed: permissions, duplicate checks, Supervisor findings, map invalidation, optional baseline and route, completed-record editing, atomic completion, concurrent retries, reminder threshold, history, stale forms, cancellation and no historical backfill.');
     return {uiTripTruckId,uiBookingId};
 };

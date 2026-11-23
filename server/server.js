@@ -1169,9 +1169,8 @@ app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), audi
             const previous = requests[0];
             if (previous.status === 'cancelled') throw new HttpError(409, 'This booking was cancelled.');
             if (previous.status === 'completed') {
-                if (body.status !== 'completed' || Object.keys(body).some(key=>key!=='status')) throw new HttpError(409,'Completed bookings cannot be changed or reopened here.');
-                res.locals.skipAudit=true;
-                return;
+                if (body.status !== 'completed') throw new HttpError(409,'Completed bookings stay completed. You can edit their details.');
+                if (Object.keys(body).every(key=>key==='status')) { res.locals.skipAudit=true; return; }
             }
 
             // Keep fields the form left out.
@@ -1202,12 +1201,12 @@ app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), audi
             if (assignedDriverId && (driverChanged || (isActive && !wasActive))) {
                 const [drivers] = await connection.query('SELECT status FROM drivers WHERE id = ? FOR UPDATE', [assignedDriverId]);
                 if (drivers.length === 0) throw new HttpError(400, 'The selected driver no longer exists.');
-                if (drivers[0].status !== 'available') throw new HttpError(409, 'The selected driver is not available.');
+                if (previous.status !== 'completed' && drivers[0].status !== 'available') throw new HttpError(409, 'The selected driver is not available.');
             }
             if (assignedTruckId && (truckChanged || (isActive && !wasActive))) {
                 const [trucks] = await connection.query('SELECT status FROM trucks WHERE id = ? FOR UPDATE', [assignedTruckId]);
                 if (trucks.length === 0) throw new HttpError(400, 'The selected truck no longer exists.');
-                if (trucks[0].status !== 'available') throw new HttpError(409, 'The selected truck is not available.');
+                if (previous.status !== 'completed' && trucks[0].status !== 'available') throw new HttpError(409, 'The selected truck is not available.');
             }
 
             await connection.query(
@@ -1226,9 +1225,9 @@ app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), audi
                 ]
             );
 
-            if (body.status==='completed') {
+            if (body.status==='completed' && previous.status!=='completed') {
                 mileage=await tripMaintenance.applyCompletion(connection,{...previous,...distance,assigned_truck_id:assignedTruckId,pickup_location:pickupLocation,delivery_location:deliveryLocation},req.auth.sub);
-                res.locals.auditSummary=`Completed booking and added ${mileage.round_trip_km} mapped round-trip km to truck ${mileage.truck_id}.`;
+                res.locals.auditSummary=mileage.applied ? `Completed booking and added ${mileage.round_trip_km} mapped round-trip km to truck ${mileage.truck_id}.` : mileage.message;
             }
 
             if (wasActive) {
@@ -1244,7 +1243,7 @@ app.put('/api/service-requests/:id', requireRoles('manager', 'dispatcher'), audi
                 await connection.query("UPDATE trucks SET status = 'busy' WHERE id = ?", [assignedTruckId]);
             }
         });
-        res.json({ message: mileage ? `Delivery completed. ${mileage.round_trip_km.toFixed(1)} round-trip km added once to the assigned truck.` : 'Request updated', mileage });
+        res.json({ message: mileage ? mileage.applied ? `Delivery completed. ${mileage.round_trip_km.toFixed(1)} round-trip km added once to the assigned truck.` : mileage.message : 'Request updated', mileage });
     } catch (error) {
         sendError(res, error, 'Unable to update service request');
     }
