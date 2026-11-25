@@ -1,7 +1,6 @@
 (() => {
     let dialog, objectUrl, controller, previousFocus, keyHandler;
-    const titles = { payments: 'Management Report', bookings: 'Booking and Delivery Report', fleet: 'Fleet and Driver Activity Report',
-        drivers: 'Drivers in Trips', newdrivers: 'New Drivers', newtrucks: 'New Trucks', customertrucks: 'Trucks Assigned to Customer Trips' };
+    const titles = { payments: 'Management Report', bookings: 'Booking and Delivery Report', fleet: 'Fleet and Driver Activity Report' };
 
     function clearOutput() {
         if (objectUrl) URL.revokeObjectURL(objectUrl);

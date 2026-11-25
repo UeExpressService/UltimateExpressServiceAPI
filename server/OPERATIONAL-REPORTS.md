@@ -18,7 +18,8 @@ No email is sent.
   monthly breakdown and detailed routes and assignments.
 - Fleet and Driver Activity Report: Manager and Supervisor. Confirmed trip counts,
   drivers in trips, new drivers, new trucks, and trucks assigned to customer trips.
-  Each of those four lists is also available as a separate PDF in the report selector.
+  The four lists are sections of this combined report. The selector keeps the
+  three main reports separate and does not offer duplicate list entries.
 
 `GET /api/reports/{type}.pdf?from=YYYY-MM-DD&to=YYYY-MM-DD`
 accepts `payments`, `bookings`, `fleet`, `drivers`, `newdrivers`, `newtrucks`,
