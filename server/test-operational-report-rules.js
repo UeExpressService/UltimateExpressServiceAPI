@@ -48,3 +48,13 @@ test('long addresses and large registers render without losing rows', async () =
     assert.equal(pdf.subarray(0,5).toString(),'%PDF-');assert.ok(pdf.length>10000);
     if(process.env.UE_REPORT_QA_DIR)fs.writeFileSync(path.join(process.env.UE_REPORT_QA_DIR,'long-register.pdf'),pdf);
 });
+
+test('separate list reports fit one page and reject unreadable overflow without dropping records', async () => {
+    const report={period:period({from:'2026-11-01',to:'2026-11-30'}),rows:[],payments:[],summary:summarize([]),
+        preparedBy:'Test Manager',role:'manager',generatedAt:new Date(),newDrivers:Array.from({length:28},(_,i)=>({name:'Driver '+i,license_number:'LIC-'+i,phone:'09170000000',added_date:'2026-11-01'}))};
+    const pdf=await renderPDF(report,'newdrivers');
+    assert.equal(pdf.subarray(0,5).toString(),'%PDF-');
+    if(process.env.UE_REPORT_QA_DIR)fs.writeFileSync(path.join(process.env.UE_REPORT_QA_DIR,'dense-newdrivers.pdf'),pdf);
+    report.newDrivers=Array.from({length:250},(_,i)=>({name:'Driver '+i,license_number:'LIC-'+i,phone:'09170000000',added_date:'2026-11-01'}));
+    await assert.rejects(renderPDF(report,'newdrivers'),error=>error.status===400&&error.message.includes('one-page'));
+});

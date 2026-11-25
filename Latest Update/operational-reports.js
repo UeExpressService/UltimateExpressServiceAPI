@@ -1,6 +1,7 @@
 (() => {
     let dialog, objectUrl, controller, previousFocus, keyHandler;
-    const titles = { payments: 'Management Report', bookings: 'Booking and Delivery Report', fleet: 'Fleet and Driver Activity Report' };
+    const titles = { payments: 'Management Report', bookings: 'Booking and Delivery Report', drivers: 'Drivers in Trips',
+        newdrivers: 'New Drivers', newtrucks: 'New Trucks', customertrucks: 'Trucks Assigned to Customer Trips' };
 
     function clearOutput() {
         if (objectUrl) URL.revokeObjectURL(objectUrl);
@@ -21,9 +22,10 @@
     }
 
     function open(type = 'payments') {
+        if (type === 'fleet') type = 'drivers';
         if (!Object.hasOwn(titles, type)) return;
         const manager = getCurrentUser()?.role === 'manager';
-        if (type === 'payments' && !manager) type = 'fleet';
+        if (type === 'payments' && !manager) type = 'drivers';
         close(); previousFocus = document.activeElement;
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
         dialog = document.createElement('section');

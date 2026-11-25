@@ -7,7 +7,8 @@ and print it from the PDF viewer. CSV exports remain available as record exports
 The server generates standalone A4 PDFs with company branding, dates, preparer,
 report ID, repeated table headers and page numbers. The Management Report uses
 portrait pages, summary cards, weekly totals, transaction details, payment and
-quotation totals, and signature lines. Other reports use landscape pages.
+quotation totals, and signature lines. The individual driver/new-record lists
+use portrait pages; booking and customer-truck reports use landscape pages.
 No email is sent.
 
 ## Reports and access
@@ -16,10 +17,16 @@ No email is sent.
   recorded payment details, quote totals, unpaid quotes and payment averages.
 - Booking and Delivery Report: Manager and Supervisor. Booking status totals,
   monthly breakdown and detailed routes and assignments.
-- Fleet and Driver Activity Report: Manager and Supervisor. Confirmed trip counts,
-  drivers in trips, new drivers, new trucks, and trucks assigned to customer trips.
-  The four lists are sections of this combined report. The selector keeps the
-  three main reports separate and does not offer duplicate list entries.
+- Drivers in Trips: one-page driver list with trip counts for the period.
+- New Drivers: one-page list of drivers added during the period.
+- New Trucks: one-page list of trucks added during the period.
+- Trucks Assigned to Customer Trips: one-page list grouped by truck and customer,
+  showing trip counts and the last booking date.
+  These four reports are available to Manager and Supervisor as separate PDFs.
+  The combined Fleet report is not offered in the selector. Its legacy API is
+  retained for compatibility. List reports adjust table spacing and type size
+  to fit one A4 page; if records cannot fit at a readable size, the request asks
+  for a shorter date range rather than dropping records or adding pages.
 
 `GET /api/reports/{type}.pdf?from=YYYY-MM-DD&to=YYYY-MM-DD`
 accepts `payments`, `bookings`, `fleet`, `drivers`, `newdrivers`, `newtrucks`,
