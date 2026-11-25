@@ -12,10 +12,12 @@ module.exports=async function({connection,base,sessions,emails}){
     assert.equal((await request('supervisor','payments')).status,403);
     assert.equal((await request('manager','unknown')).status,404);
     for(const query of ['','from=2035-02-30&to=2035-03-01','from=2035-01-31&to=2035-01-01','from=2035-01-01&to=2036-01-02','from[]=2035-01-01&to=2035-01-31'])assert.equal((await request('manager','bookings',query)).status,400);
-    const [{insertId:truck1}]=await connection.query("INSERT INTO trucks(type,license_plate)VALUES('Report Van','REPORT-1')");
-    const [{insertId:truck2}]=await connection.query("INSERT INTO trucks(type,license_plate)VALUES('Report Truck','REPORT-2')");
-    const [{insertId:driver1}]=await connection.query("INSERT INTO drivers(name,license_number)VALUES('Report Driver','REPORT-LIC-1')");
-    const [{insertId:driver2}]=await connection.query("INSERT INTO drivers(name,license_number)VALUES('Report Driver','REPORT-LIC-2')");
+    const [{insertId:truck1}]=await connection.query("INSERT INTO trucks(type,license_plate,created_at)VALUES('Report Van','REPORT-1','2035-01-01 00:00:00')");
+    const [{insertId:truck2}]=await connection.query("INSERT INTO trucks(type,license_plate,created_at)VALUES('Report Truck','REPORT-2','2035-01-31 23:59:59')");
+    const [{insertId:driver1}]=await connection.query("INSERT INTO drivers(name,license_number,created_at)VALUES('Report Driver','REPORT-LIC-1','2035-01-01 00:00:00')");
+    const [{insertId:driver2}]=await connection.query("INSERT INTO drivers(name,license_number,created_at)VALUES('Report Driver','REPORT-LIC-2','2035-01-31 23:59:59')");
+    await connection.query("INSERT INTO drivers(name,license_number,created_at)VALUES('Unassigned New Driver','REPORT-UNUSED','2035-01-20'),('Prior Driver','REPORT-PRIOR','2034-12-31 23:59:59'),('Next Month Driver','REPORT-NEXT','2035-02-01 00:00:00')");
+    await connection.query("INSERT INTO trucks(type,license_plate,created_at)VALUES('Unassigned New Truck','REPORT-UNUSED','2035-01-20'),('Prior Truck','REPORT-PRIOR','2034-12-31 23:59:59'),('Next Month Truck','REPORT-NEXT','2035-02-01 00:00:00')");
     const insert=async(status,pickup,created,driver,truck,quote=null,paid=null,paidAt=null)=>{
         const [{insertId}]=await connection.query(`INSERT INTO service_requests(customer_id,contact_person,pickup_location,delivery_location,status,pickup_date,created_at,assigned_driver_id,assigned_truck_id,quoted_amount,paid_amount,paid_at)
             VALUES(3,'Report Customer','Manila','Laguna',?,?,?,?,?,?,?,?)`,[status,pickup,created,driver,truck,quote,paid,paidAt]);return insertId;
@@ -43,9 +45,19 @@ module.exports=async function({connection,base,sessions,emails}){
     assert.equal(data.payments.reduce((sum,r)=>sum+Math.round(Number(r.paid_amount)*100),0),62345);
     const empty=await loadReport(connection,period({from:'2036-01-01',to:'2036-01-31'}),2);
     assert.equal(empty.summary.total,0);assert.equal(empty.summary.completionRate,null);
+    const fleet=await loadReport(connection,period({from:'2035-01-01',to:'2035-01-31'}),2,'fleet');
+    assert.equal(fleet.newDrivers.length,3);assert.equal(fleet.newTrucks.length,3);
+    assert.ok(fleet.newDrivers.some(r=>r.id===driver1&&r.added_date==='2035-01-01'));
+    assert.ok(fleet.newDrivers.some(r=>r.id===driver2&&r.added_date==='2035-01-31'));
+    assert.ok(fleet.newDrivers.some(r=>r.name==='Unassigned New Driver'),'New drivers without trips are included');
+    assert.ok(fleet.newTrucks.some(r=>r.type==='Unassigned New Truck'),'New trucks without trips are included');
+    assert.ok(!fleet.newDrivers.some(r=>['Prior Driver','Next Month Driver'].includes(r.name)));
+    assert.ok(!fleet.newTrucks.some(r=>['REPORT-PRIOR','REPORT-NEXT'].includes(r.license_plate)));
+    const emptyFleet=await loadReport(connection,period({from:'2036-01-01',to:'2036-01-31'}),2,'fleet');
+    assert.deepEqual(emptyFleet.newDrivers,[]);assert.deepEqual(emptyFleet.newTrucks,[]);
     const output=process.env.UE_REPORT_QA_DIR||fs.mkdtempSync(path.join(os.tmpdir(),'ue-operational-reports-'));
     fs.mkdirSync(output,{recursive:true});
-    for(const [role,type] of [['manager','payments'],['manager','bookings'],['supervisor','fleet']]){
+    for(const [role,type] of [['manager','payments'],['manager','bookings'],['supervisor','fleet'],['supervisor','drivers'],['manager','newdrivers'],['supervisor','newtrucks'],['supervisor','customertrucks']]){
         const response=await request(role,type);assert.equal(response.status,200);
         assert.match(response.headers.get('content-type'),/^application\/pdf/);
         assert.match(response.headers.get('content-disposition'),new RegExp(type+'-2035-01-01-to-2035-01-31.pdf'));
@@ -54,7 +66,7 @@ module.exports=async function({connection,base,sessions,emails}){
         fs.writeFileSync(path.join(output,type+'.pdf'),bytes);
     }
     fs.writeFileSync(path.join(output,'verified-summary.json'),JSON.stringify(data.summary,null,2));
-    console.log('Operational reports passed: role restrictions, valid inclusive dates, monthly boundaries, fallback dates, payment-date cohort, pending/cancelled exclusions, missing assignments, repeated names, PDF downloads and empty periods. Evidence: '+output);
+    console.log('Operational reports passed: role restrictions, valid inclusive dates, monthly boundaries, new driver/truck creation dates including unused resources, fallback dates, payment-date cohort, pending/cancelled exclusions, missing assignments, repeated names, all seven PDF downloads and empty periods. Evidence: '+output);
     if(process.env.UE_REPORT_BROWSER_QA)await require('./test-operational-report-ui')({base,sessions,output});
     assert.equal(emails.length,emailCount,'Generating reports does not send any email');
     for(let attempt=0;attempt<30;attempt++){

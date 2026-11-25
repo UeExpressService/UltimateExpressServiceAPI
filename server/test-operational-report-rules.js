@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { period, summarize, statusGroup, renderPDF } = require('./operational-reports');
+const { period, summarize, statusGroup, renderPDF, TITLES } = require('./operational-reports');
 
 test('report periods include leap days and reject rollover, reversed, excessive and non-scalar dates', () => {
     assert.equal(period({from:'2024-01-01',to:'2024-12-31'}).days,366);
@@ -31,7 +31,7 @@ test('activity counts omit cancelled and pending assignments and preserve distin
 test('empty report PDFs are valid standalone files for every report type', async () => {
     const report={period:period({from:'2026-11-01',to:'2026-11-30'}),rows:[],payments:[],summary:summarize([]),
         preparedBy:'Test Manager',role:'manager',generatedAt:new Date('2026-11-25T04:00:00Z')};
-    for(const type of ['bookings','fleet','payments']){
+    for(const type of Object.keys(TITLES)){
         const pdf=await renderPDF(report,type);
         assert.equal(pdf.subarray(0,5).toString(),'%PDF-');assert.ok(pdf.length>3000);
         if(process.env.UE_REPORT_QA_DIR)fs.writeFileSync(path.join(process.env.UE_REPORT_QA_DIR,'empty-'+type+'.pdf'),pdf);

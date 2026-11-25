@@ -17,9 +17,12 @@ No email is sent.
 - Booking and Delivery Report: Manager and Supervisor. Booking status totals,
   monthly breakdown and detailed routes and assignments.
 - Fleet and Driver Activity Report: Manager and Supervisor. Confirmed trip counts,
-  saved truck/driver assignments and resource trip counts.
+  drivers in trips, new drivers, new trucks, and trucks assigned to customer trips.
+  Each of those four lists is also available as a separate PDF in the report selector.
 
-`GET /api/reports/{payments|bookings|fleet}.pdf?from=YYYY-MM-DD&to=YYYY-MM-DD`
+`GET /api/reports/{type}.pdf?from=YYYY-MM-DD&to=YYYY-MM-DD`
+accepts `payments`, `bookings`, `fleet`, `drivers`, `newdrivers`, `newtrucks`,
+or `customertrucks`. It
 uses the existing Bearer session and current database role. Downloads are not
 cached. Periods are inclusive, between 2000 and 2099, and limited to 366 days
 and 5,000 bookings/payments. The database is read in one consistent snapshot.
@@ -37,6 +40,11 @@ formula/basis columns, technical notes or completion/assignment percentages.
 New/pending/blank statuses are Pending; approved/ongoing are Ongoing. Completed
 and Cancelled remain separate; unrecognized statuses appear as Other.
 Confirmed trips include approved, ongoing and completed bookings only.
+Trip lists exclude pending and cancelled bookings. Customer trip truck rows
+show the saved truck, driver, customer, route, booking date and status; they
+are assignment records rather than independently verified vehicle visits.
+New drivers/trucks use their record creation date in the selected period,
+including the first and last days. They do not depend on having a booking.
 
 Statuses and assignments are their current saved values at generation time.
 The system does not store actual arrival times or complete reassignment

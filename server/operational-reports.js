@@ -3,7 +3,9 @@ const path = require('node:path');
 const { PDFDocument } = require('pdfkit');
 
 const DAY = 86400000;
-const TITLES = { payments: 'Management Report', bookings: 'Booking and Delivery Report', fleet: 'Fleet and Driver Activity Report' };
+const TITLES = { payments: 'Management Report', bookings: 'Booking and Delivery Report', fleet: 'Fleet and Driver Activity Report',
+    drivers: 'Drivers in Trips', newdrivers: 'New Drivers', newtrucks: 'New Trucks', customertrucks: 'Trucks Assigned to Customer Trips' };
+const FLEET_TYPES = ['fleet', 'drivers', 'newdrivers', 'newtrucks', 'customertrucks'];
 
 function validDate(value) {
     if (typeof value !== 'string' || !/^20\d{2}-\d{2}-\d{2}$/.test(value)) return false;
@@ -90,7 +92,19 @@ async function loadReport(dbp, selectedPeriod, actorId, type = 'bookings') {
                 ORDER BY sr.paid_at, sr.id LIMIT 5001`, [selectedPeriod.from, selectedPeriod.to]);
             if (payments.length > 5000) throw Object.assign(new Error('This period has over 5,000 payments. Choose a shorter period.'), { status: 400 });
         }
-        const report = { period: selectedPeriod, rows, payments, summary: summarize(rows), preparedBy: actor?.name || 'Staff', role: actor?.role || 'Staff', generatedAt: new Date() };
+        let newDrivers = [], newTrucks = [];
+        if (FLEET_TYPES.includes(type)) {
+            [newDrivers] = await connection.query(`SELECT id, name, license_number, phone,
+                DATE_FORMAT(created_at, '%Y-%m-%d') AS added_date FROM drivers
+                WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+                ORDER BY created_at, id LIMIT 5001`, [selectedPeriod.from, selectedPeriod.to]);
+            [newTrucks] = await connection.query(`SELECT id, license_plate, type, capacity,
+                DATE_FORMAT(created_at, '%Y-%m-%d') AS added_date FROM trucks
+                WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+                ORDER BY created_at, id LIMIT 5001`, [selectedPeriod.from, selectedPeriod.to]);
+            if (newDrivers.length > 5000 || newTrucks.length > 5000) throw Object.assign(new Error('This period has over 5,000 new fleet records. Choose a shorter period.'), { status: 400 });
+        }
+        const report = { period: selectedPeriod, rows, payments, newDrivers, newTrucks, summary: summarize(rows), preparedBy: actor?.name || 'Staff', role: actor?.role || 'Staff', generatedAt: new Date() };
         await connection.commit();
         return report;
     } catch (error) { await connection.rollback(); throw error; }
@@ -105,7 +119,7 @@ function renderPDF(report, type) {
         const chunks = [];
         doc.on('data', chunk => chunks.push(chunk)); doc.on('end', () => resolve(Buffer.concat(chunks))); doc.on('error', reject);
         const width = doc.page.width - 80, bottom = doc.page.height - 55;
-        const reference = `UE-${{payments:'TPR',bookings:'BDR',fleet:'FDA'}[type]}-${report.generatedAt.toISOString().slice(0,10).replace(/-/g,'')}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+        const reference = `UE-${{payments:'TPR',bookings:'BDR',fleet:'FDA',drivers:'DIT',newdrivers:'NDR',newtrucks:'NTR',customertrucks:'CTT'}[type]}-${report.generatedAt.toISOString().slice(0,10).replace(/-/g,'')}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
         let y, section = 0;
         const navy = '#093b5d', green = '#75b72d', lightBlue = '#e8f2f9', lightGreen = '#edf6e7';
         const date = value => new Date(value + 'T00:00:00Z').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -193,7 +207,7 @@ function renderPDF(report, type) {
         const s = report.summary;
         try {
             page();
-            heading(type === 'payments' ? 'Executive summary' : 'Operational summary');
+            if (!FLEET_TYPES.includes(type) || type === 'fleet') heading(type === 'payments' ? 'Executive summary' : 'Operational summary');
             if (type === 'payments') {
                 const money = cents => `PHP ${(cents / 100).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 const cents = value => Math.round(Number(value || 0) * 100);
@@ -258,23 +272,39 @@ function renderPDF(report, type) {
                     `${r.driver_name || 'Driver not assigned'}\n${r.truck_plate || 'Truck not assigned'}`, statusGroup(r.status) === 'Other' ? `Other: ${r.status}` : statusGroup(r.status)
                 ]), [0.8,1.1,1.4,1.8,1.8,1.6,1]);
             } else {
-                table(['Summary', 'Total'], [
+                if (type === 'fleet') table(['Summary', 'Total'], [
                     ['Confirmed trip bookings', s.confirmed],
                     ['Trucks with assigned trips', s.trucks.length],
                     ['Drivers with assigned trips', s.drivers.length],
                     ['Completed trip bookings', s.counts.Completed],
                     ['Without a truck assignment', s.missingTruck],
                     ['Without a driver assignment', s.missingDriver],
-                    ['Bookings with a truck and driver', s.fullyAssigned]
+                    ['Bookings with a truck and driver', s.fullyAssigned],
+                    ['New drivers', (report.newDrivers || []).length],
+                    ['New trucks', (report.newTrucks || []).length]
                 ], [3,2]);
-                heading('Truck trip activity');
-                table(['Truck', 'Truck type', 'Assigned trips', 'Completed', 'Ongoing'], s.trucks.map(r => [r.name,r.extra,r.assigned,r.completed,r.ongoing]), [1.5,2.2,1,1,1]);
-                heading('Driver trip activity');
-                table(['Driver', 'Assigned trips', 'Completed', 'Ongoing'], s.drivers.map(r => [r.name,r.assigned,r.completed,r.ongoing]), [3,1,1,1]);
-                nextPage(); heading('Assignment register for confirmed trips');
-                table(['Booking', 'Booking date', 'Driver', 'Truck', 'Truck type', 'Status'], report.rows.filter(r => ['Ongoing','Completed'].includes(statusGroup(r.status))).map(r => [
-                    `REQ-${r.id}`, r.report_date, r.driver_name || 'Not assigned', r.truck_plate || 'Not assigned', r.truck_type || 'Not recorded', statusGroup(r.status)
-                ]), [0.9,1.3,2,1.4,2,1]);
+                const trips = report.rows.filter(r => ['Ongoing','Completed'].includes(statusGroup(r.status)));
+                if (['fleet','drivers'].includes(type)) {
+                    heading('Drivers in trips');
+                    table(['Driver', 'Trips', 'Completed', 'Ongoing'], s.drivers.map(r => [r.name,r.assigned,r.completed,r.ongoing]), [3,1,1,1]);
+                    table(['Driver','Booking','Booking date','Customer','Truck','Pickup','Delivery','Status'], trips.filter(r => r.assigned_driver_id).map(r => [
+                        r.driver_name || `Driver #${r.assigned_driver_id}`,`REQ-${r.id}`,r.report_date,r.customer_name,r.truck_plate || 'Not assigned',r.pickup_location,r.delivery_location,statusGroup(r.status)
+                    ]), [1.4,.8,1.1,1.5,1.1,1.8,1.8,1]);
+                }
+                if (['fleet','newdrivers'].includes(type)) {
+                    heading('New drivers');
+                    table(['Driver','License number','Contact number','Date added'], (report.newDrivers || []).map(r => [r.name,r.license_number,r.phone || 'Not recorded',r.added_date]), [2.5,2,1.5,1.3]);
+                }
+                if (['fleet','newtrucks'].includes(type)) {
+                    heading('New trucks');
+                    table(['Plate number','Truck type','Capacity (kg)','Date added'], (report.newTrucks || []).map(r => [r.license_plate,r.type,r.capacity || 'Not recorded',r.added_date]), [1.5,2.5,1.4,1.3]);
+                }
+                if (['fleet','customertrucks'].includes(type)) {
+                    heading('Trucks assigned to customer trips');
+                    table(['Truck','Truck type','Booking','Booking date','Customer','Pickup','Delivery','Driver','Status'], trips.filter(r => r.assigned_truck_id).map(r => [
+                        r.truck_plate || `Truck #${r.assigned_truck_id}`,r.truck_type || 'Not recorded',`REQ-${r.id}`,r.report_date,r.customer_name,r.pickup_location,r.delivery_location,r.driver_name || 'Not assigned',statusGroup(r.status)
+                    ]), [1.1,1.2,.8,1.1,1.5,1.8,1.8,1.4,1]);
+                }
             }
             space(80);
             const signatureWidth=(width-35)/2;
