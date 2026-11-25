@@ -950,10 +950,8 @@
                 ['Month', 'Recorded payments', 'Paid bookings']
             ];
             reportData.monthlyPaidRevenue.forEach((amount, index) => rows.push([MONTHS[index], amount, reportData.monthlyPaidOrders[index]]));
-            rows.push([], ['Calculated Amounts'], ['Metric', 'Amount (PHP)', 'Formula']);
-            rows.push(...calculatedAmountRows(amount => String(amount)));
-            rows.push(['Date basis', 'Quotes: pickup year, or creation year when no pickup date; payments: recorded payment year.']);
-            rows.push(['Unpaid quotes', 'Confirmed quotes without a recorded payment; not received revenue.']);
+            rows.push([], ['Amount Summary'], ['Metric', 'Amount (PHP)']);
+            rows.push(...calculatedAmountRows(amount => String(amount)).map(([label, amount]) => [label, amount]));
             rows.push([], ['Month', 'Service requests', 'Completed requests']);
             reportData.monthlyTransactions.forEach((count, index) => rows.push([MONTHS[index], count, reportData.monthlyCompleted[index]]));
             rows.push([], ['Service type', 'Requests']);

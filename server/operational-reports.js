@@ -4,7 +4,6 @@ const { PDFDocument } = require('pdfkit');
 
 const DAY = 86400000;
 const TITLES = { payments: 'Transaction and Payment Report', bookings: 'Booking and Delivery Report', fleet: 'Fleet and Driver Activity Report' };
-const DATE_BASIS = 'Bookings are selected by scheduled pickup date, or creation date when no pickup date is saved. Status and assignments are the current saved values at generation time.';
 
 function validDate(value) {
     if (typeof value !== 'string' || !/^20\d{2}-\d{2}-\d{2}$/.test(value)) return false;
@@ -176,7 +175,7 @@ function renderPDF(report, type) {
             });
             y += 16;
         }
-        const s = report.summary, percent = value => value === null ? 'N/A (no bookings)' : `${value.toFixed(2)}%`;
+        const s = report.summary;
         try {
             page();
             heading('Operational summary');
@@ -187,20 +186,18 @@ function renderPDF(report, type) {
                 const confirmed = report.rows.filter(r => ['Ongoing','Completed'].includes(statusGroup(r.status)) && Number(r.quoted_amount) > 0);
                 const quotes = confirmed.reduce((sum,r) => sum + cents(r.quoted_amount), 0);
                 const unpaid = confirmed.filter(r => r.paid_amount === null).reduce((sum,r) => sum + cents(r.quoted_amount), 0);
-                paragraph(`The selected period contains ${s.total} booking(s) and ${report.payments.length} recorded payment(s) totaling ${money(paid)}. Payment totals use the payment recording date, so the payment register can include bookings scheduled outside this period.`);
-                table(['Measure', 'Result', 'Calculation / basis'], [
-                    ['Bookings in the selected period', s.total, 'Scheduled pickup date, or creation date when pickup date is missing'],
-                    ['Completed bookings', s.counts.Completed, 'Selected bookings currently marked completed'],
-                    ['Confirmed quotes', money(quotes), 'Sum of positive saved quotes for approved, ongoing and completed selected bookings'],
-                    ['Unpaid confirmed quotes', money(unpaid), 'Selected confirmed quotes without a saved payment amount; not received revenue'],
-                    ['Recorded payments in the period', money(paid), 'Sum of payment amounts with a payment recording date within the period'],
-                    ['Paid bookings in the period', report.payments.length, 'Number of payment register entries'],
-                    ['Average recorded payment', report.payments.length ? money(Math.round(paid / report.payments.length)) : 'N/A (no payments)', `${money(paid)} / ${report.payments.length} recorded payments`]
-                ], [2.2,1.3,5]);
-                paragraph(DATE_BASIS + ' Quote totals and payment totals use different date bases. Do not subtract payments from quotes to calculate unpaid amounts.');
+                table(['Summary', 'Total'], [
+                    ['Bookings in the selected period', s.total],
+                    ['Completed bookings', s.counts.Completed],
+                    ['Confirmed quotes', money(quotes)],
+                    ['Unpaid confirmed quotes', money(unpaid)],
+                    ['Recorded payments in the period', money(paid)],
+                    ['Paid bookings in the period', report.payments.length],
+                    ['Average recorded payment', report.payments.length ? money(Math.round(paid / report.payments.length)) : 'N/A']
+                ], [3,2]);
                 nextPage(); heading('Booking transaction details');
-                table(['Booking', 'Date / basis', 'Customer', 'Status', 'Saved quote', 'Payment status'], report.rows.map(r => [
-                    `REQ-${r.id}`, `${r.report_date}\n${r.date_basis}`, r.customer_name, statusGroup(r.status),
+                table(['Booking', 'Booking date', 'Customer', 'Status', 'Saved quote', 'Payment status'], report.rows.map(r => [
+                    `REQ-${r.id}`, r.report_date, r.customer_name, statusGroup(r.status),
                     r.quoted_amount === null ? 'Not quoted' : money(cents(r.quoted_amount)),
                     r.paid_amount === null ? 'Not recorded' : r.paid_date ? `Recorded ${r.paid_date}${r.paid_date < report.period.from || r.paid_date > report.period.to ? ' (outside period)' : ''}` : 'Payment date not recorded'
                 ]), [0.9,1.3,2,1.1,1.3,2.2]);
@@ -209,39 +206,34 @@ function renderPDF(report, type) {
                     `REQ-${r.id}`, r.customer_name, r.paid_date, money(cents(r.paid_amount)), r.pickup_date || 'Not recorded', statusGroup(r.status)
                 ]), [0.9,2,1.8,1.4,1.2,1.2]);
             } else if (type === 'bookings') {
-                paragraph(`The selected period contains ${s.total} booking(s): ${s.counts.Completed} completed, ${s.counts.Ongoing} ongoing, ${s.counts.Pending} pending and ${s.counts.Cancelled} cancelled. Completion rate for this booking cohort is ${percent(s.completionRate)}.`);
-                table(['Measure', 'Result', 'Definition'], [
-                    ['Total bookings', s.total, 'All bookings selected by the reporting period'],
-                    ...Object.entries(s.counts).map(([label,total]) => [label, total, label === 'Ongoing' ? 'Approved and ongoing saved statuses' : label === 'Pending' ? 'New, pending or blank saved statuses' : `${label} saved status${label === 'Other' ? ' (unrecognized values)' : ''}`]),
-                    ['Completion rate', percent(s.completionRate), `${s.counts.Completed} completed / ${s.total} selected bookings x 100`]
-                ], [2,1,5]);
-                paragraph(DATE_BASIS + ' This is a status-based completion measure, not an on-time delivery rate; actual arrival times are not recorded.');
+                table(['Summary', 'Total'], [
+                    ['Total bookings', s.total],
+                    ...Object.entries(s.counts).map(([label,total]) => [label, total])
+                ], [3,2]);
                 heading('Monthly booking breakdown');
                 table(['Month', 'Bookings', 'Completed', 'Ongoing', 'Pending', 'Cancelled', 'Other'], s.monthly.map(r => [r.month,r.total,r.completed,r.ongoing,r.pending,r.cancelled,r.other]), [1.3,1,1,1,1,1,1]);
                 nextPage(); heading('Booking and delivery register');
-                table(['Booking', 'Date / basis', 'Customer', 'Pickup', 'Delivery', 'Driver / truck', 'Status'], report.rows.map(r => [
-                    `REQ-${r.id}`, `${r.report_date}\n${r.date_basis}`, r.customer_name, r.pickup_location, r.delivery_location,
+                table(['Booking', 'Booking date', 'Customer', 'Pickup', 'Delivery', 'Driver / truck', 'Status'], report.rows.map(r => [
+                    `REQ-${r.id}`, r.report_date, r.customer_name, r.pickup_location, r.delivery_location,
                     `${r.driver_name || 'Driver not assigned'}\n${r.truck_plate || 'Truck not assigned'}`, statusGroup(r.status) === 'Other' ? `Other: ${r.status}` : statusGroup(r.status)
                 ]), [0.8,1.1,1.4,1.8,1.8,1.6,1]);
             } else {
-                paragraph(`${s.confirmed} confirmed trip booking(s) fall in this period. ${s.trucks.length} truck(s) and ${s.drivers.length} driver(s) have saved assignments. ${s.fullyAssigned} booking(s) have both a truck and driver recorded.`);
-                table(['Measure', 'Result', 'Definition'], [
-                    ['Confirmed trip bookings', s.confirmed, 'Approved, ongoing and completed bookings only'],
-                    ['Trucks with assigned trips', s.trucks.length, 'Distinct saved truck assignments among confirmed trip bookings'],
-                    ['Drivers with assigned trips', s.drivers.length, 'Distinct saved driver assignments among confirmed trip bookings'],
-                    ['Completed trip bookings', s.counts.Completed, 'Confirmed trip bookings currently marked completed'],
-                    ['Without a truck assignment', s.missingTruck, 'Confirmed trip bookings with no saved truck'],
-                    ['Without a driver assignment', s.missingDriver, 'Confirmed trip bookings with no saved driver'],
-                    ['Complete assignment coverage', percent(s.assignmentCoverage), `${s.fullyAssigned} bookings with both assignments / ${s.confirmed} confirmed trip bookings x 100`]
-                ], [2.2,1,5]);
-                paragraph(DATE_BASIS + ' Pending and cancelled bookings do not count as trips. Resource counts show booking activity, not hours worked, vehicle utilization by time, or past reassignment history.');
+                table(['Summary', 'Total'], [
+                    ['Confirmed trip bookings', s.confirmed],
+                    ['Trucks with assigned trips', s.trucks.length],
+                    ['Drivers with assigned trips', s.drivers.length],
+                    ['Completed trip bookings', s.counts.Completed],
+                    ['Without a truck assignment', s.missingTruck],
+                    ['Without a driver assignment', s.missingDriver],
+                    ['Bookings with a truck and driver', s.fullyAssigned]
+                ], [3,2]);
                 heading('Truck trip activity');
-                table(['Truck', 'Truck type', 'Assigned trips', 'Completed', 'Ongoing', 'Completion rate'], s.trucks.map(r => [r.name,r.extra,r.assigned,r.completed,r.ongoing,percent(r.completed / r.assigned * 100)]), [1.5,2.2,1,1,1,1.2]);
+                table(['Truck', 'Truck type', 'Assigned trips', 'Completed', 'Ongoing'], s.trucks.map(r => [r.name,r.extra,r.assigned,r.completed,r.ongoing]), [1.5,2.2,1,1,1]);
                 heading('Driver trip activity');
-                table(['Driver', 'Assigned trips', 'Completed', 'Ongoing', 'Completion rate'], s.drivers.map(r => [r.name,r.assigned,r.completed,r.ongoing,percent(r.completed / r.assigned * 100)]), [3,1,1,1,1.2]);
+                table(['Driver', 'Assigned trips', 'Completed', 'Ongoing'], s.drivers.map(r => [r.name,r.assigned,r.completed,r.ongoing]), [3,1,1,1]);
                 nextPage(); heading('Assignment register for confirmed trips');
-                table(['Booking', 'Date / basis', 'Driver', 'Truck', 'Truck type', 'Status'], report.rows.filter(r => ['Ongoing','Completed'].includes(statusGroup(r.status))).map(r => [
-                    `REQ-${r.id}`, `${r.report_date}\n${r.date_basis}`, r.driver_name || 'Not assigned', r.truck_plate || 'Not assigned', r.truck_type || 'Not recorded', statusGroup(r.status)
+                table(['Booking', 'Booking date', 'Driver', 'Truck', 'Truck type', 'Status'], report.rows.filter(r => ['Ongoing','Completed'].includes(statusGroup(r.status))).map(r => [
+                    `REQ-${r.id}`, r.report_date, r.driver_name || 'Not assigned', r.truck_plate || 'Not assigned', r.truck_type || 'Not recorded', statusGroup(r.status)
                 ]), [0.9,1.3,2,1.4,2,1]);
             }
             const pages = doc.bufferedPageRange();

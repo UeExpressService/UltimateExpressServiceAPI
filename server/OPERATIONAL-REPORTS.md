@@ -12,9 +12,9 @@ preparer, report ID, repeated table headers and page numbers. No email is sent.
 - Transaction and Payment Report: Manager only. Booking transaction details,
   recorded payment details, quote totals, unpaid quotes and payment averages.
 - Booking and Delivery Report: Manager and Supervisor. Booking status totals,
-  completion rate, monthly breakdown and detailed routes and assignments.
+  monthly breakdown and detailed routes and assignments.
 - Fleet and Driver Activity Report: Manager and Supervisor. Confirmed trip counts,
-  saved truck/driver assignments, resource trip counts and assignment coverage.
+  saved truck/driver assignments and resource trip counts.
 
 `GET /api/reports/{payments|bookings|fleet}.pdf?from=YYYY-MM-DD&to=YYYY-MM-DD`
 uses the existing Bearer session and current database role. Downloads are not
@@ -27,15 +27,13 @@ Report generation is recorded in the activity log.
 Bookings use their scheduled pickup date, falling back to creation date only
 when pickup date is absent. Payments use the Manager-recorded payment date,
 so a selected month's payments can include a booking from another month.
-The PDF labels these different cohorts. Financial sums use integer cents.
+The PDF separates booking details from payments recorded during the period.
+Financial sums use integer cents. Downloads show records and totals without
+formula/basis columns, technical notes or completion/assignment percentages.
 
 New/pending/blank statuses are Pending; approved/ongoing are Ongoing. Completed
 and Cancelled remain separate; unrecognized statuses appear as Other.
-Completion rate = completed selected bookings / all selected bookings x 100.
 Confirmed trips include approved, ongoing and completed bookings only.
-Assignment coverage = confirmed trips with both assignments / confirmed trips
-x 100. Resource completion = completed assigned trips / assigned trips x 100.
-Empty denominators display N/A.
 
 Statuses and assignments are their current saved values at generation time.
 The system does not store actual arrival times or complete reassignment
