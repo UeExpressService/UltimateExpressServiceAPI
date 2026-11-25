@@ -3,7 +3,7 @@ const path = require('node:path');
 const { PDFDocument } = require('pdfkit');
 
 const DAY = 86400000;
-const TITLES = { payments: 'Transaction and Payment Report', bookings: 'Booking and Delivery Report', fleet: 'Fleet and Driver Activity Report' };
+const TITLES = { payments: 'Management Report', bookings: 'Booking and Delivery Report', fleet: 'Fleet and Driver Activity Report' };
 
 function validDate(value) {
     if (typeof value !== 'string' || !/^20\d{2}-\d{2}-\d{2}$/.test(value)) return false;
@@ -100,29 +100,32 @@ async function loadReport(dbp, selectedPeriod, actorId, type = 'bookings') {
 function renderPDF(report, type) {
     return new Promise((resolve, reject) => {
         const title = TITLES[type];
-        const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 40, bufferPages: true,
+        const doc = new PDFDocument({ size: 'A4', layout: type === 'payments' ? 'portrait' : 'landscape', margin: 40, bufferPages: true,
             info: { Title: title, Author: 'Ultimate Express Trans Logistic Corporation', Subject: `${report.period.from} to ${report.period.to}` } });
         const chunks = [];
         doc.on('data', chunk => chunks.push(chunk)); doc.on('end', () => resolve(Buffer.concat(chunks))); doc.on('error', reject);
         const width = doc.page.width - 80, bottom = doc.page.height - 55;
         const reference = `UE-${{payments:'TPR',bookings:'BDR',fleet:'FDA'}[type]}-${report.generatedAt.toISOString().slice(0,10).replace(/-/g,'')}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-        const generated = report.generatedAt.toLocaleString('en-PH', { timeZone: 'Asia/Manila', hour12: true });
-        let y;
+        let y, section = 0;
+        const navy = '#093b5d', green = '#75b72d', lightBlue = '#e8f2f9', lightGreen = '#edf6e7';
+        const date = value => new Date(value + 'T00:00:00Z').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
         const clean = value => String(value ?? 'Not recorded').replace(/[\x00-\x08\x0b-\x1f]/g, ' ');
         function text(value, x, top, options = {}) {
             doc.fillColor('#17231b').text(clean(value), x, top, { lineGap: 2, ...options });
         }
         function page() {
-            doc.image(path.join(__dirname, '../Latest Update/images/logo.jpg'), 40, 30, { fit: [40, 40] });
-            doc.font('Helvetica-Bold').fontSize(13); text('ULTIMATE EXPRESS', 90, 32, { width: width - 50 });
-            doc.font('Helvetica').fontSize(9); text('Trans Logistic Corporation', 90, 49, { width: width - 50 });
-            doc.font('Helvetica-Bold').fontSize(19); text(title, 40, 82, { width });
-            doc.font('Helvetica').fontSize(9);
-            text(`Reporting period: ${report.period.from} to ${report.period.to} (inclusive)`, 40, 110, { width: width / 2 });
-            text(`Report ID: ${reference}`, 40 + width / 2, 110, { width: width / 2, align: 'right' });
-            text(`Generated: ${generated} PHT`, 40, 126, { width: width / 2 });
-            text(`Prepared by: ${report.preparedBy} (${report.role})`, 40 + width / 2, 126, { width: width / 2, height: 15, ellipsis: true, align: 'right' });
-            y = 157;
+            doc.save().polygon([doc.page.width-190,0],[doc.page.width,0],[doc.page.width,50]).fill(navy);
+            doc.polygon([doc.page.width-190,5],[doc.page.width,55],[doc.page.width,62]).fill(green).restore();
+            doc.image(path.join(__dirname, '../Latest Update/images/logo.jpg'), 40, 24, { fit: [40, 40] });
+            doc.font('Helvetica-Bold').fontSize(18); text('ULTIMATE EXPRESS', 90, 28, { width: width - 50, fill: '#061b34' });
+            doc.font('Helvetica').fontSize(10); text('Trans Logistic Corporation', 90, 49, { width: width - 50 });
+            doc.moveTo(40,76).lineTo(doc.page.width-40,76).lineWidth(1.5).stroke(green);
+            doc.font('Helvetica-Bold').fontSize(type === 'payments' ? 23 : 20); text(title.toUpperCase(), 40, 88, { width });
+            doc.font('Helvetica').fontSize(10); text(type === 'payments' ? 'Monthly Operations and Transactions Summary' : 'Operations and Activity Summary',40,116,{width});
+            doc.fontSize(8);
+            text(`Reporting period: ${date(report.period.from)} - ${date(report.period.to)}`,40,139,{width:width*.7});
+            text(`Generated: ${report.generatedAt.toLocaleDateString('en-PH',{timeZone:'Asia/Manila'})}`,40+width*.7,139,{width:width*.3,align:'right'});
+            y = 163;
         }
         function nextPage() { doc.addPage(); page(); }
         function space(height) { if (y + height > bottom) nextPage(); }
@@ -131,37 +134,49 @@ function renderPDF(report, type) {
             const h = doc.heightOfString(clean(value), { width, lineGap: 2 }); space(h + 12);
             text(value, 40, y, { width }); y += h + 12;
         }
-        function heading(value) { space(74); doc.font('Helvetica-Bold').fontSize(12); text(value, 40, y, { width }); y += 24; }
+        function heading(value) {
+            space(80); section++;
+            doc.save().polygon([33,y],[42,y],[34,y+20],[25,y+20]).fill(green);
+            doc.roundedRect(40,y,width,20,2).fill(navy).restore();
+            doc.font('Helvetica-Bold').fontSize(10).fillColor('white').text(`${section}.  ${value.toUpperCase()}`,48,y+5,{width:width-16,lineBreak:false});
+            y += 28;
+        }
         function table(columns, rows, weights) {
             if (!rows.length) { paragraph('No records for this reporting period.'); return; }
             const sum = weights.reduce((a,b) => a+b,0), widths = weights.map(w => w / sum * width);
+            const fontSize = columns.length > 7 ? 7 : 9;
+            const minimumHeight = type === 'payments' ? 21 : 25;
             function height(values) {
-                return Math.max(25, ...values.map((v,i) => doc.heightOfString(clean(v), { width: widths[i] - 12, lineGap: 2 }) + 12));
+                return Math.max(minimumHeight, ...values.map((v,i) => doc.heightOfString(clean(v), { width: widths[i] - 10, lineGap: 2 }) + 10));
             }
             function row(values, header = false, index = 0) {
-                doc.font(header ? 'Helvetica-Bold' : 'Helvetica').fontSize(9);
+                const total = values[0] === 'TOTAL';
+                doc.font(header || total ? 'Helvetica-Bold' : 'Helvetica').fontSize(fontSize);
                 const h = height(values);
                 let x = 40;
                 values.forEach((value,i) => {
-                    doc.rect(x, y, widths[i], h).fillAndStroke(header ? '#e8eee9' : index % 2 ? '#f7f9f7' : '#ffffff', '#ced7d0');
-                    doc.fillColor('#17231b'); text(value, x + 6, y + 6, { width: widths[i] - 12 }); x += widths[i];
+                    doc.rect(x, y, widths[i], h).fillAndStroke(header ? '#cce2f2' : total ? '#deedcb' : index % 2 ? '#f5f8fa' : '#ffffff', '#b4c5cf');
+                    if (!header && columns[i] === 'Status' && ['Completed','Pending','Ongoing','Cancelled'].includes(value)) {
+                        doc.roundedRect(x+3,y+4,widths[i]-6,Math.min(h-8,18),3).fill({Completed:'#deefd6',Pending:'#fff2bd',Ongoing:'#dcecf9',Cancelled:'#f6dddd'}[value]);
+                    }
+                    text(value, x + 5, y + 5, { width: widths[i] - 10 }); x += widths[i];
                 });
                 y += h;
             }
-            doc.font('Helvetica-Bold').fontSize(9);
+            doc.font('Helvetica-Bold').fontSize(fontSize);
             const headerHeight = height(columns);
             space(headerHeight + 30); row(columns, true);
             rows.forEach((values,index) => {
-                doc.font('Helvetica').fontSize(9);
+                doc.font('Helvetica').fontSize(fontSize);
                 const remaining = values.map(clean);
                 // Long saved addresses can continue onto another page without clipping.
                 do {
-                    const maxTextHeight = bottom - 157 - headerHeight - 12;
+                    const maxTextHeight = bottom - 163 - headerHeight - 12;
                     const fragment = remaining.map((value,i) => {
                         let lo = 0, hi = value.length;
                         while (lo < hi) {
                             const mid = Math.ceil((lo + hi) / 2);
-                            if (doc.heightOfString(value.slice(0,mid), { width: widths[i] - 12, lineGap: 2 }) <= maxTextHeight) lo = mid;
+                            if (doc.heightOfString(value.slice(0,mid), { width: widths[i] - 10, lineGap: 2 }) <= maxTextHeight) lo = mid;
                             else hi = mid - 1;
                         }
                         const part = value.slice(0,lo);
@@ -169,7 +184,7 @@ function renderPDF(report, type) {
                         return part;
                     });
                     const h = height(fragment);
-                    if (y + h > bottom) { nextPage(); row(columns, true); doc.font('Helvetica').fontSize(9); }
+                    if (y + h > bottom) { nextPage(); row(columns, true); doc.font('Helvetica').fontSize(fontSize); }
                     row(fragment, false, index);
                 } while (remaining.some(Boolean));
             });
@@ -178,7 +193,7 @@ function renderPDF(report, type) {
         const s = report.summary;
         try {
             page();
-            heading('Operational summary');
+            heading(type === 'payments' ? 'Executive summary' : 'Operational summary');
             if (type === 'payments') {
                 const money = cents => `PHP ${(cents / 100).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 const cents = value => Math.round(Number(value || 0) * 100);
@@ -186,22 +201,47 @@ function renderPDF(report, type) {
                 const confirmed = report.rows.filter(r => ['Ongoing','Completed'].includes(statusGroup(r.status)) && Number(r.quoted_amount) > 0);
                 const quotes = confirmed.reduce((sum,r) => sum + cents(r.quoted_amount), 0);
                 const unpaid = confirmed.filter(r => r.paid_amount === null).reduce((sum,r) => sum + cents(r.quoted_amount), 0);
-                table(['Summary', 'Total'], [
-                    ['Bookings in the selected period', s.total],
-                    ['Completed bookings', s.counts.Completed],
-                    ['Confirmed quotes', money(quotes)],
-                    ['Unpaid confirmed quotes', money(unpaid)],
-                    ['Recorded payments in the period', money(paid)],
-                    ['Paid bookings in the period', report.payments.length],
-                    ['Average recorded payment', report.payments.length ? money(Math.round(paid / report.payments.length)) : 'N/A']
-                ], [3,2]);
-                nextPage(); heading('Booking transaction details');
-                table(['Booking', 'Booking date', 'Customer', 'Status', 'Saved quote', 'Payment status'], report.rows.map(r => [
-                    `REQ-${r.id}`, r.report_date, r.customer_name, statusGroup(r.status),
-                    r.quoted_amount === null ? 'Not quoted' : money(cents(r.quoted_amount)),
-                    r.paid_amount === null ? 'Not recorded' : r.paid_date ? `Recorded ${r.paid_date}${r.paid_date < report.period.from || r.paid_date > report.period.to ? ' (outside period)' : ''}` : 'Payment date not recorded'
-                ]), [0.9,1.3,2,1.1,1.3,2.2]);
-                heading('Payments recorded within the selected period');
+                const cards=[['Total Bookings',s.total],['Completed Trips',s.counts.Completed],['Pending Trips',s.counts.Pending],['Cancelled Trips',s.counts.Cancelled],['Confirmed Quotes',money(quotes)],['Total Collected',money(paid)]];
+                const cardWidth=(width-25)/6;
+                space(66);
+                cards.forEach(([label,value],i)=>{
+                    const x=40+i*(cardWidth+5);
+                    doc.roundedRect(x,y,cardWidth,60,4).fill(i%2?lightGreen:lightBlue);
+                    doc.font('Helvetica-Bold').fontSize(8); text(label,x+5,y+9,{width:cardWidth-10,align:'center'});
+                    let size=13; doc.fontSize(size);
+                    while(size>7 && doc.widthOfString(String(value))>cardWidth-10)doc.fontSize(--size);
+                    text(value,x+5,y+36,{width:cardWidth-10,align:'center',lineBreak:false});
+                });
+                y+=74;
+                heading('Monthly operations summary');
+                const weeks=new Map();
+                function weekFor(value){
+                    const month=value.slice(0,7),day=Number(value.slice(8)),bucket=Math.min(3,Math.floor((day-1)/7));
+                    const key=month+'-'+bucket;
+                    if(!weeks.has(key)){
+                        const last=new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5)),0)).getUTCDate();
+                        const from=month+'-'+String(bucket*7+1).padStart(2,'0'),to=month+'-'+String(bucket===3?last:bucket*7+7).padStart(2,'0');
+                        weeks.set(key,{label:`${date(from<report.period.from?report.period.from:from)} - ${date(to>report.period.to?report.period.to:to)}`,total:0,Pending:0,Ongoing:0,Completed:0,Cancelled:0,Other:0});
+                    }
+                    return weeks.get(key);
+                }
+                for(let time=Date.parse(report.period.from);time<=Date.parse(report.period.to);time+=DAY)weekFor(new Date(time).toISOString().slice(0,10));
+                for(const row of report.rows){const week=weekFor(row.report_date);week.total++;week[statusGroup(row.status)]++;}
+                const weeklyColumns=['Period','Bookings','Completed','Ongoing','Pending','Cancelled',...(s.counts.Other?['Other']:[])];
+                const weeklyRows=[...weeks.values()].map(w=>[w.label,w.total,w.Completed,w.Ongoing,w.Pending,w.Cancelled,...(s.counts.Other?[w.Other]:[])]);
+                weeklyRows.push(['TOTAL',s.total,s.counts.Completed,s.counts.Ongoing,s.counts.Pending,s.counts.Cancelled,...(s.counts.Other?[s.counts.Other]:[])]);
+                table(weeklyColumns,weeklyRows,[3,1,1,1,1,1,...(s.counts.Other?[1]:[])]);
+                heading('Detailed monthly transactions');
+                table(['Booking ID','Date','Customer','Pickup','Delivery','Truck','Driver','Status','Quote (PHP)'], report.rows.map(r=>[
+                    `REQ-${r.id}`,r.report_date,r.customer_name,r.pickup_location,r.delivery_location,r.truck_plate||'Not assigned',r.driver_name||'Not assigned',statusGroup(r.status),
+                    r.quoted_amount===null?'Not quoted':(cents(r.quoted_amount)/100).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})
+                ]),[1,1.1,1.6,1.5,1.5,1.1,1.3,1.2,1.3]);
+                heading('Payments and quotations summary');
+                table(['Category','Amount (PHP)'],[
+                    ['Confirmed quotations',money(quotes)],['Unpaid confirmed quotations',money(unpaid)],['Total collected in the period',money(paid)],
+                    ['Average recorded payment',report.payments.length?money(Math.round(paid/report.payments.length)):'N/A']
+                ],[3,2]);
+                doc.font('Helvetica-Bold').fontSize(9);space(45);text('Payments recorded during the reporting period',40,y,{width});y+=18;
                 table(['Booking', 'Customer', 'Payment recorded (PHT)', 'Paid amount', 'Pickup date', 'Current status'], report.payments.map(r => [
                     `REQ-${r.id}`, r.customer_name, r.paid_date, money(cents(r.paid_amount)), r.pickup_date || 'Not recorded', statusGroup(r.status)
                 ]), [0.9,2,1.8,1.4,1.2,1.2]);
@@ -236,11 +276,20 @@ function renderPDF(report, type) {
                     `REQ-${r.id}`, r.report_date, r.driver_name || 'Not assigned', r.truck_plate || 'Not assigned', r.truck_type || 'Not recorded', statusGroup(r.status)
                 ]), [0.9,1.3,2,1.4,2,1]);
             }
+            space(80);
+            const signatureWidth=(width-35)/2;
+            doc.font('Helvetica').fontSize(9);text('Prepared by:',40,y,{width:signatureWidth});text('Approved by:',75+signatureWidth,y,{width:signatureWidth});
+            doc.moveTo(40,y+35).lineTo(40+signatureWidth,y+35).stroke('#33434f');
+            doc.moveTo(75+signatureWidth,y+35).lineTo(40+width,y+35).stroke('#33434f');
+            doc.font('Helvetica-Bold').fontSize(9);text(report.preparedBy,40,y+40,{width:signatureWidth,height:15,ellipsis:true});
+            doc.font('Helvetica').fontSize(8);text(report.role,40,y+55,{width:signatureWidth});
             const pages = doc.bufferedPageRange();
             for (let i = 0; i < pages.count; i++) {
                 doc.switchToPage(i); doc.font('Helvetica').fontSize(8);
                 const bottomMargin = doc.page.margins.bottom;
                 doc.page.margins.bottom = 0;
+                doc.save().polygon([0,doc.page.height-15],[0,doc.page.height-5],[doc.page.width,doc.page.height],[doc.page.width*.55,doc.page.height]).fill(green);
+                doc.polygon([0,doc.page.height-5],[doc.page.width,doc.page.height-16],[doc.page.width,doc.page.height],[0,doc.page.height]).fill(navy).restore();
                 text(`${reference} | ${report.period.from} to ${report.period.to}`, 40, doc.page.height - 32, { width: width - 90, lineBreak: false });
                 text(`Page ${i + 1} of ${pages.count}`, doc.page.width - 130, doc.page.height - 32, { width: 90, align: 'right', lineBreak: false });
                 doc.page.margins.bottom = bottomMargin;

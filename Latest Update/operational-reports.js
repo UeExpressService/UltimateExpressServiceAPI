@@ -1,6 +1,6 @@
 (() => {
     let dialog, objectUrl, controller, previousFocus, keyHandler;
-    const titles = { payments: 'Transaction and Payment Report', bookings: 'Booking and Delivery Report', fleet: 'Fleet and Driver Activity Report' };
+    const titles = { payments: 'Management Report', bookings: 'Booking and Delivery Report', fleet: 'Fleet and Driver Activity Report' };
 
     function clearOutput() {
         if (objectUrl) URL.revokeObjectURL(objectUrl);
@@ -35,7 +35,7 @@
             <p>Choose a period to summarize bookings, delivery status, and assigned trips.</p></div>
             <button type="button" data-close aria-label="Close report generator">Close</button></header>
             <form class="ue-operational-report-form">
-                <label>Report<select name="type">${manager ? '<option value="payments">Transaction and Payment Report</option>' : ''}<option value="bookings">Booking and Delivery Report</option><option value="fleet">Fleet and Driver Activity Report</option></select></label>
+                <label>Report<select name="type">${manager ? '<option value="payments">Management Report</option>' : ''}<option value="bookings">Booking and Delivery Report</option><option value="fleet">Fleet and Driver Activity Report</option></select></label>
                 <label>Period<select name="period"><option value="month">Monthly</option><option value="custom">Custom dates</option></select></label>
                 <label data-month>Reporting month<input type="month" name="month" min="2000-01" max="2099-12" required></label>
                 <label data-custom hidden>From<input type="date" name="from" min="2000-01-01" max="2099-12-31"></label>

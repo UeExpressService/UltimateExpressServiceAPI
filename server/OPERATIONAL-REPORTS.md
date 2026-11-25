@@ -4,12 +4,15 @@ Manager: Records > Generate Monthly Report. Supervisor: Generate Activity Report
 Choose a reporting month or a custom range, generate the PDF, then download it
 and print it from the PDF viewer. CSV exports remain available as record exports.
 
-The server generates standalone A4 landscape PDFs with company branding, dates,
-preparer, report ID, repeated table headers and page numbers. No email is sent.
+The server generates standalone A4 PDFs with company branding, dates, preparer,
+report ID, repeated table headers and page numbers. The Management Report uses
+portrait pages, summary cards, weekly totals, transaction details, payment and
+quotation totals, and signature lines. Other reports use landscape pages.
+No email is sent.
 
 ## Reports and access
 
-- Transaction and Payment Report: Manager only. Booking transaction details,
+- Management Report: Manager only. Booking transaction details,
   recorded payment details, quote totals, unpaid quotes and payment averages.
 - Booking and Delivery Report: Manager and Supervisor. Booking status totals,
   monthly breakdown and detailed routes and assignments.
