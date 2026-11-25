@@ -6,7 +6,7 @@ const {period,loadReport}=require('./operational-reports');
 module.exports=async function({connection,base,sessions,emails}){
     const emailCount=emails.length;
     const request=(role,type='bookings',query='from=2035-01-01&to=2035-01-31')=>fetch(`${base}/reports/${type}.pdf?${query}`,{
-        headers:sessions[role]?{Authorization:'Bearer '+sessions[role]}:{}
+        headers:sessions[role]?{Authorization:'Bearer '+sessions[role], 'X-Forwarded-For':role==='manager'?'198.51.100.10':'198.51.100.11'}:{}
     });
     for(const [role,expected] of [['anonymous',401],['customer',403],['dispatcher',403]])assert.equal((await request(role)).status,expected);
     assert.equal((await request('supervisor','payments')).status,403);
@@ -55,9 +55,19 @@ module.exports=async function({connection,base,sessions,emails}){
     assert.ok(!fleet.newTrucks.some(r=>['REPORT-PRIOR','REPORT-NEXT'].includes(r.license_plate)));
     const emptyFleet=await loadReport(connection,period({from:'2036-01-01',to:'2036-01-31'}),2,'fleet');
     assert.deepEqual(emptyFleet.newDrivers,[]);assert.deepEqual(emptyFleet.newTrucks,[]);
+    const driverList=await loadReport(connection,period({from:'2035-01-01',to:'2035-01-31'}),2,'driverlist');
+    assert.ok(driverList.allDrivers.some(r=>r.name==='Prior Driver'),'Full driver list includes older records');
+    assert.ok(driverList.allDrivers.some(r=>r.name==='Unassigned New Driver'),'Full driver list includes unused drivers');
+    assert.ok(driverList.allDrivers.some(r=>r.id===driver2),'Last-day driver is included');
+    assert.ok(!driverList.allDrivers.some(r=>r.name==='Next Month Driver'),'Full driver list excludes records after the selected end date');
+    const truckList=await loadReport(connection,period({from:'2035-01-01',to:'2035-01-31'}),2,'trucklist');
+    assert.ok(truckList.allTrucks.some(r=>r.license_plate==='REPORT-PRIOR'),'Full truck list includes older records');
+    assert.ok(truckList.allTrucks.some(r=>r.license_plate==='REPORT-UNUSED'),'Full truck list includes unused trucks');
+    assert.ok(truckList.allTrucks.some(r=>r.id===truck2),'Last-day truck is included');
+    assert.ok(!truckList.allTrucks.some(r=>r.license_plate==='REPORT-NEXT'),'Full truck list excludes later registrations');
     const output=process.env.UE_REPORT_QA_DIR||fs.mkdtempSync(path.join(os.tmpdir(),'ue-operational-reports-'));
     fs.mkdirSync(output,{recursive:true});
-    for(const [role,type] of [['manager','payments'],['manager','bookings'],['supervisor','fleet'],['supervisor','drivers'],['manager','newdrivers'],['supervisor','newtrucks'],['supervisor','customertrucks']]){
+    for(const [role,type] of [['manager','payments'],['manager','bookings'],['supervisor','fleet'],['manager','driverlist'],['supervisor','trucklist'],['supervisor','drivers'],['manager','newdrivers'],['supervisor','newtrucks'],['supervisor','customertrucks']]){
         const response=await request(role,type);assert.equal(response.status,200);
         assert.match(response.headers.get('content-type'),/^application\/pdf/);
         assert.match(response.headers.get('content-disposition'),new RegExp(type+'-2035-01-01-to-2035-01-31.pdf'));
@@ -66,7 +76,7 @@ module.exports=async function({connection,base,sessions,emails}){
         fs.writeFileSync(path.join(output,type+'.pdf'),bytes);
     }
     fs.writeFileSync(path.join(output,'verified-summary.json'),JSON.stringify(data.summary,null,2));
-    console.log('Operational reports passed: role restrictions, valid inclusive dates, monthly boundaries, new driver/truck creation dates including unused resources, fallback dates, payment-date cohort, pending/cancelled exclusions, missing assignments, repeated names, all seven PDF downloads and empty periods. Evidence: '+output);
+    console.log('Operational reports passed: role restrictions, valid inclusive dates, full fleet registers including older and unused resources, end-date boundaries, monthly new driver/truck lists, fallback dates, payment-date cohort, pending/cancelled exclusions, missing assignments, repeated names, all nine PDF downloads and empty periods. Evidence: '+output);
     if(process.env.UE_REPORT_BROWSER_QA)await require('./test-operational-report-ui')({base,sessions,output});
     assert.equal(emails.length,emailCount,'Generating reports does not send any email');
     for(let attempt=0;attempt<30;attempt++){

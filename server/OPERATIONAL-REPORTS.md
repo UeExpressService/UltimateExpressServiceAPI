@@ -17,6 +17,9 @@ No email is sent.
   recorded payment details, quote totals, unpaid quotes and payment averages.
 - Booking and Delivery Report: Manager and Supervisor. Booking status totals,
   monthly breakdown and detailed routes and assignments.
+- Driver List and Truck List: separate one-page registered fleet lists, including
+  older records added on or before the selected end date and their current status.
+  They do not require a trip or limit records to those added during the month.
 - Drivers in Trips: one-page driver list with trip counts for the period.
 - New Drivers: one-page list of drivers added during the period.
 - New Trucks: one-page list of trucks added during the period.
@@ -29,7 +32,7 @@ No email is sent.
   for a shorter date range rather than dropping records or adding pages.
 
 `GET /api/reports/{type}.pdf?from=YYYY-MM-DD&to=YYYY-MM-DD`
-accepts `payments`, `bookings`, `fleet`, `drivers`, `newdrivers`, `newtrucks`,
+accepts `payments`, `bookings`, `fleet`, `driverlist`, `trucklist`, `drivers`, `newdrivers`, `newtrucks`,
 or `customertrucks`. It
 uses the existing Bearer session and current database role. Downloads are not
 cached. Periods are inclusive, between 2000 and 2099, and limited to 366 days

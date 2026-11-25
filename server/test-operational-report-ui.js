@@ -68,13 +68,13 @@ module.exports = async function ({ base, sessions, output }) {
         const supervisor = await pageFor('supervisor');
         await supervisor.getByRole('button', { name: 'Generate Activity Report' }).click();
         const fleet = supervisor.getByRole('dialog');
-        assert.equal(await fleet.locator('[name=type]').inputValue(), 'drivers');
-        assert.deepEqual(await fleet.locator('[name=type] option').evaluateAll(options => options.map(option => option.value)), ['bookings','drivers','newdrivers','newtrucks','customertrucks']);
+        assert.equal(await fleet.locator('[name=type]').inputValue(), 'driverlist');
+        assert.deepEqual(await fleet.locator('[name=type] option').evaluateAll(options => options.map(option => option.value)), ['bookings','driverlist','trucklist','drivers','newdrivers','newtrucks','customertrucks']);
         assert.equal(await fleet.locator('option[value=payments]').count(), 0, 'Supervisors cannot choose financial reports');
         await fleet.locator('[name=month]').fill('2035-01');
         await fleet.getByRole('button', { name: 'Generate PDF' }).click();
         await fleet.getByRole('link', { name: 'Download PDF' }).waitFor();
-        assert.match(await fleet.locator('[data-download]').getAttribute('download'), /drivers-2035-01-01-to-2035-01-31/);
+        assert.match(await fleet.locator('[data-download]').getAttribute('download'), /driverlist-2035-01-01-to-2035-01-31/);
         await supervisor.screenshot({ path: path.join(output, 'supervisor-activity-report.png') });
         console.log('Monthly report browser checks passed: Manager and Supervisor entry points, PDF preview/download, exact month and leap-year boundaries, stale-preview clearing, validation errors and mobile layout.');
     } finally { await browser.close(); }

@@ -1,6 +1,6 @@
 (() => {
     let dialog, objectUrl, controller, previousFocus, keyHandler;
-    const titles = { payments: 'Management Report', bookings: 'Booking and Delivery Report', drivers: 'Drivers in Trips',
+    const titles = { payments: 'Management Report', bookings: 'Booking and Delivery Report', driverlist: 'Driver List', trucklist: 'Truck List', drivers: 'Drivers in Trips',
         newdrivers: 'New Drivers', newtrucks: 'New Trucks', customertrucks: 'Trucks Assigned to Customer Trips' };
 
     function clearOutput() {
@@ -22,10 +22,10 @@
     }
 
     function open(type = 'payments') {
-        if (type === 'fleet') type = 'drivers';
+        if (type === 'fleet') type = 'driverlist';
         if (!Object.hasOwn(titles, type)) return;
         const manager = getCurrentUser()?.role === 'manager';
-        if (type === 'payments' && !manager) type = 'drivers';
+        if (type === 'payments' && !manager) type = 'driverlist';
         close(); previousFocus = document.activeElement;
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
         dialog = document.createElement('section');
@@ -44,7 +44,7 @@
                 <label data-custom hidden>To<input type="date" name="to" min="2000-01-01" max="2099-12-31"></label>
                 <button type="submit">Generate PDF</button>
             </form>
-            <p class="ue-operational-report-note">Select up to 366 days. The report uses the pickup date, or the creation date when no pickup date is saved. Statuses reflect the latest saved records.</p>
+            <p class="ue-operational-report-note" data-note>Select up to 366 days. The report uses the pickup date, or the creation date when no pickup date is saved. Statuses reflect the latest saved records.</p>
             <p data-status role="status" aria-live="polite"></p>
             <div data-output hidden><p><a data-download>Download PDF</a><span>Open the downloaded PDF to print or share the report.</span></p>
             <iframe data-preview title="Generated operational PDF report"></iframe></div>
@@ -54,6 +54,9 @@
         form.elements.type.value = type; form.elements.month.value = today.slice(0, 7);
         form.elements.from.value = today.slice(0, 8) + '01'; form.elements.to.value = today;
         function updatePeriod() {
+            const roster = ['driverlist','trucklist'].includes(form.elements.type.value);
+            const newRecords = ['newdrivers','newtrucks'].includes(form.elements.type.value);
+            dialog.querySelector('[data-note]').textContent = roster ? 'Full registered list as of the selected month or end date. Includes older records and their current status.' : newRecords ? 'Lists include drivers or trucks added during the selected month or date range.' : 'Select up to 366 days. The report uses the pickup date, or the creation date when no pickup date is saved. Statuses reflect the latest saved records.';
             const monthly = form.elements.period.value === 'month';
             form.classList.toggle('ue-report-custom-dates', !monthly);
             form.querySelector('[data-month]').hidden = !monthly;
@@ -61,6 +64,7 @@
             form.querySelectorAll('[data-custom]').forEach(label => { label.hidden = monthly; });
             form.elements.from.required = form.elements.to.required = !monthly;
         }
+        updatePeriod();
         dialog.querySelector('[data-close]').addEventListener('click', close);
         form.addEventListener('change', () => {
             updatePeriod();

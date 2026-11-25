@@ -4,9 +4,9 @@ const { PDFDocument } = require('pdfkit');
 
 const DAY = 86400000;
 const TITLES = { payments: 'Management Report', bookings: 'Booking and Delivery Report', fleet: 'Fleet and Driver Activity Report',
-    drivers: 'Drivers in Trips', newdrivers: 'New Drivers', newtrucks: 'New Trucks', customertrucks: 'Trucks Assigned to Customer Trips' };
+    driverlist: 'Driver List', trucklist: 'Truck List', drivers: 'Drivers in Trips', newdrivers: 'New Drivers', newtrucks: 'New Trucks', customertrucks: 'Trucks Assigned to Customer Trips' };
 const FLEET_TYPES = ['fleet', 'drivers', 'newdrivers', 'newtrucks', 'customertrucks'];
-const SINGLE_PAGE_TYPES = ['drivers', 'newdrivers', 'newtrucks', 'customertrucks'];
+const SINGLE_PAGE_TYPES = ['driverlist', 'trucklist', 'drivers', 'newdrivers', 'newtrucks', 'customertrucks'];
 
 function validDate(value) {
     if (typeof value !== 'string' || !/^20\d{2}-\d{2}-\d{2}$/.test(value)) return false;
@@ -70,7 +70,7 @@ async function loadReport(dbp, selectedPeriod, actorId, type = 'bookings') {
         // Keep every section of the report on the same saved-record snapshot.
         await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
         await connection.query('START TRANSACTION READ ONLY');
-        const [rows] = await connection.query(`SELECT sr.id, sr.customer_id, sr.status, sr.assigned_truck_id, sr.assigned_driver_id,
+        const [rows] = ['driverlist','trucklist'].includes(type) ? [[]] : await connection.query(`SELECT sr.id, sr.customer_id, sr.status, sr.assigned_truck_id, sr.assigned_driver_id,
             DATE_FORMAT(COALESCE(sr.pickup_date, sr.created_at), '%Y-%m-%d') AS report_date,
             CASE WHEN sr.pickup_date IS NULL THEN 'Created' ELSE 'Pickup' END AS date_basis,
             COALESCE(NULLIF(sr.contact_person, ''), u.name, 'Customer not recorded') AS customer_name,
@@ -105,7 +105,20 @@ async function loadReport(dbp, selectedPeriod, actorId, type = 'bookings') {
                 ORDER BY created_at, id LIMIT 5001`, [selectedPeriod.from, selectedPeriod.to]);
             if (newDrivers.length > 5000 || newTrucks.length > 5000) throw Object.assign(new Error('This period has over 5,000 new fleet records. Choose a shorter period.'), { status: 400 });
         }
-        const report = { period: selectedPeriod, rows, payments, newDrivers, newTrucks, summary: summarize(rows), preparedBy: actor?.name || 'Staff', role: actor?.role || 'Staff', generatedAt: new Date() };
+        let allDrivers = [], allTrucks = [];
+        if (type === 'driverlist') {
+            [allDrivers] = await connection.query(`SELECT id, name, license_number, phone, status,
+                DATE_FORMAT(created_at, '%Y-%m-%d') AS added_date FROM drivers
+                WHERE created_at < DATE_ADD(?, INTERVAL 1 DAY) ORDER BY name, id LIMIT 5001`, [selectedPeriod.to]);
+            if (allDrivers.length > 5000) throw Object.assign(new Error('The driver list has over 5,000 records. Choose an earlier end date.'), { status: 400 });
+        }
+        if (type === 'trucklist') {
+            [allTrucks] = await connection.query(`SELECT id, license_plate, type, capacity, status, third_party,
+                DATE_FORMAT(created_at, '%Y-%m-%d') AS added_date FROM trucks
+                WHERE created_at < DATE_ADD(?, INTERVAL 1 DAY) ORDER BY license_plate, id LIMIT 5001`, [selectedPeriod.to]);
+            if (allTrucks.length > 5000) throw Object.assign(new Error('The truck list has over 5,000 records. Choose an earlier end date.'), { status: 400 });
+        }
+        const report = { period: selectedPeriod, rows, payments, newDrivers, newTrucks, allDrivers, allTrucks, summary: summarize(rows), preparedBy: actor?.name || 'Staff', role: actor?.role || 'Staff', generatedAt: new Date() };
         await connection.commit();
         return report;
     } catch (error) { await connection.rollback(); throw error; }
@@ -122,7 +135,7 @@ function renderPDF(report, type) {
         const chunks = [];
         doc.on('data', chunk => chunks.push(chunk)); doc.on('end', () => resolve(Buffer.concat(chunks))); doc.on('error', reject);
         const width = doc.page.width - 80, bottom = doc.page.height - 55;
-        const reference = `UE-${{payments:'TPR',bookings:'BDR',fleet:'FDA',drivers:'DIT',newdrivers:'NDR',newtrucks:'NTR',customertrucks:'CTT'}[type]}-${report.generatedAt.toISOString().slice(0,10).replace(/-/g,'')}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+        const reference = `UE-${{payments:'TPR',bookings:'BDR',fleet:'FDA',driverlist:'DRL',trucklist:'TRL',drivers:'DIT',newdrivers:'NDR',newtrucks:'NTR',customertrucks:'CTT'}[type]}-${report.generatedAt.toISOString().slice(0,10).replace(/-/g,'')}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
         let y, section = 0;
         const navy = '#093b5d', green = '#75b72d', lightBlue = '#e8f2f9', lightGreen = '#edf6e7';
         const date = value => new Date(value + 'T00:00:00Z').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -138,7 +151,7 @@ function renderPDF(report, type) {
             doc.font('Helvetica').fontSize(10); text('Trans Logistic Corporation', 90, 49, { width: width - 50 });
             doc.moveTo(40,76).lineTo(doc.page.width-40,76).lineWidth(1.5).stroke(green);
             doc.font('Helvetica-Bold').fontSize(type === 'payments' ? 23 : 20); text(title.toUpperCase(), 40, 88, { width });
-            doc.font('Helvetica').fontSize(10); text(type === 'payments' ? 'Monthly Operations and Transactions Summary' : 'Operations and Activity Summary',40,116,{width});
+            doc.font('Helvetica').fontSize(10); text(type === 'payments' ? 'Monthly Operations and Transactions Summary' : ['driverlist','trucklist'].includes(type) ? `Fleet Register as of ${date(report.period.to)}` : 'Operations and Activity Summary',40,116,{width});
             doc.fontSize(8);
             text(`Reporting period: ${date(report.period.from)} - ${date(report.period.to)}`,40,139,{width:width*.7});
             text(`Generated: ${report.generatedAt.toLocaleDateString('en-PH',{timeZone:'Asia/Manila'})}`,40+width*.7,139,{width:width*.3,align:'right'});
@@ -177,7 +190,7 @@ function renderPDF(report, type) {
                     for (const values of rows) total += height(values);
                     if (y + total + 16 + 80 <= bottom) { fits = true; break; }
                 }
-                if (!fits) throw Object.assign(new Error('Too many records for a readable one-page report. Choose a shorter date range.'), { status: 400 });
+                if (!fits) throw Object.assign(new Error(['driverlist','trucklist'].includes(type) ? 'Too many records for a readable one-page list. Choose an earlier end date.' : 'Too many records for a readable one-page report. Choose a shorter date range.'), { status: 400 });
             }
             function row(values, header = false, index = 0) {
                 const total = values[0] === 'TOTAL';
@@ -223,7 +236,7 @@ function renderPDF(report, type) {
         const s = report.summary;
         try {
             page();
-            if (!FLEET_TYPES.includes(type) || type === 'fleet') heading(type === 'payments' ? 'Executive summary' : 'Operational summary');
+            if (['payments','bookings','fleet'].includes(type)) heading(type === 'payments' ? 'Executive summary' : 'Operational summary');
             if (type === 'payments') {
                 const money = cents => `PHP ${(cents / 100).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 const cents = value => Math.round(Number(value || 0) * 100);
@@ -288,6 +301,14 @@ function renderPDF(report, type) {
                     `${r.driver_name || 'Driver not assigned'}\n${r.truck_plate || 'Truck not assigned'}`, statusGroup(r.status) === 'Other' ? `Other: ${r.status}` : statusGroup(r.status)
                 ]), [0.8,1.1,1.4,1.8,1.8,1.6,1]);
             } else {
+                if (type === 'driverlist') {
+                    heading('Driver list');
+                    table(['Driver','License number','Contact number','Status'], (report.allDrivers || []).map(r => [r.name,r.license_number,r.phone || 'Not recorded',r.status || 'Not recorded']), [2.3,1.8,1.7,1.2]);
+                }
+                if (type === 'trucklist') {
+                    heading('Truck list');
+                    table(['Plate number','Truck type','Capacity (kg)','Status','Ownership'], (report.allTrucks || []).map(r => [r.license_plate,r.type,r.capacity || 'Not recorded',r.status || 'Not recorded',Number(r.third_party) ? 'Partner' : 'Owned']), [1.4,2.2,1.2,1.2,1]);
+                }
                 if (type === 'fleet') table(['Summary', 'Total'], [
                     ['Confirmed trip bookings', s.confirmed],
                     ['Trucks with assigned trips', s.trucks.length],
