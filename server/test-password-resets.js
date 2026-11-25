@@ -202,6 +202,7 @@ async function main() {
     const tripRecords = await require('./test-trip-maintenance')({connection,base,sessions,receiptId:panelRecords.receiptId});
     await require('./test-report-amounts')({ connection, base, sessions });
     await require('./test-manual-assignment')({ connection, base, sessions });
+    await require('./test-operational-reports')({ connection, base, sessions, emails });
     if (process.env.UE_PLAYWRIGHT_MODULE) await require('./test-revision-ui')({ base, sessions, ...panelRecords,...tripRecords });
 
     // Check legacy signed INT IDs as well as the fresh BIGINT UNSIGNED schema.

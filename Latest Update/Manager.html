@@ -9,6 +9,7 @@
     <script src="ue-dialog.js"></script>
     <script src="payment-schedules.js" defer></script>
     <script src="print-documents.js" defer></script>
+    <script src="operational-reports.js" defer></script>
     <script src="route-pricing.js" defer></script>
     <script src="maintenance.js" defer></script>
     <script src="inspection-requests.js" defer></script>
@@ -107,7 +108,7 @@
 
         <!-- Records reports -->
         <div id="panel-revenue" class="panel ue-initially-hidden">
-            <div class="page-header"><div><h1>Records <span class="ue-text-primary">Overview</span></h1><p>Customer activity and service volume from the database</p></div><div class="filter-bar"><select id="revYearSelect" aria-label="Reporting year" class="filter-select" onchange="loadManagerReport()"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select><button class="btn-outline-sm" onclick="printManagerReport()"><i class="bi bi-printer"></i> Print Report</button><button class="btn-outline-sm" onclick="downloadManagerReport()"><i class="bi bi-download"></i> Download Report</button></div></div>
+            <div class="page-header"><div><h1>Records <span class="ue-text-primary">Overview</span></h1><p>Customer activity and service volume from the database</p></div><div class="filter-bar"><select id="revYearSelect" aria-label="Reporting year" class="filter-select" onchange="loadManagerReport()"><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select><button class="btn-outline-sm" onclick="printManagerReport()"><i class="bi bi-printer"></i> Generate Monthly Report</button><button class="btn-outline-sm" onclick="downloadManagerReport()"><i class="bi bi-download"></i> Export Yearly Records</button></div></div>
             <div class="stats-grid" id="revenueStatsGrid"></div>
             <section class="card full-width ue-mb-card" aria-labelledby="calculatedAmountsTitle">
                 <div class="card-header"><div class="card-title" id="calculatedAmountsTitle"><i class="bi bi-calculator"></i> Calculated Amounts</div></div>
@@ -926,21 +927,7 @@
         }
 
         function printManagerReport() {
-            if (!reportData) return toast('Analytics are still loading.', 'error');
-            const cash = UEDocuments.money, summary = reportData.summary;
-            UEDocuments.preview({ title: 'Management Report', reference: `Reporting year ${reportData.year}`,
-                facts: [['Recorded payments', cash(summary.paid_revenue)], ['Paid bookings', summary.paid_orders],
-                    ['Service requests', summary.total_transactions], ['Completed', summary.completed],
-                    ['Ongoing', summary.ongoing], ['Pending', summary.pending]],
-                sections: [
-                    { title: 'Calculated Amounts', columns: ['Metric', 'Amount', 'Formula'], rows: calculatedAmountRows(cash) },
-                    { title: 'Monthly Operations', columns: ['Month', 'Recorded payments', 'Paid bookings', 'Requests', 'Completed'],
-                        rows: MONTHS.map((month,i) => [month,cash(reportData.monthlyPaidRevenue[i]),reportData.monthlyPaidOrders[i],reportData.monthlyTransactions[i],reportData.monthlyCompleted[i]]) },
-                    { title: 'Quarterly Operations', columns: ['Quarter', 'Transactions', 'Recorded payments', 'Average daily payment'],
-                        rows: (reportData.quarterlySummary || []).map(row => [`Q${row.quarter}`,row.total_transactions,cash(row.paid_revenue),cash(row.average_daily_revenue)]) },
-                    { title: 'Customer Payments', columns: ['Customer', 'Paid bookings', 'Total paid'],
-                        rows: reportData.customerPayments.map(row => [row.customer_name,row.paid_orders,cash(row.total_paid)]) }
-                ], note: 'Quotes use the pickup year, or creation year if no pickup date is saved. Payments use the year they were recorded by the Manager. Unpaid quotes are not received revenue and are not calculated by subtracting payments from quotes.' });
+            return UEOperationalReports.open('payments');
         }
 
         function downloadManagerReport(){

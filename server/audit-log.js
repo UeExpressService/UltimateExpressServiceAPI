@@ -23,6 +23,7 @@ function routeActivity(req) {
     if (path === '/api/account/first-login-password') return make('password.changed', 'user', 'Set their account password.');
     if (path === '/api/customer/password-reset/confirm') return make('password.reset', 'user', 'Reset their account password.');
     if (path === '/api/manager/report') return make('report.viewed', 'report', 'Viewed management reports.', true);
+    if (path === '/api/reports/:type.pdf') return make('report.generated', 'report', 'Generated a printable operational PDF report.');
     if (path.includes('/waybills')) return make(method === 'POST' ? 'waybill.uploaded' : path.includes(':waybillId') ? 'waybill.opened' : 'waybills.viewed', method === 'GET' && !path.includes(':waybillId') ? 'service_request' : 'waybill', method === 'POST' ? 'Uploaded a waybill.' : path.includes(':waybillId') ? 'Viewed or downloaded a waybill.' : 'Viewed the booking waybill list.', method === 'GET' && !path.includes(':waybillId'));
     if (path === '/api/service-requests/:id/payment') return make('payment.recorded', 'service_request', 'Recorded the service payment.');
     if (path === '/api/service-requests/:id/cancel') return make('service_request.cancelled', 'service_request', 'Cancelled a booking.');

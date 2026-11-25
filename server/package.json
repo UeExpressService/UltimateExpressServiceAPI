@@ -5,7 +5,7 @@
   "description": "Backend API for the Ultimate Express capstone project",
   "main": "server.js",
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "start": "node server.js",
@@ -21,7 +21,8 @@
     "test:password-resets": "node test-password-resets.js",
     "test:gmail-recovery": "node --test test-gmail-connection.js",
     "test:audit": "node --test test-audit-log.js",
-    "test:revisions": "node --test test-revision-rules.js"
+    "test:revisions": "node --test test-revision-rules.js",
+    "test:operational-reports": "node --test test-operational-report-rules.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.4",
@@ -30,6 +31,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
     "googleapis": "^144.0.0",
-    "mysql2": "^3.14.3"
+    "mysql2": "^3.14.3",
+    "pdfkit": "^0.21.0"
   }
 }

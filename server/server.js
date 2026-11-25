@@ -415,7 +415,7 @@ function findFrontendDir() {
 const frontendPath = findFrontendDir();
 console.log(`Serving front-end files from: ${frontendPath}`);
 
-const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js', 'waybills.js', 'operations.js', 'payment-schedules.js', 'email-recovery.js', 'website-inquiries.js', 'print-documents.js', 'route-pricing.js', 'maintenance.js', 'inspection-requests.js']);
+const publicScripts = new Set(['auth.js', 'api-config.js', 'route-map.js', 'ue-dialog.js', 'waybills.js', 'operations.js', 'payment-schedules.js', 'email-recovery.js', 'website-inquiries.js', 'print-documents.js', 'operational-reports.js', 'route-pricing.js', 'maintenance.js', 'inspection-requests.js']);
 const publicExtensions = /\.(html|css|js|png|jpe?g|webp|gif|svg|ico|woff2?)$/i;
 
 app.get('/health', (req, res) => res.json({ ok: true }));
@@ -1481,6 +1481,7 @@ app.post('/api/users/create-customer', requireManager, auditUserAction('customer
 require('./partners')(app, { dbp, requireManager, auditManagerAction: auditUserAction, cleanText, isValidEmail, HttpError, sendError });
 
 // Build the manager's report from the database.
+require('./operational-reports').register(app, { dbp, requireRoles, sendError, rateLimit });
 app.get('/api/manager/report', requireManager, async (req, res) => {
     const requestedYear = req.query.year === undefined ? new Date().getFullYear() : Number(req.query.year);
     if (!Number.isInteger(requestedYear) || requestedYear < 2000 || requestedYear > 2100) {

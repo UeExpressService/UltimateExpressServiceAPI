@@ -9,6 +9,7 @@
     <script src="ue-dialog.js"></script>
     <script src="operations.js" defer></script>
     <script src="print-documents.js" defer></script>
+    <script src="operational-reports.js" defer></script>
     <script src="maintenance.js" defer></script>
     <script src="inspection-requests.js" defer></script>
     <script>if (!requireRole('supervisor')) document.documentElement.style.display = 'none';</script>
@@ -43,9 +44,9 @@
                 <p>Manage drivers, trucks, and fleet resources for dispatch operations</p>
             </div>
             <div class="ue-supervisor-report-actions">
-            <button class="btn-add" type="button" onclick="printFleetReport()"><i class="bi bi-printer"></i> Print Fleet Report</button>
+            <button class="btn-add" type="button" onclick="printFleetReport()"><i class="bi bi-printer"></i> Generate Activity Report</button>
             <button class="btn-add" type="button" onclick="downloadFleetReport()">
-                <i class="bi bi-download"></i> Export Fleet Report
+                <i class="bi bi-download"></i> Export Fleet Records
             </button>
             </div>
         </div>
@@ -451,15 +452,7 @@
         }
 
         function printFleetReport() {
-            const visibleDrivers = getFilteredDrivers(), visibleTrucks = getFilteredTrucks();
-            UEDocuments.preview({ title: 'Fleet Report', reference: 'Filtered fleet records',
-                facts: [['Drivers shown', visibleDrivers.length], ['Trucks shown', visibleTrucks.length],
-                    ['Available drivers', visibleDrivers.filter(row => row.status === 'available').length],
-                    ['Available trucks', visibleTrucks.filter(row => row.status === 'available').length]],
-                sections: [
-                    { title: 'Drivers', columns: ['Name', 'License', 'Phone', 'Status'], rows: visibleDrivers.map(row => [row.name, row.license, row.phone, row.status]) },
-                    { title: 'Trucks', columns: ['Plate', 'Type', 'Capacity', 'Location', 'Status', 'Ownership'], rows: visibleTrucks.map(row => [row.plate, row.type, row.capacity, row.location, row.status, row.third_party ? 'Third-party' : 'Owned']) }
-                ], note: 'This report reflects the current search and status filters. Availability may change after this report is generated.' });
+            UEOperationalReports.open('fleet');
         }
 
         function downloadFleetReport() {
